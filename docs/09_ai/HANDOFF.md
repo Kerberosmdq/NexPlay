@@ -7,8 +7,10 @@ Document template for transferring task execution context between AI sessions an
 - **Title**: Architecture & Governance Pre-flight (plan, ADRs, roadmap, backlog, conventions, git reconciliation, skills)
 
 ## Current Branch
-- `docs/architecture-preflight`
-- Remote `origin`: https://github.com/Kerberosmdq/NexPlay.git (not yet pushed)
+- `main`
+- Remote `origin`: https://github.com/Kerberosmdq/NexPlay.git (pushed)
+- The working branch `docs/architecture-preflight` was merged into `main` and
+  deleted (locally and on origin) once merged — no other branches remain.
 
 ## Files Modified
 - `docs/NEXPLAY_PLAN.md` (Created) — vision, scope, shared platform, stack, AI collaboration model.
@@ -31,8 +33,8 @@ Document template for transferring task execution context between AI sessions an
 - **M0 — Foundations** is next (see `docs/ROADMAP.md`): Next.js + TS scaffold
   deployed to Vercel, design tokens skeleton, next-intl wiring, Supabase
   project + anonymous auth + RLS, CI, branch protection on `main`.
-- This branch (`docs/architecture-preflight`) has not been pushed or merged
-  to `main` yet — confirm with the founder before opening a PR/merging.
+- Enable GitHub branch protection on `main` (not yet configured) before
+  multiple agents start opening PRs against it.
 
 ## Warnings
 - Do not attempt to work on `main` branch.
