@@ -2,7 +2,7 @@
 id: ADR-0001
 title: Stack Selection and Persistence Boundary
 status: Accepted
-version: 1.0.0
+version: 1.1.0
 category: Architecture Decision Record
 
 authors:
@@ -46,6 +46,11 @@ is what causes agents to collide.
 ### 1. Application stack
 - **Language:** TypeScript everywhere (app, shared logic, content packs).
   Types are the contract multiple agents check each other's work against.
+- **Package manager:** pnpm, exclusively. Only `pnpm-lock.yaml` is committed;
+  `package-lock.json` and `yarn.lock` must never appear in the repo. With
+  multiple agents installing dependencies independently, a single locked
+  package manager is what keeps the dependency tree reproducible — mixed
+  lockfiles is a real, not theoretical, collision risk.
 - **Framework:** Next.js (React), mobile-first responsive layout.
 - **Styling:** Tailwind CSS driven entirely by a design-tokens layer (see
   `docs/04_design/`). No component hardcodes a raw color/spacing value.
@@ -143,5 +148,9 @@ individual games — every `GameModule` inherits it for free.
 - ADR-0003 — Scalability and Privacy Seams
 
 ## Changelog
+### Version 1.1.0
+- Locked package manager to pnpm exclusively (§1), to prevent mixed
+  lockfiles across agents working in parallel.
+
 ### Version 1.0.0
 - Initial accepted version.

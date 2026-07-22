@@ -13,6 +13,14 @@ the ADRs in `docs/00_decisions/architecture/`. For product scope, see
 
 ---
 
+## Package manager
+- **pnpm only** (ADR-0001 §1). Use `pnpm install`, `pnpm add`, `pnpm run`.
+- Never run `npm install` or `yarn` in this repo — they generate a competing
+  lockfile. Only `pnpm-lock.yaml` is committed.
+- If `package-lock.json` or `yarn.lock` ever appear (e.g. an agent used the
+  wrong command out of habit), delete them and reinstall with pnpm before
+  committing — do not commit both.
+
 ## Folder structure
 
 ```
