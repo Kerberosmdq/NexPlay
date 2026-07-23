@@ -3,20 +3,24 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: TASK-0021
-- **Title**: Room Creation & Join-by-Code Primitives
+- **Task ID**: TASK-0022
+- **Title**: Placeholder Game & Device Modes Sync UI
 
 ## Current Branch
-- `feat/room-creation`
+- `feat/placeholder-game`
 - Remote `origin`: https://github.com/Kerberosmdq/NexPlay.git
 
 ## Files Modified / Added
-- `lib/types/room.ts` — TypeScript types for `Player`, `RoomState`, and presence payloads.
-- `lib/realtime/code.ts` — Room code generator (4-character uppercase e.g. `ABCD` omitting confusing characters) and format validator.
-- `lib/realtime/room.ts` — Initial room state creator, topic generator, and host migration logic per ADR-0001 §4.
-- `lib/realtime/index.ts` — Re-exports realtime primitives.
-- `tests/unit/room.test.ts` — 7 Vitest unit tests covering code generation, code validation, initial room state, and host migration behavior (100% green).
-- `docs/09_ai/tasks/TASK-0021-room-creation.md` — Task specification document.
+- `games/placeholder/reducer.ts` — Pure state machine reducer for the placeholder game (`START_GAME`, `INCREMENT`, `DECREMENT`, `FINISH_GAME`, `RESET_GAME`).
+- `games/placeholder/module.ts` — `GameModule` implementation matching ADR-0002 contract.
+- `games/placeholder/views/Host.tsx` — Host control view for multi-device mode.
+- `games/placeholder/views/Player.tsx` — Player view for multi-device mode.
+- `games/placeholder/views/SingleDevice.tsx` — Pass & Play single-device mode view.
+- `components/platform/RoomLobby.tsx` — Mobile-first room lobby UI with Single-Device vs Multi-Device tabs, code generator, and join form.
+- `app/[locale]/page.tsx` — Integrated interactive lobby and placeholder game views on the main page.
+- `tests/unit/placeholder-game.test.ts` — 6 Vitest unit tests for placeholder reducer (100% green).
+- `tests/e2e/locale-routing.spec.ts` — Updated Playwright e2e test locators for the new RoomLobby UI (100% green).
+- `docs/09_ai/tasks/TASK-0022-placeholder-game.md` — Task specification document.
 - `docs/09_ai/CURRENT_STATE.md`, `docs/09_ai/HANDOFF.md` (this file).
 
 ## External state (not in git, important for the next agent to know)
@@ -25,10 +29,11 @@ Document template for transferring task execution context between AI sessions an
 - **GitHub branch protection on `main`** is strict: required status checks must pass before merge.
 
 ## Pending Tasks
-- **TASK-0022**: Multi-device & Single-device placeholder state synchronization UI (`games/placeholder/` & `components/platform/`).
+- **TASK-0023**: Reconnection resilience and durable persistence boundary wiring for placeholder game (`lib/realtime/reconnect.ts` & `lib/analytics/`).
 
 ## Next Suggested Task
-- Open PR for `feat/room-creation`, wait for CI checks, and merge to `main`.
-- Begin **TASK-0022**: Build placeholder state synchronization UI for single-device and multi-device modes.
+- Merge `feat/placeholder-game` PR to `main`.
+- Begin **TASK-0023**: Implement reconnection handling and `game_results`/`events` durable writes for placeholder game.
+
 
 

@@ -41,6 +41,7 @@ M1 — Platform walking skeleton (see `docs/ROADMAP.md`): prove the shared room/
       `AuthProvider`, `public.users` row creation, unit tests).
 - [x] **TASK-0021**: Room creation and join-by-code primitives (`lib/realtime/`,
       room code generator, room state & presence management, host migration logic, unit tests).
+- [x] **TASK-0022**: Multi-device & Single-device placeholder state synchronization UI (`games/placeholder/` & `components/platform/`).
 
 ## Tasks In Progress
 - [ ] None
@@ -49,7 +50,7 @@ M1 — Platform walking skeleton (see `docs/ROADMAP.md`): prove the shared room/
 - None.
 
 ## Next Task
-- **TASK-0022**: Multi-device & Single-device placeholder state synchronization UI (`games/placeholder/` & `components/platform/`).
+- **TASK-0023**: Reconnection resilience and durable persistence boundary wiring for placeholder game (`lib/realtime/reconnect.ts` & `lib/analytics/`).
 
 ## Last Updated
 - 2026-07-23
