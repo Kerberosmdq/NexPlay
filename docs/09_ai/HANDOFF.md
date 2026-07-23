@@ -3,76 +3,68 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: TASK-0014
-- **Title**: M0 code scaffold — Next.js app, design tokens, i18n, tests, CI
+- **Task ID**: TASK-0018
+- **Title**: M0 — Foundations (complete: app scaffold, Supabase, Vercel, branch protection)
 
 ## Current Branch
-- `feat/m0-app-scaffold` (not yet merged to `main` — pending merge/push)
-- Remote `origin`: https://github.com/Kerberosmdq/NexPlay.git
+- `main`
+- Remote `origin`: https://github.com/Kerberosmdq/NexPlay.git (pushed)
+- No other branches exist locally or on origin. Every task branch so far has
+  been merged and deleted immediately after landing on `main`.
 
-## Files Modified
-- Root: `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `tsconfig.json`,
-  `next.config.ts`, `eslint.config.mjs`, `postcss.config.mjs`, `vitest.config.ts`,
-  `playwright.config.ts`, `proxy.ts` (Next.js 16 renamed `middleware.ts` →
-  `proxy.ts` — see AGENTS.md warning about version drift), `.gitignore`,
-  `README.md`, `CLAUDE.md`, `AGENTS.md`, `.claude/launch.json`.
-- `app/[locale]/layout.tsx`, `app/[locale]/page.tsx`, `app/globals.css`,
-  `app/tokens.css` (design tokens skeleton), `app/favicon.ico`.
-- `i18n/routing.ts`, `request.ts`, `navigation.ts`, `en.json`, `es.json`,
-  `checkMessageParity.ts` (+ unit test).
-- `components/ui/`, `components/platform/`, `games/`, `lib/realtime/`,
-  `lib/auth/`, `lib/analytics/`, `supabase/migrations/`, `tests/unit/`,
-  `tests/e2e/` — folder skeleton per `docs/05_engineering/CONVENTIONS.md`,
-  each with a README explaining its purpose (all currently empty of code —
-  first real game is M2).
-- `tests/unit/checkMessageParity.test.ts`, `tests/e2e/locale-routing.spec.ts`.
-- `.github/workflows/ci.yml` — lint/typecheck/unit-test job + separate e2e job.
-- `docs/09_ai/CURRENT_STATE.md`, `docs/09_ai/HANDOFF.md` (this file) — updated.
+## Files Modified (this session, since the architecture pre-flight)
+- Full Next.js app scaffold (`app/`, `components/`, `games/`, `lib/`,
+  `i18n/`, `tests/`, config files) — see the previous handoff entry for the
+  full list; superseded by this one.
+- `supabase/migrations/20260723000000_init_schema.sql` — `users`,
+  `game_results`, `events` with RLS, applied to the live Supabase project.
+- `.env.example` (committed) and `.env.local` (gitignored, holds the real
+  `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` for this
+  project — already populated, do not overwrite blindly).
+- `docs/ROADMAP.md` — M0 marked complete.
+- `docs/09_ai/CURRENT_STATE.md`, `docs/09_ai/HANDOFF.md` (this file).
 
-## Verification done
-- `pnpm run lint`, `pnpm run typecheck`, `pnpm run test` all pass locally.
-- `pnpm run build` succeeds; app manually verified in a real browser at
-  `/en` and `/es` — correct locale content rendered on each.
-- `pnpm run test:e2e` passes (2/2) against a dedicated port (3100).
+## External state (not in git, important for the next agent to know)
+- **Supabase project** is live (`jamrubutlvsfvmqwhbpr`), Anonymous Sign-ins
+  enabled, migration applied, RLS confirmed on all three tables.
+- **Vercel** is connected to this GitHub repo and auto-deploys `main`. Live
+  at https://nex-play-one.vercel.app — verified working at `/en` and `/es`.
+- **GitHub branch protection on `main`** is strict: required status checks
+  (`Lint, typecheck, unit tests`, `End-to-end tests` from `.github/workflows/ci.yml`)
+  must pass before merge, `enforce_admins: true` (no bypass, not even for the
+  repo owner), no force pushes, no deletions. **Every change from here on —
+  including the founder's own — must go through a PR with green CI.** Direct
+  pushes to `main` will now be rejected by GitHub itself.
 
 ## Pending Tasks
-1. Merge `feat/m0-app-scaffold` into `main`, push, delete the branch (same
-   clean-branch pattern used for the architecture pre-flight).
-2. **Vercel**: connect the GitHub repo, deploy `main`. Requires the
-   founder's own Vercel account — an AI agent cannot create accounts or log
-   in on the founder's behalf.
-3. **Supabase**: create the project, enable Anonymous Auth, write the first
-   RLS-enabled migration for `users`/`game_results`/`events` (ADR-0001 §3,
-   ADR-0003). Also requires the founder's own account.
-4. **GitHub branch protection** on `main` — requires explicit permission
-   before changing repo settings; ask before running via `gh` or guide
-   through the GitHub UI.
-5. Once 2-4 land, M0 is done and M1 (platform walking skeleton) starts.
+- **M1 — Platform walking skeleton** is next (`docs/ROADMAP.md`): room
+  creation/join-by-code, both device modes, realtime sync of a placeholder
+  state across two real devices, reconnection/host-migration (ADR-0001 §4)
+  manually verified, and durable writes to `game_results`/`events` wired for
+  a placeholder game.
+- No Supabase client code exists in the app yet — that's the first real work
+  of M1 (`lib/auth/`, `lib/realtime/`), consuming the env vars now in place.
 
 ## Warnings
-- Do not attempt to work on `main` branch.
-- Maintain English as the mandatory repository language for all documentation files.
+- Because branch protection now enforces PRs even for the owner, the
+  "checkout branch → work → merge --ff-only → push → delete branch" flow
+  used so far will need to become "checkout branch → work → push → open PR
+  → wait for CI → merge via GitHub" going forward. Update this workflow
+  expectation for the next agent/session.
+- Do not commit `.env.local` or any real secret. `.env.example` is the only
+  env file that belongs in git.
 - Any change to the `GameModule` contract (ADR-0002) or the persistence
-  boundary (ADR-0001 §3) requires updating the relevant ADR, not a silent
-  code change.
+  boundary (ADR-0001 §3) requires updating the relevant ADR first.
 - New durable Supabase tables beyond `users`, `game_results`, `events`
-  require an ADR update first (ADR-0001).
-- Child-privacy posture is strict (ADR-0003): no PII, display names are
-  ephemeral only, analytics events are enums/numbers only, no third-party
-  analytics SDKs.
-- **Next.js 16 renamed `middleware.ts` to `proxy.ts`.** `AGENTS.md` at the
-  repo root warns that this Next.js version may differ from an agent's
-  training data — check `node_modules/next/dist/docs/` before assuming any
-  Next.js API/convention.
-- An unrelated app ("NexIndu") was found running on `localhost:3000` on the
-  founder's machine during testing — not part of this repo. `playwright.config.ts`
-  deliberately uses port 3100 to avoid ever colliding with whatever else may
-  be running locally.
+  require an ADR update first.
+- Child-privacy posture is strict (ADR-0003): no PII, ephemeral display
+  names only, enum/number-only analytics, no third-party analytics SDKs.
+- Next.js 16 uses `proxy.ts`, not `middleware.ts` — see `AGENTS.md`.
 
 ## Recommendations
-- Before starting Vercel/Supabase setup, run the `start-task` skill.
+- Before M1 work starts, run the `start-task` skill.
 - Ideas that surface but aren't in scope go to `docs/BACKLOG.md`.
 
 ## Next Suggested Task
-- Merge this branch, then walk the founder through Vercel + Supabase setup
-  (steps 2-3 above) and get explicit permission for branch protection (step 4).
+- Kick off M1: implement `lib/auth/` (anonymous sign-in on first load) and
+  `lib/realtime/` (room creation/join-by-code), per ADR-0001/ADR-0002.

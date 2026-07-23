@@ -4,12 +4,12 @@ Living status document tracking the current sprint, objectives, completed tasks,
 
 ## Current Sprint
 - Sprint: Sprint 3 - M0 Foundations
-- Status: In Progress (code scaffold done; external account setup pending)
+- Status: Complete
 
 ## Current Objective
-Ship M0 per `docs/ROADMAP.md`: an empty, deployable Next.js app with the
-platform's foundational wiring (design tokens, i18n, tests, CI), plus
-Supabase and Vercel connected and branch protection enabled on `main`.
+M0 is done. Next up is M1 — Platform walking skeleton (see `docs/ROADMAP.md`):
+prove the shared room/device-mode/realtime base works end to end, with no
+real game yet.
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -22,32 +22,36 @@ Supabase and Vercel connected and branch protection enabled on `main`.
 - [x] **TASK-0007**: Reconcile git state, first commit, remote configured
 - [x] **TASK-0008**: Create `start-task` / `finish-task` skills
 - [x] **TASK-0009**: Lock package manager to pnpm exclusively (amended ADR-0001)
-- [x] **TASK-0010**: Scaffold Next.js 16 + TypeScript app with pnpm (`app/`, `components/`, `games/`, `lib/`, `supabase/migrations/`, `tests/` per CONVENTIONS.md folder structure). Root `CLAUDE.md`/`AGENTS.md` added as agent entry points (Next.js's generator produces version-specific agent warnings — kept and pointed at our onboarding docs).
-- [x] **TASK-0011**: Design tokens skeleton (`app/tokens.css`) — placeholder color/type/radius/motion tokens wired through Tailwind v4 `@theme`; real brand direction deferred to M2 per PROJECT_CONSTITUTION.md Article 10.
-- [x] **TASK-0012**: next-intl wired (`i18n/routing.ts`, `request.ts`, `navigation.ts`, `en.json`/`es.json`); `app/[locale]/` routing verified working for both locales in a real browser.
-- [x] **TASK-0013**: Vitest + Playwright configured, each with a real (not placeholder) test: a message-catalog parity check (`i18n/checkMessageParity.ts`) and an e2e locale-routing smoke test.
-- [x] **TASK-0014**: GitHub Actions CI workflow (`.github/workflows/ci.yml`) — lint, typecheck, unit tests, and e2e as separate jobs.
+- [x] **TASK-0010**: Scaffold Next.js 16 + TypeScript app with pnpm
+- [x] **TASK-0011**: Design tokens skeleton (`app/tokens.css`)
+- [x] **TASK-0012**: next-intl wired (ES/EN), verified in-browser
+- [x] **TASK-0013**: Vitest + Playwright with real smoke tests
+- [x] **TASK-0014**: GitHub Actions CI workflow
+- [x] **TASK-0015**: Initial Supabase migration (`users`, `game_results`,
+      `events`) with RLS policies per ADR-0001/ADR-0003; applied to the live
+      project via the Supabase SQL Editor and confirmed present.
+- [x] **TASK-0016**: `.env.example` + `.env.local` (local, gitignored) wired
+      with the project's real Supabase URL/anon key.
+- [x] **TASK-0017**: Vercel project connected and deployed — live at
+      https://nex-play-one.vercel.app, verified working at both `/en` and
+      `/es` with no console errors.
+- [x] **TASK-0018**: GitHub branch protection enabled on `main` — strict:
+      required status checks (`Lint, typecheck, unit tests`, `End-to-end
+      tests`) must pass, enforced for admins too (no bypass), no force
+      pushes or deletions.
 
 ## Tasks In Progress
-- [ ] None (code portion of M0 complete; awaiting merge)
+- [ ] None
 
 ## Known Issues
-- None. Note: while running the Playwright e2e smoke test, port 3000 on the
-  developer's machine was found occupied by an unrelated running app
-  ("NexIndu"). Not a NexPlay issue — `playwright.config.ts` now runs against
-  a dedicated port (3100) to avoid any collision, regardless of what else is
-  running locally.
+- None.
 
 ## Next Task
-- **Vercel**: connect the GitHub repo, deploy the current `main` (empty app)
-  to confirm it goes live.
-- **Supabase**: create the project, enable Anonymous Auth, write the first
-  migration (RLS enabled) for `users`/`game_results`/`events` per ADR-0001 §3.
-- **GitHub branch protection** on `main` before multiple agents open PRs
-  against it.
-- These three require the founder's own accounts/credentials and cannot be
-  done by an AI agent directly — see `docs/09_ai/HANDOFF.md`.
-- Once those land, M0 is done and M1 (platform walking skeleton) starts.
+- **M1 — Platform walking skeleton** (see `docs/ROADMAP.md`): room
+  creation/join-by-code, both device modes, realtime sync of a placeholder
+  state, reconnection/host-migration policy (ADR-0001 §4) verified against
+  two real devices, and `game_results`/`events` durable writes wired for a
+  placeholder game to prove the persistence boundary end to end.
 
 ## Last Updated
-- 2026-07-22
+- 2026-07-23
