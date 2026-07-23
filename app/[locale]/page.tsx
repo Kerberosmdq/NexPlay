@@ -91,7 +91,7 @@ export default function HomePage() {
 
   if (!session) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-slate-950 text-white">
+      <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-transparent text-white">
         <RoomLobby
           onStartSingleDevice={handleStartSingleDevice}
           onCreateRoom={handleCreateRoom}
@@ -102,7 +102,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-slate-950 text-white space-y-4">
+    <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-transparent text-white space-y-4">
       <div className="w-full max-w-md flex justify-between items-center px-2">
         <span className="text-xs text-slate-400">
           Hola, <strong className="text-white">{session.displayName}</strong>

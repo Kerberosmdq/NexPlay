@@ -7,15 +7,7 @@
 }
 
 body {
-  background-color: #0b0417;
-  background-image: 
-    /* Ambient Neon Glows */
-    radial-gradient(circle at 10% 15%, rgba(139, 92, 246, 0.4) 0%, transparent 45%),
-    radial-gradient(circle at 90% 85%, rgba(255, 140, 0, 0.35) 0%, transparent 45%),
-    radial-gradient(circle at 50% 30%, rgba(16, 185, 129, 0.25) 0%, transparent 50%),
-    /* Vibrant High-Contrast Confetti SVG Pattern */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill-opacity='0.85'%3E%3Cpath fill='%23ff8c00' d='M15 15l8 16L7 22zM120 30l12 6-6 14zM65 90l10-10 10 10-10 10zM140 130l8 14-14-6z'/%3E%3Ccircle fill='%2310b981' cx='40' cy='120' r='7'/%3E%3Ccircle fill='%2306b6d4' cx='130' cy='70' r='6'/%3E%3Ccircle fill='%23f43f5e' cx='90' cy='25' r='5'/%3E%3Cpath fill='%2306b6d4' d='M90 20h16v5H90zM25 65h6v16h-6z'/%3E%3Cpath fill='%23ec4899' d='M110 115l8-14 8 14zM30 35l14 8-12 10z'/%3E%3Cpath fill='%23a78bfa' d='M50 140h14v5H50zM130 15h5v14h-5z'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 100% 100%, 100% 100%, 100% 100%, 160px 160px;
+  background-color: #0b0417; /* Solid dark background for the page */
   color: #ffffff;
   min-height: 100vh;
 }
