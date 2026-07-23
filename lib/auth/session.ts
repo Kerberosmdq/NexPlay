@@ -14,8 +14,16 @@ export interface AnonymousSessionResult {
  * 3. Records a row in `public.users` table for new sessions per ADR-0001 / ADR-0003.
  */
 export async function ensureAnonymousSession(
-  client: SupabaseClient
+  client: SupabaseClient | null
 ): Promise<AnonymousSessionResult> {
+  if (!client) {
+    return {
+      session: null,
+      createdNew: false,
+      error: new Error("Supabase client not initialized (missing environment variables)."),
+    };
+  }
+
   try {
     const { data: sessionData, error: sessionError } = await client.auth.getSession();
 

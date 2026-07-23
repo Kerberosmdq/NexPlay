@@ -38,6 +38,13 @@ function createMockSupabaseClient(options: {
 }
 
 describe("ensureAnonymousSession", () => {
+  it("returns error gracefully when client is null", async () => {
+    const result = await ensureAnonymousSession(null);
+    expect(result.session).toBeNull();
+    expect(result.createdNew).toBe(false);
+    expect(result.error).toBeDefined();
+  });
+
   it("reuses an existing active session without signing in again", async () => {
     const mockSession = {
       user: { id: "user-123" },
