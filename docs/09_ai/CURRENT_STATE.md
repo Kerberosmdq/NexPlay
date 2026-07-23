@@ -3,13 +3,11 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 3 - M0 Foundations
-- Status: Complete
+- Sprint: Sprint 4 - M1 Platform Walking Skeleton
+- Status: In Progress
 
 ## Current Objective
-M0 is done. Next up is M1 — Platform walking skeleton (see `docs/ROADMAP.md`):
-prove the shared room/device-mode/realtime base works end to end, with no
-real game yet.
+M1 — Platform walking skeleton (see `docs/ROADMAP.md`): prove the shared room/device-mode/realtime base works end to end, with no real game yet.
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -39,6 +37,8 @@ real game yet.
       required status checks (`Lint, typecheck, unit tests`, `End-to-end
       tests`) must pass, enforced for admins too (no bypass), no force
       pushes or deletions.
+- [x] **TASK-0020**: Wire Supabase Anonymous Auth on first load (`lib/auth/`,
+      `AuthProvider`, `public.users` row creation, unit tests).
 
 ## Tasks In Progress
 - [ ] None
@@ -47,12 +47,7 @@ real game yet.
 - None.
 
 ## Next Task
-- **TASK-0020** (`docs/09_ai/tasks/TASK-0020-anonymous-auth.md`): wire
-  Supabase Anonymous Auth so every device gets a durable `user_id` on first
-  load — the first slice of **M1 — Platform walking skeleton**
-  (see `docs/ROADMAP.md`). Read the task spec for exact scope boundaries
-  before starting; do not start on the rest of M1 (room creation,
-  device modes, realtime sync) until this lands.
+- **TASK-0021**: Room creation and join-by-code (`lib/realtime/`) — the second slice of **M1 — Platform walking skeleton** (see `docs/ROADMAP.md`).
 
 ## Last Updated
 - 2026-07-23
