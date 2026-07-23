@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { generateRoomCode, isValidRoomCode } from "@/lib/realtime";
 
 export interface RoomLobbyProps {
@@ -19,6 +19,8 @@ export function RoomLobby({
   const [joinCodeInput, setJoinCodeInput] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
+
   const handleCreate = () => {
     const name = displayName.trim() || "Anfitrión";
     const code = generateRoomCode();
@@ -31,7 +33,7 @@ export function RoomLobby({
     const code = joinCodeInput.trim().toUpperCase();
 
     if (!isValidRoomCode(code)) {
-      setError("Código inválido. Usa 4 letras (ej. ABCD).");
+      setError("INGRESA UN CÓDIGO DE 4 LETRAS (EJ. ABCD)");
       return;
     }
 
@@ -45,117 +47,149 @@ export function RoomLobby({
     onStartSingleDevice(name);
   };
 
+  const codeChars = joinCodeInput.padEnd(4, "").split("");
+
   return (
-    <div className="w-full max-w-md mx-auto p-6 sm:p-8 bg-[#180c35] text-white rounded-3xl border-2 border-[#3c1e78] shadow-[0_12px_36px_rgba(0,0,0,0.5)] space-y-6">
+    <div className="w-full max-w-lg mx-auto p-6 sm:p-8 bg-[#13072b] text-white rounded-3xl border-4 border-[#3b177d] shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-6">
       {/* Brand Header */}
-      <div className="text-center space-y-1.5">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-950/80 border border-purple-500/30 rounded-full text-xs font-bold text-purple-300 mb-1">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          Plataforma NexPlay v1.0
-        </div>
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-[0_3px_0_#4c1d95]">
-          Nex<span className="text-amber-400">Play</span>
+      <div className="text-center space-y-1">
+        <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-[#8b5cf6] drop-shadow-[4px_4px_0px_#ff8c00] select-none">
+          Nex<span className="text-[#ff8c00]">Play</span>
         </h1>
-        <p className="text-xs font-medium text-purple-300/80">
-          Juegos de mesa digitales para jugar en familia y amigos
+        <p className="text-sm font-black tracking-widest text-[#ff8c00] uppercase pt-2">
+          ¡ÚNETE AL JUEGO! / JOIN THE GAME!
         </p>
       </div>
 
       {/* Mode Switcher */}
-      <div className="grid grid-cols-2 gap-2 bg-[#0d061f] p-1.5 rounded-2xl border-2 border-[#2c145a]">
+      <div className="grid grid-cols-2 gap-3 bg-[#0a0318] p-2 rounded-2xl border-3 border-[#281057]">
         <button
           onClick={() => {
             setMode("multi-device");
             setError(null);
           }}
-          className={`py-3 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all ${
+          className={`py-3.5 rounded-xl font-black text-xs sm:text-sm tracking-wider uppercase transition-all ${
             mode === "multi-device"
-              ? "bg-[#7c3aed] text-white shadow-[0_4px_0_#4c1d95]"
-              : "text-purple-400 hover:text-white"
+              ? "bg-[#8b5cf6] text-white shadow-[0_4px_0_#5b21b6] border-2 border-purple-300/40"
+              : "text-purple-300 hover:text-white"
           }`}
         >
-          📱 Multidispositivo
+          MULTIDISPOSITIVO
         </button>
         <button
           onClick={() => {
             setMode("single-device");
             setError(null);
           }}
-          className={`py-3 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all ${
+          className={`py-3.5 rounded-xl font-black text-xs sm:text-sm tracking-wider uppercase transition-all ${
             mode === "single-device"
-              ? "bg-[#ff8c00] text-white shadow-[0_4px_0_#c2410c]"
-              : "text-purple-400 hover:text-white"
+              ? "bg-[#ff8c00] text-white shadow-[0_4px_0_#9a3412] border-2 border-amber-300/40"
+              : "text-purple-300 hover:text-white"
           }`}
         >
-          📲 1 Teléfono
+          1 TELÉFONO
         </button>
       </div>
 
       {/* Nickname Input */}
       <div className="space-y-2">
-        <label className="text-xs font-extrabold uppercase tracking-wider text-purple-300 flex justify-between">
-          <span>Tu Nombre / Nickname</span>
-          <span className="text-[10px] text-purple-400 font-normal">Opcional</span>
+        <label className="text-xs font-black uppercase tracking-widest text-purple-300">
+          TU NOMBRE / NICKNAME
         </label>
         <input
           type="text"
           maxLength={15}
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          placeholder="Ej. Mateo, Sofía, Papá"
-          className="w-full px-4 py-3.5 bg-[#0d061f] border-2 border-[#3c1e78] rounded-2xl text-white placeholder-purple-600/70 font-semibold focus:outline-none focus:border-[#7c3aed] focus:ring-2 focus:ring-purple-500/40 shadow-[inner_0_2px_4px_rgba(0,0,0,0.4)] transition-all"
+          placeholder="EJ. MATEO, SOFÍA, PAPÁ"
+          className="w-full px-5 py-4 bg-[#0a0318] border-3 border-[#3b177d] rounded-2xl text-white placeholder-purple-600 font-extrabold text-base focus:outline-none focus:border-[#ff8c00] shadow-[inner_0_2px_4px_rgba(0,0,0,0.6)] uppercase tracking-wider"
         />
       </div>
 
       {error && (
-        <div className="p-3.5 bg-rose-950/80 border-2 border-rose-500/50 rounded-2xl text-xs font-bold text-rose-200 text-center animate-bounce">
+        <div className="p-4 bg-rose-950/90 border-3 border-rose-500 rounded-2xl text-xs font-black text-rose-200 text-center tracking-wider">
           ⚠️ {error}
         </div>
       )}
 
       {mode === "multi-device" ? (
-        <div className="space-y-5 pt-1">
-          {/* Create Room Button */}
-          <button
-            onClick={handleCreate}
-            className="w-full py-4 bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-black text-base rounded-2xl border-2 border-[#a78bfa]/40 shadow-[0_6px_0_#4c1d95] hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none transition-all duration-100 flex items-center justify-center gap-2"
-          >
-            <span className="text-xl">🏠</span> Crear Nueva Sala / Create Room
-          </button>
+        <div className="space-y-6 pt-2">
+          {/* Room Code Entry Label & Tiles */}
+          <div className="space-y-3">
+            <label className="block text-center text-xs font-black uppercase tracking-widest text-purple-300">
+              CÓDIGO DE SALA / ENTER ROOM CODE
+            </label>
 
-          <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t-2 border-[#2c145a]"></div>
-            <span className="flex-shrink mx-3 text-[11px] font-black uppercase text-purple-400 tracking-wider">
-              o ingresar con código
-            </span>
-            <div className="flex-grow border-t-2 border-[#2c145a]"></div>
-          </div>
-
-          {/* Join Room Form */}
-          <div className="grid grid-cols-5 gap-2">
+            {/* Hidden Input */}
             <input
+              ref={hiddenInputRef}
               type="text"
               maxLength={4}
               value={joinCodeInput}
               onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
-              placeholder="ABCD"
-              className="col-span-3 px-3 py-3.5 bg-[#0d061f] border-2 border-[#3c1e78] rounded-2xl text-center text-2xl font-mono font-black tracking-widest text-amber-400 placeholder-purple-800 uppercase focus:outline-none focus:border-amber-400 shadow-[inner_0_2px_4px_rgba(0,0,0,0.4)]"
+              className="sr-only"
+              autoCapitalize="characters"
             />
-            <button
-              onClick={handleJoin}
-              className="col-span-2 py-3.5 bg-[#10b981] hover:bg-[#059669] text-white font-black text-sm rounded-2xl border-2 border-emerald-300/40 shadow-[0_6px_0_#047857] hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+
+            {/* 4 Glowing Code Tiles */}
+            <div
+              onClick={() => hiddenInputRef.current?.focus()}
+              className="flex justify-center gap-3 sm:gap-4 cursor-pointer select-none"
             >
-              🚀 Unirse
-            </button>
+              {[0, 1, 2, 3].map((idx) => {
+                const char = codeChars[idx] || "";
+                const isFocused = joinCodeInput.length === idx;
+                return (
+                  <div
+                    key={idx}
+                    className={`w-14 h-16 sm:w-16 sm:h-20 rounded-2xl flex items-center justify-center bg-[#05020c] border-4 transition-all ${
+                      char
+                        ? "border-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.5)] scale-105"
+                        : isFocused
+                        ? "border-[#ff8c00] shadow-[0_0_15px_rgba(255,140,0,0.5)] animate-pulse"
+                        : "border-[#2d1259]"
+                    }`}
+                  >
+                    <span className="text-3xl sm:text-4xl font-black text-[#10b981] tracking-widest">
+                      {char}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
+
+          {/* Join Party Button */}
+          <button
+            onClick={handleJoin}
+            className="w-full py-4 sm:py-5 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-black text-xl sm:text-2xl tracking-wider uppercase rounded-2xl border-4 border-[#ff8c00] shadow-[0_8px_0_#ff8c00] hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+          >
+            UNIRSE A SALA / JOIN PARTY
+          </button>
+
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t-2 border-[#281057]"></div>
+            <span className="flex-shrink mx-4 text-xs font-black uppercase text-purple-400 tracking-widest">
+              O CREA UNA NUEVA
+            </span>
+            <div className="flex-grow border-t-2 border-[#281057]"></div>
+          </div>
+
+          {/* Create Room Button */}
+          <button
+            onClick={handleCreate}
+            className="w-full py-4 sm:py-5 bg-[#ff8c00] hover:bg-[#ea580c] text-white font-black text-xl sm:text-2xl tracking-wider uppercase rounded-2xl border-4 border-[#1e0b3d] shadow-[0_8px_0_#1e0b3d] hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none transition-all duration-100"
+          >
+            CREAR NUEVA SALA / CREATE ROOM
+          </button>
         </div>
       ) : (
-        <div className="pt-2">
+        <div className="pt-4">
           <button
             onClick={handleSingleDevice}
-            className="w-full py-4 bg-[#ff8c00] hover:bg-[#ea580c] text-white font-black text-base rounded-2xl border-2 border-amber-300/40 shadow-[0_6px_0_#c2410c] hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none transition-all duration-100 flex items-center justify-center gap-2"
+            className="w-full py-5 bg-[#ff8c00] hover:bg-[#ea580c] text-white font-black text-xl sm:text-2xl tracking-wider uppercase rounded-2xl border-4 border-[#1e0b3d] shadow-[0_8px_0_#1e0b3d] hover:translate-y-[-2px] active:translate-y-[4px] active:shadow-none transition-all duration-100"
           >
-            <span className="text-xl">🎮</span> Iniciar Modo 1 Teléfono (Pass & Play)
+            INICIAR MODO 1 TELÉFONO
           </button>
         </div>
       )}
