@@ -15,7 +15,7 @@
 
 ---
 
-## M0 — Foundations
+## M0 — Foundations — ✅ Complete (2026-07-23)
 Repo and tooling ready to build on.
 - Next.js + TypeScript scaffold, deployed empty to Vercel.
 - Design tokens skeleton (`docs/04_design/`).
