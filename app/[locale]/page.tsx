@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import { RoomLobby } from "@/components/platform/RoomLobby";
+import { MultiDeviceRoom } from "@/components/platform/MultiDeviceRoom";
 import { placeholderGameModule } from "@/games/placeholder/module";
 import type { PlaceholderAction, PlaceholderState } from "@/games/placeholder/reducer";
-import { HostView } from "@/games/placeholder/views/Host";
-import { PlayerView } from "@/games/placeholder/views/Player";
 import { SingleDeviceView } from "@/games/placeholder/views/SingleDevice";
-import type { Player } from "@/lib/types/room";
 
 export default function HomePage() {
   const [session, setSession] = useState<{
@@ -22,8 +20,6 @@ export default function HomePage() {
     placeholderGameModule.setup([], { initialCount: 0 })
   );
 
-  const [players, setPlayers] = useState<Player[]>([]);
-
   const handleStartSingleDevice = (displayName: string) => {
     setSession({
       mode: "single-device",
@@ -36,53 +32,23 @@ export default function HomePage() {
   };
 
   const handleCreateRoom = (displayName: string, code: string) => {
-    const hostUser: Player = {
-      id: "user-host-1",
-      displayName,
-      isHost: true,
-      joinedAt: Date.now(),
-      isOnline: true,
-    };
-
     setSession({
       mode: "multi-device",
       role: "host",
       roomCode: code,
-      userId: hostUser.id,
+      userId: `host-${Math.random().toString(36).substr(2, 9)}`, // Temporary anonymous ID logic
       displayName,
     });
-
-    setPlayers([hostUser]);
-    setGameState(placeholderGameModule.setup([hostUser], { initialCount: 0 }));
   };
 
   const handleJoinRoom = (displayName: string, code: string) => {
-    const playerUser: Player = {
-      id: "user-player-2",
-      displayName,
-      isHost: false,
-      joinedAt: Date.now(),
-      isOnline: true,
-    };
-
-    const hostUser: Player = {
-      id: "user-host-1",
-      displayName: "Anfitrión Demo",
-      isHost: true,
-      joinedAt: Date.now() - 5000,
-      isOnline: true,
-    };
-
     setSession({
       mode: "multi-device",
       role: "player",
       roomCode: code,
-      userId: playerUser.id,
+      userId: `player-${Math.random().toString(36).substr(2, 9)}`, // Temporary anonymous ID logic
       displayName,
     });
-
-    setPlayers([hostUser, playerUser]);
-    setGameState(placeholderGameModule.setup([hostUser, playerUser], { initialCount: 0 }));
   };
 
   const dispatchAction = (action: PlaceholderAction) => {
@@ -123,21 +89,12 @@ export default function HomePage() {
         />
       )}
 
-      {session.mode === "multi-device" && session.role === "host" && (
-        <HostView
-          state={gameState}
-          players={players}
+      {session.mode === "multi-device" && (
+        <MultiDeviceRoom
           roomCode={session.roomCode}
-          dispatch={dispatchAction}
-        />
-      )}
-
-      {session.mode === "multi-device" && session.role === "player" && (
-        <PlayerView
-          state={gameState}
-          playerId={session.userId}
-          roomCode={session.roomCode}
-          dispatch={dispatchAction}
+          userId={session.userId}
+          displayName={session.displayName}
+          role={session.role}
         />
       )}
     </main>
