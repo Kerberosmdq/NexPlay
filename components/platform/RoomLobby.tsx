@@ -55,15 +55,41 @@ export function RoomLobby({
       <div className="absolute -top-6 -left-6 w-12 h-12 bg-gradient-to-tr from-cyan-400 to-emerald-400 rounded-2xl rotate-12 shadow-[0_0_20px_rgba(6,182,212,0.6)] hidden sm:block pointer-events-none z-10 border-2 border-white/40"></div>
       <div className="absolute -bottom-6 -right-6 w-14 h-14 bg-gradient-to-tr from-amber-400 to-rose-500 rounded-2xl -rotate-12 shadow-[0_0_20px_rgba(255,140,0,0.6)] hidden sm:block pointer-events-none z-10 border-2 border-white/40"></div>
 
-      {/* Main Lobby Card */}
-      <div className="relative w-full p-6 sm:p-8 bg-[#13072b]/95 backdrop-blur-md text-white rounded-3xl border-4 border-[#3b177d] shadow-[0_20px_60px_rgba(0,0,0,0.9)] space-y-6">
+      {/* Main Lobby Card with Party Background */}
+      <div 
+        className="relative w-full overflow-hidden p-6 sm:p-8 text-white rounded-3xl border-4 border-[#3b177d] shadow-[0_20px_60px_rgba(0,0,0,0.9)] space-y-6"
+        style={{
+          backgroundColor: '#13072b',
+          backgroundImage: `
+            radial-gradient(circle at 10% 15%, rgba(139, 92, 246, 0.4) 0%, transparent 45%),
+            radial-gradient(circle at 90% 85%, rgba(255, 140, 0, 0.35) 0%, transparent 45%),
+            radial-gradient(circle at 50% 30%, rgba(16, 185, 129, 0.25) 0%, transparent 50%),
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill-opacity='0.85'%3E%3Cpath fill='%23ff8c00' d='M15 15l8 16L7 22zM120 30l12 6-6 14zM65 90l10-10 10 10-10 10zM140 130l8 14-14-6z'/%3E%3Ccircle fill='%2310b981' cx='40' cy='120' r='7'/%3E%3Ccircle fill='%2306b6d4' cx='130' cy='70' r='6'/%3E%3Ccircle fill='%23f43f5e' cx='90' cy='25' r='5'/%3E%3Cpath fill='%2306b6d4' d='M90 20h16v5H90zM25 65h6v16h-6z'/%3E%3Cpath fill='%23ec4899' d='M110 115l8-14 8 14zM30 35l14 8-12 10z'/%3E%3Cpath fill='%23a78bfa' d='M50 140h14v5H50zM130 15h5v14h-5z'/%3E%3C/g%3E%3C/svg%3E")
+          `,
+          backgroundSize: '100% 100%, 100% 100%, 100% 100%, 160px 160px'
+        }}
+      >
         {/* Brand Header */}
-        <div className="text-center space-y-1">
-          <h1 className="text-5xl sm:text-6xl font-black tracking-tight select-none">
-            <span className="text-[#8b5cf6]">Nex</span>
-            <span className="text-[#ff8c00]">Play</span>
+        <div className="text-center space-y-1 pb-4">
+          <h1 
+            className="text-6xl sm:text-7xl font-black tracking-tighter select-none -rotate-2"
+            style={{
+              WebkitTextStroke: '2px #13072b',
+              textShadow: `
+                0px 1px 0 #13072b,
+                0px 2px 0 #13072b,
+                0px 3px 0 #13072b,
+                3px 4px 0 #ff8c00,
+                3px 5px 0 #ff8c00,
+                3px 6px 0 #ff8c00,
+                3px 7px 0 #ff8c00,
+                4px 8px 0 #13072b
+              `
+            }}
+          >
+            <span className="text-[#a855f7]">Nex</span><span className="text-[#facc15]">Play</span>
           </h1>
-          <p className="text-xs sm:text-sm font-black tracking-widest text-[#ff8c00] uppercase pt-2">
+          <p className="text-[10px] sm:text-xs font-black tracking-[0.2em] text-[#10b981] uppercase pt-3">
             ¡ÚNETE AL JUEGO! / JOIN THE GAME!
           </p>
         </div>
