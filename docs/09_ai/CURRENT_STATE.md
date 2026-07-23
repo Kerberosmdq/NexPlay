@@ -47,11 +47,12 @@ real game yet.
 - None.
 
 ## Next Task
-- **M1 — Platform walking skeleton** (see `docs/ROADMAP.md`): room
-  creation/join-by-code, both device modes, realtime sync of a placeholder
-  state, reconnection/host-migration policy (ADR-0001 §4) verified against
-  two real devices, and `game_results`/`events` durable writes wired for a
-  placeholder game to prove the persistence boundary end to end.
+- **TASK-0020** (`docs/09_ai/tasks/TASK-0020-anonymous-auth.md`): wire
+  Supabase Anonymous Auth so every device gets a durable `user_id` on first
+  load — the first slice of **M1 — Platform walking skeleton**
+  (see `docs/ROADMAP.md`). Read the task spec for exact scope boundaries
+  before starting; do not start on the rest of M1 (room creation,
+  device modes, realtime sync) until this lands.
 
 ## Last Updated
 - 2026-07-23

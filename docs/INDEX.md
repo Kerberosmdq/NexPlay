@@ -22,6 +22,7 @@
 - [`AI_CONTEXT.md`](09_ai/AI_CONTEXT.md) — permanent context summary.
 - [`CURRENT_STATE.md`](09_ai/CURRENT_STATE.md) — living sprint/task status.
 - [`HANDOFF.md`](09_ai/HANDOFF.md) — living handoff between sessions/agents.
+- [`tasks/`](09_ai/tasks/) — instantiated task specs (per `TASK_TEMPLATE.md`), one file per assignable unit of work.
 
 ## Templates (`08_templates/`)
 - [`ADR_TEMPLATE.md`](08_templates/ADR_TEMPLATE.md), [`PDR_TEMPLATE.md`](08_templates/PDR_TEMPLATE.md), [`BDR_TEMPLATE.md`](08_templates/BDR_TEMPLATE.md), [`TASK_TEMPLATE.md`](08_templates/TASK_TEMPLATE.md), [`CHECKLIST_TEMPLATE.md`](08_templates/CHECKLIST_TEMPLATE.md)
