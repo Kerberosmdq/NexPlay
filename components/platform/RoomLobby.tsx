@@ -50,13 +50,14 @@ export function RoomLobby({
   const codeChars = joinCodeInput.padEnd(4, "").split("");
 
   return (
-    <div className="w-full max-w-lg mx-auto p-6 sm:p-8 bg-[#13072b] text-white rounded-3xl border-4 border-[#3b177d] shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-6">
-      {/* Brand Header */}
+    <div className="w-full max-w-lg mx-auto p-6 sm:p-8 bg-[#13072b]/95 backdrop-blur-md text-white rounded-3xl border-4 border-[#3b177d] shadow-[0_16px_48px_rgba(0,0,0,0.8)] space-y-6">
+      {/* Brand Header - Clean & Crisp Logo without text shadow */}
       <div className="text-center space-y-1">
-        <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-[#8b5cf6] drop-shadow-[4px_4px_0px_#ff8c00] select-none">
-          Nex<span className="text-[#ff8c00]">Play</span>
+        <h1 className="text-5xl sm:text-6xl font-black tracking-tight select-none">
+          <span className="text-[#8b5cf6]">Nex</span>
+          <span className="text-[#ff8c00]">Play</span>
         </h1>
-        <p className="text-sm font-black tracking-widest text-[#ff8c00] uppercase pt-2">
+        <p className="text-xs sm:text-sm font-black tracking-widest text-[#ff8c00] uppercase pt-2">
           ¡ÚNETE AL JUEGO! / JOIN THE GAME!
         </p>
       </div>
