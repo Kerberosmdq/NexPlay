@@ -1,0 +1,86 @@
+/*
+ * Design tokens — the single source of truth for color, type, spacing,
+ * radius, and motion. No component may hardcode a raw value for any of
+ * these; consume a token instead (ADR-0001 §1, NEXPLAY_PLAN.md §5).
+ *
+ * These are placeholder values for M0 (an empty, deployable app). The
+ * actual brand direction — informed by the Nex hexagon identity — is a
+ * design decision for M2, explored via a few concrete options before being
+ * committed here (PROJECT_CONSTITUTION.md Article 10; NEXPLAY_PLAN.md §5).
+ * Changing a token value updates every consumer at once; that is the point
+ * of this file existing.
+ */
+
+:root {
+  /* Color — neutral placeholder scale + semantic roles.
+     Brand accent color is intentionally undecided until M2. */
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-600: #525252;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+
+  --color-surface: var(--color-neutral-0);
+  --color-surface-muted: var(--color-neutral-50);
+  --color-text: var(--color-neutral-900);
+  --color-text-muted: var(--color-neutral-600);
+  --color-border: var(--color-neutral-300);
+
+  /* Typography */
+  --font-sans: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
+  --font-mono: var(--font-geist-mono, ui-monospace, monospace);
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* Radius — rounded, kid-friendly tap targets by default */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-full: 9999px;
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 360ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: var(--color-neutral-950);
+    --color-surface-muted: var(--color-neutral-900);
+    --color-text: var(--color-neutral-50);
+    --color-text-muted: var(--color-neutral-300);
+    --color-border: var(--color-neutral-600);
+  }
+}
+
+/* Expose tokens as Tailwind theme values so utilities (bg-surface,
+   text-text-muted, rounded-lg, duration-base, ...) read from this file. */
+@theme inline {
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-border: var(--color-border);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-full: var(--radius-full);
+
+  --duration-fast: var(--duration-fast);
+  --duration-base: var(--duration-base);
+  --duration-slow: var(--duration-slow);
+}
