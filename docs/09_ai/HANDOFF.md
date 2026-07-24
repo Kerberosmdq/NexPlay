@@ -3,95 +3,92 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: (unnumbered hotfix, see below)
-- **Title**: Fix room connection failure (trailing newline in Supabase env var)
+- **Task ID**: (unnumbered hotfixes, see below)
+- **Title**: M2 (Impostor) fully verified live — connection bug fixed, RLS gap closed
 
 ## Current Branch
-- `fix/trim-supabase-env-vars` (branched from `main`, after TASK-0025/
-  `feat/impostor-game` merged via [PR #14](https://github.com/Kerberosmdq/NexPlay/pull/14)
-  and the diagnostics hotfix merged via [PR #15](https://github.com/Kerberosmdq/NexPlay/pull/15))
-- About to be pushed and opened as a PR against `main`.
+- `main` — everything below is merged and deployed. No open branches.
 
-## What happened (read this before touching `lib/auth/client.ts` again)
-After TASK-0025 (Impostor) went live, the founder reported multi-device room
-creation hanging forever on "Conectando a la sala...", reproduced on their
-phone and PC. PR #15 added connection diagnostics (console logs at each step,
-a 12s subscribe timeout, a visible error state instead of an infinite
-spinner) since the failure was completely silent — no console errors, no
-WebSocket connection attempt even detectable via a `WebSocket` constructor
-proxy across three different browser sessions used to investigate.
+## What happened (read this before assuming M1/M2 are fully done)
 
-**Root cause, found once the founder tested with PR #15's logging live:**
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel's environment variables has a
-**trailing newline** baked into its value (almost certainly pasted from a
-terminal/file that included the `\n`). Since `NEXT_PUBLIC_*` vars are
-inlined as literal strings at build time, this corrupted the `apikey` query
-param on every Realtime WebSocket URL
-(`...AMLM6XqxICMaMbsBeaY%0A&vsn=2.0.0` — that `%0A` is the newline), which
-the server rejected with `CHANNEL_ERROR` / "transport failure". Plain
-REST/Auth calls (sign-in, `/rest/v1/*` inserts) kept working fine throughout,
-because they don't put the key into a URL query string the same way —
-that's why sign-in, `users` inserts, and even the (separately broken) RLS
-policy investigation on `events`/`game_results` all looked normal while
-Realtime silently failed 100% of the time.
+TASK-0025 (Impostor, M2) merged, then the founder playtested on a real
+deployment and hit two real production issues, both now resolved:
 
-**Fix in this PR:** `.trim()` both `NEXT_PUBLIC_SUPABASE_URL` and
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` in `lib/auth/client.ts` so a stray
-newline/whitespace in the env var can never do this again.
+### 1. Rooms hung forever on "Conectando a la sala..."
+Root cause: `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel had a **trailing
+newline** baked into its value. Since `NEXT_PUBLIC_*` vars are inlined as
+literal strings at build time, this corrupted the `apikey` query param on
+every Realtime WebSocket URL (visible as `%0A` right before `&vsn=2.0.0`),
+which Supabase rejected with `CHANNEL_ERROR`/"transport failure" — 100% of
+the time, completely silently, because REST/Auth calls don't embed the key
+in a URL the same way and kept working fine throughout, masking the issue.
+Fixed via [PR #15](https://github.com/Kerberosmdq/NexPlay/pull/15)
+(connection diagnostics — logging, a 12s subscribe timeout, a visible
+error+retry UI instead of an infinite spinner — which is what revealed the
+real error once the founder tested live) and
+[PR #16](https://github.com/Kerberosmdq/NexPlay/pull/16) (`.trim()` on both
+Supabase env vars in `lib/auth/client.ts`, so a stray newline can't do this
+again regardless of how the Vercel dashboard value is pasted). The founder
+also re-pasted the env vars cleanly in Vercel and redeployed.
+**Confirmed fixed:** full multi-device match playtested on 4+ real devices.
 
-**Still needs doing manually (not fixable from code):** the founder should
-open Vercel → Project Settings → Environment Variables, re-paste
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` (and ideally `NEXT_PUBLIC_SUPABASE_URL` too,
-just in case) making sure no trailing newline sneaks in, and redeploy.
-`.trim()` should make this moot going forward regardless, but the dashboard
-value is still messy and worth cleaning up. **Confirm with the founder
-whether they've done this before assuming the underlying Vercel value is
-clean** — the code fix alone is sufficient, so this is a nice-to-have, not
-blocking.
+### 2. `game_results`/`events` RLS policies were missing on the live DB
+Known since TASK-0024/0025 (see prior handoffs) — the migration file always
+had the right policies, but they were apparently never applied when
+`supabase/migrations/20260723000000_init_schema.sql` was run by hand via
+the SQL Editor back in TASK-0015. The founder re-ran the two `create
+policy ... for insert to authenticated with check (true)` statements.
 
-## Files Modified / Added (this fix)
-- `lib/auth/client.ts` — `.trim()` on both Supabase env vars.
-- `lib/realtime/hooks/useRoomConnection.ts` (PR #15, already merged) —
-  diagnostic logging, subscribe timeout, `connectionError` state.
-- `components/platform/MultiDeviceRoom.tsx` (PR #15) — renders a real error
-  + retry button instead of an infinite "Conectando..." spinner.
-- `i18n/en.json`, `i18n/es.json` (PR #15) — `Lobby.connectionError`,
-  `Lobby.retryButton`.
+**Important process note on how this was verified**, because it caused a
+confusing back-and-forth: my first few verification attempts (hitting the
+REST API directly with a real anon-auth JWT) kept failing with
+`42501 — new row violates row-level security policy`, even after the
+founder confirmed the SQL ran successfully and `pg_policies`/
+`information_schema.role_table_grants` all showed exactly the right
+config. **The RLS policy and grants were correct the whole time** — my
+test script was requesting `Prefer: return=representation` (to see the
+inserted row for debugging), which requires a SELECT policy to be visible
+after insert. These tables deliberately have no SELECT policy (reads are
+dashboard/service-role-only, per ADR-0003) — so `return=representation`
+will always 403 on these tables, even though a plain insert (what the real
+app does — `supabase-js`'s `.insert()` without `.select()` uses
+`Prefer: return=minimal` by default) succeeds fine. **Confirmed working**
+once the verification script matched the app's actual request shape (201
+on both tables). Lesson for next time: when verifying an RLS fix via raw
+REST calls, match the exact `Prefer` header the real client library sends
+— don't add `return=representation` "just to see the data," since it
+changes what the RLS check actually has to satisfy.
+
+## Files touched across this stretch
+- `lib/realtime/hooks/useRoomConnection.ts` — diagnostic logging, subscribe
+  timeout, `connectionError` state (PR #15).
+- `components/platform/MultiDeviceRoom.tsx` — real error + retry UI instead
+  of infinite spinner (PR #15).
+- `i18n/en.json`, `i18n/es.json` — `Lobby.connectionError`, `Lobby.retryButton`.
+- `lib/auth/client.ts` — `.trim()` on both Supabase env vars (PR #16).
+- Live Supabase DB (not in git): `game_results`/`events` INSERT policies
+  re-applied by the founder directly in the SQL Editor.
+- Vercel env vars (not in git): `NEXT_PUBLIC_SUPABASE_ANON_KEY` (and
+  `NEXT_PUBLIC_SUPABASE_URL`) re-pasted cleanly by the founder, redeployed.
 
 ## External state (not in git, important for the next agent to know)
 - **Supabase project** is live (`jamrubutlvsfvmqwhbpr`), Anonymous Sign-ins enabled.
 - **Vercel** is connected to GitHub repo and auto-deploys `main`.
 - **GitHub branch protection on `main`** is strict: required status checks must pass before merge.
-- **`NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel likely still has a trailing
-  newline in the dashboard value** (see above) — the `.trim()` fix makes
-  this harmless, but it's worth the founder cleaning up the actual value
-  next time they're in Vercel settings, and doing one more redeploy+test to
-  confirm multi-device rooms connect cleanly end to end.
-- **RLS policy drift on `game_results`/`events`:** the live database is
-  missing the INSERT policies for these two tables, even though they're
-  present in `supabase/migrations/20260723000000_init_schema.sql`. Verified
-  by hitting the REST API directly with a real anonymous-auth JWT: `users`
-  insert succeeds (201), `game_results`/`events` insert fails with Postgres
-  42501 ("new row violates row-level security policy"). Fix: re-run the two
-  `create policy ... for insert to authenticated with check (true)`
-  statements from the migration file in the Supabase SQL Editor. **Still not
-  applied as of this handoff.**
-- The two-real-phones manual reconnection check (M1) has still never been
-  performed.
-- The alive/eliminated roster (Impostor, TASK-0025) hasn't been playtested
-  with 4+ devices yet — blocked on the connection bug above until now.
+- Both known production issues above are now resolved and confirmed live.
+- The two-real-phones manual reconnection check (M1) has **still** never
+  been performed — the only remaining open item from M1/M2's "Done when"
+  criteria. Not blocking, but do it before assuming the platform's
+  resilience story (host migration, reconnection) is proven beyond
+  unit tests.
 
 ## Pending Tasks
 - None specced yet.
 
 ## Next Suggested Task
-- Push and merge `fix/trim-supabase-env-vars`.
-- Founder re-tests multi-device room creation on a real phone; if it now
-  connects, playtest the alive/eliminated roster with 4+ devices.
-- Clean up the trailing newline in Vercel's `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  dashboard value directly (belt-and-suspenders with the `.trim()` fix).
-- Apply the RLS policy fix in Supabase SQL Editor and confirm
-  `recordEvent`/`recordGameResult` write successfully.
-- Manually verify a real multi-phone reconnection; only then mark M1's
-  remaining check done and M2 ✅ in `docs/ROADMAP.md`.
-- Start M3 (Who Am I) per `docs/ROADMAP.md`.
+- Do the two-real-phones reconnection check (kill one phone's connection
+  mid-match, confirm it rejoins via its `user_id` without losing its role).
+- Start M3 — Who Am I (`docs/ROADMAP.md`) — second game, deliberately
+  chosen to stress-test that the platform is "just implement a new
+  GameModule." If it isn't, that's a signal ADR-0002 needs revisiting, not
+  a reason to patch around it.
