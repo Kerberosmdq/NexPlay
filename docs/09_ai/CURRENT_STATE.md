@@ -3,11 +3,11 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 5 - M2 Impostor
-- Status: In Progress
+- Sprint: Sprint 6 - M3 Who Am I
+- Status: Not started
 
 ## Current Objective
-M1 is complete (see `docs/ROADMAP.md`). M2 — Impostor (see `docs/NEXPLAY_PLAN.md` §6): first real, playable game on top of the platform, both device modes.
+M1 and M2 are both complete (see `docs/ROADMAP.md`). M3 — Who Am I (see `docs/NEXPLAY_PLAN.md` §6): second game, deliberately chosen to stress-test that the platform is truly reusable — should be "just a new GameModule."
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -55,26 +55,38 @@ M1 is complete (see `docs/ROADMAP.md`). M2 — Impostor (see `docs/NEXPLAY_PLAN.
       half-wired timer, no-repeat words within a match, and an
       alive/eliminated roster. 25 unit tests. Founder playtested a full
       match on 3 real devices and confirmed it plays well.
+- [x] **Hotfix (unnumbered)**: Multi-device rooms hung forever on "Conectando
+      a la sala..." in production — `NEXT_PUBLIC_SUPABASE_ANON_KEY` had a
+      trailing newline in Vercel, corrupting the Realtime WebSocket
+      `apikey` query param (`CHANNEL_ERROR`/"transport failure" on every
+      attempt, silent because REST/Auth calls don't embed the key in a URL
+      the same way). Fixed in two PRs: #15 added connection diagnostics
+      (logging, timeout, visible error+retry UI) that revealed the real
+      error once tested live; #16 added `.trim()` on both Supabase env vars
+      so a stray newline can't do this again. Founder also re-pasted the
+      env vars cleanly in Vercel and redeployed. Confirmed working: full
+      multi-device match on 4+ real devices, including the
+      alive/eliminated roster.
+- [x] **`game_results`/`events` RLS policies applied** to the live database
+      (the founder re-ran the migration's `create policy` statements — they
+      really were missing). Verified with a real anon-auth JWT hitting the
+      REST API directly the same way the app's `supabase-js` client does
+      (`Prefer: return=minimal`, no `.select()`): both tables now insert
+      successfully (201). An earlier round of "still failing" reports during
+      this verification was a false alarm from the verification script
+      itself requesting `return=representation`, which requires a SELECT
+      policy that was deliberately never added (reads happen via the
+      dashboard/service role, per ADR-0003) — not a real bug.
 
 ## Tasks In Progress
 - [ ] None.
 
 ## Known Issues
 - M1's two-real-phones manual reconnection check was never performed; only unit-test coverage exists for host migration. Not blocking, but should be done before M2 ships to the family.
-- The alive/eliminated roster (added in TASK-0025's last round of changes)
-  needs 4+ devices to playtest — founder only had 3 available. Verify once
-  this is live and reachable from a phone.
-- **`game_results`/`events` INSERT policies are missing on the live
-  database** (confirmed via direct REST API test with a real anon-auth JWT:
-  `users` insert works, the other two fail with 42501). See `HANDOFF.md`
-  for the SQL fix — needs to be run in the Supabase SQL Editor, it's not
-  something a code change can fix. Still not applied as of this update.
 
 ## Next Task
-- Push `feat/impostor-game`, open PR, get CI green, merge (`feat/close-m1-gap`
-  already merged via PR #13). Then playtest the roster with 4+ devices,
-  apply the RLS fix, and do the two-real-phones reconnection check before
-  considering M1+M2 fully done. Then start M3 (Who Am I) per `docs/ROADMAP.md`.
+- Do the two-real-phones reconnection check (M1's last open item), then
+  start M3 (Who Am I) per `docs/ROADMAP.md`.
 
 ## Last Updated
 - 2026-07-24

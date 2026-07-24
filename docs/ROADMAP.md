@@ -53,7 +53,7 @@ live, and a disconnect/reconnect during the session doesn't break the room.
 The two-phone manual check remains outstanding; everything else is done and
 automated-test-covered.
 
-## M2 — Impostor — 🚧 In Progress
+## M2 — Impostor — ✅ Complete (2026-07-24)
 The first real, playable game.
 - Both device modes.
 - Categories + words content pack (kid-safe, ES/EN), optional clue for the
@@ -61,14 +61,21 @@ The first real, playable game.
   (shown correctly on every device: was it the impostor or not).
 - Word content includes images/icons alongside text so a 7-year-old and a
   9-year-old play on equal footing (see `BACKLOG.md` for the broader
-  image-support idea if it needs to expand beyond Impostor).
+  image-support idea if it needs to expand beyond Impostor — deferred, not
+  in scope for this milestone).
 
-**Status (TASK-0025):** implemented, unit-tested (25 tests), and
-playtested by the founder on 3 real devices through a full multi-round
-match (elimination, scoring, celebration screen) — confirmed working well.
-Not yet playtested: the alive/eliminated roster (needs 4+ devices) and the
-two-real-phones reconnection check (M1 leftover). Word images are not in
-scope for this pass (tracked in `BACKLOG.md`).
+**Status:** implemented, unit-tested (25 tests), and playtested by the
+founder end to end on a live production deployment across 4+ real devices
+— full multi-round match (elimination, turn-based discussion, scoring,
+celebration screen, alive/eliminated roster) all confirmed working. A
+production bug found during this playtesting (Realtime connection hanging
+forever due to a trailing newline in a Vercel env var) was fixed along the
+way; see `HANDOFF.md` for the full story. Word images remain out of scope
+for this milestone (tracked in `BACKLOG.md`).
+
+**M1's two-real-phones reconnection check is still outstanding** — tracked
+separately, not blocking M2, but worth doing before considering the
+platform's resilience story fully proven.
 
 **Done when:** the family plays a full real match, both device modes, on
 actual phones, without a developer present to fix anything mid-game.
