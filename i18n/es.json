@@ -34,6 +34,18 @@
         "hintEasy": "Pista fácil (palabra relacionada)",
         "needsPlayers": "{n} (necesita {min}+ jugadores)"
       }
+    },
+    "whoAmI": {
+      "name": "¿Quién Soy?",
+      "description": "Adiviná tu propia palabra secreta haciendo preguntas de sí o no.",
+      "config": {
+        "timerSeconds": "Tiempo de la ronda",
+        "time3min": "3 minutos",
+        "time5min": "5 minutos",
+        "time7min": "7 minutos",
+        "time10min": "10 minutos",
+        "timeUnlimited": "Sin límite de tiempo"
+      }
     }
   },
   "Impostor": {
@@ -98,6 +110,40 @@
       "impostorSurvived": "¡EL IMPOSTOR SOBREVIVIÓ!",
       "survivedCelebration": "{names} engañó a todos y se lleva los puntos. ¡Bien jugado!",
       "secretWordWas": "La palabra secreta era:",
+      "scoresTitle": "Puntuaciones",
+      "nextRoundButton": "Siguiente ronda"
+    }
+  },
+  "WhoAmI": {
+    "config": {
+      "title": "CONFIGURAR PARTIDA",
+      "notEnoughPlayers": "Faltan jugadores. Mínimo 3 necesarios.",
+      "startButton": "¡COMENZAR JUEGO!",
+      "waitingForHost": "Esperando que el anfitrión configure la partida...",
+      "playerNamePlaceholder": "Jugador {n}",
+      "addPlayerButton": "Agregar jugador",
+      "exitButton": "Salir"
+    },
+    "playing": {
+      "othersTitle": "Los demás",
+      "yourTurn": "¡Es tu turno! Preguntá algo sobre vos.",
+      "waitingForTurn": "Es el turno de {name}...",
+      "doneAskingButton": "Ya pregunté, siguiente",
+      "guessButton": "Creo que sé quién soy",
+      "confirmPrompt": "Decilo en voz alta. ¿Era correcto?",
+      "correctButton": "¡Sí, acerté!",
+      "wrongButton": "No, seguir jugando",
+      "youGuessed": "¡Acertaste!",
+      "keepHelping": "Podés seguir ayudando a contestar preguntas de los demás.",
+      "endRoundButton": "Terminar ronda"
+    },
+    "singleDevice": {
+      "holdFor": "Mostrale esto a todos menos a {name}",
+      "guessedButton": "¡Adivinó!",
+      "passButton": "Pasar"
+    },
+    "resolution": {
+      "title": "¡Fin de la ronda!",
       "scoresTitle": "Puntuaciones",
       "nextRoundButton": "Siguiente ronda"
     }

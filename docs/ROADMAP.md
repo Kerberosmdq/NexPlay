@@ -80,7 +80,7 @@ platform's resilience story fully proven.
 **Done when:** the family plays a full real match, both device modes, on
 actual phones, without a developer present to fix anything mid-game.
 
-## M3 — Who Am I
+## M3 — Who Am I — 🚧 Implemented, pending founder playtest
 Second game — deliberately chosen to stress-test reuse.
 - Guess-your-own-hidden-word via yes/no questions.
 - Per-player distinct secret word/prompt, kid-safe content pack.
@@ -89,6 +89,17 @@ Second game — deliberately chosen to stress-test reuse.
 changes required to the shared platform. If it *does* require platform
 changes, that's a signal ADR-0002's contract needs revisiting — flag it,
 don't patch around it silently.
+
+**Status:** built exactly to that bar — zero changes to `lib/types/room.ts`,
+`platformReducer.ts`'s logic, `useRoomConnection.ts`, or Impostor; only an
+additive registry line and one lookup-table entry (the game already
+documented as an extension point). Design was worked out with the founder
+in conversation before any code (rotating-turn questions + anytime
+self-reported guessing, shared/per-turn timer, Heads-Up-style
+single-device, own word bank with emoji). 15 unit tests; playtested
+locally end to end in single-device, multi-device only smoke-tested to the
+lobby (no live Supabase in the dev sandbox). **Not yet playtested by the
+founder on real devices** — do that before marking this milestone ✅.
 
 ## M4 — Battleship
 Third game — deliberately chosen to prove the platform isn't just for

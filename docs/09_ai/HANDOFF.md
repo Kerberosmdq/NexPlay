@@ -3,92 +3,104 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: (unnumbered hotfixes, see below)
-- **Title**: M2 (Impostor) fully verified live — connection bug fixed, RLS gap closed
+- **Task ID**: TASK-0026
+- **Title**: Who Am I Game (M3)
 
 ## Current Branch
-- `main` — everything below is merged and deployed. No open branches.
+- `feat/who-am-i-game` — about to be pushed and opened as a PR against `main`.
+- Everything before this (M1, M2, the connection/RLS hotfixes, the
+  "remember the room" feature) is already merged to `main` and live.
 
-## What happened (read this before assuming M1/M2 are fully done)
+## What's in this task
+Full design was worked out with the founder in conversation *before*
+writing any code (see `docs/09_ai/tasks/TASK-0026-who-am-i-game.md` for the
+agreed spec). Summary of the game:
+- Everyone gets a secret word; every device shows everyone *else's* word.
+- Questions rotate one player at a time (fixed turn order), but *guessing*
+  is not turn-locked — anyone can declare "I think I know" at any moment,
+  say it out loud, and self-report correct/wrong (same honor-system
+  pattern as Impostor's voting).
+- Correct guess → that word is revealed to them, fixed points awarded,
+  they drop out of the question-turn rotation but keep watching/helping.
+- Timer expires → anyone who never guessed gets their word revealed with
+  0 points.
+- Single-device: sequential per-player turns, Heads-Up style — phone shown
+  to everyone but the current guesser, per-turn timer, "¡Adivinó!"/"Pasar".
+- Content: a **separate** word bank from Impostor's (founder's explicit
+  call, not shared), same categories minus Professions, each word tagged
+  with an emoji as a lightweight "picture" (no real art, no AI-generated
+  content at runtime — consistent with `NEXPLAY_PLAN.md`'s non-goals).
 
-TASK-0025 (Impostor, M2) merged, then the founder playtested on a real
-deployment and hit two real production issues, both now resolved:
+## Why this task matters beyond "one more game"
+M3 exists specifically to prove ADR-0002's `GameModule` contract is real —
+that a second game is "just a new module," not new platform plumbing. It
+held: the only platform-adjacent touches were one additive line in
+`AVAILABLE_GAMES` and one entry in the `TERMINAL_PHASE_BY_GAME` lookup
+table in `MultiDeviceRoom.tsx`/`page.tsx` — a table that already documents
+itself as the intended per-game extension point (added during Impostor's
+build). `lib/types/room.ts`, `platformReducer.ts`'s actual logic, and
+`useRoomConnection.ts` were untouched. If M4 (Battleship) needs more than
+this, that's a real signal to revisit ADR-0002, not a reason to improvise.
 
-### 1. Rooms hung forever on "Conectando a la sala..."
-Root cause: `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel had a **trailing
-newline** baked into its value. Since `NEXT_PUBLIC_*` vars are inlined as
-literal strings at build time, this corrupted the `apikey` query param on
-every Realtime WebSocket URL (visible as `%0A` right before `&vsn=2.0.0`),
-which Supabase rejected with `CHANNEL_ERROR`/"transport failure" — 100% of
-the time, completely silently, because REST/Auth calls don't embed the key
-in a URL the same way and kept working fine throughout, masking the issue.
-Fixed via [PR #15](https://github.com/Kerberosmdq/NexPlay/pull/15)
-(connection diagnostics — logging, a 12s subscribe timeout, a visible
-error+retry UI instead of an infinite spinner — which is what revealed the
-real error once the founder tested live) and
-[PR #16](https://github.com/Kerberosmdq/NexPlay/pull/16) (`.trim()` on both
-Supabase env vars in `lib/auth/client.ts`, so a stray newline can't do this
-again regardless of how the Vercel dashboard value is pasted). The founder
-also re-pasted the env vars cleanly in Vercel and redeployed.
-**Confirmed fixed:** full multi-device match playtested on 4+ real devices.
+## Files Modified / Added
+- `games/who-am-i/`: `reducer.ts` (pure — turn rotation skips guessed
+  players, anytime-guess scoring, timer-driven or manual `END_ROUND`),
+  `module.ts`, `pickRound.ts` (word/turn-order picker, mirrors Impostor's),
+  `content/{types,es,en,index}.ts` (85-word bank with emoji, Impostor's
+  animals/food/household/toys-vehicles-nature categories minus
+  Professions), `views/Player.tsx` (multi-device), `views/SingleDevice.tsx`
+  (Heads-Up-style sequential turns).
+- `lib/realtime/platformReducer.ts` — additive `AVAILABLE_GAMES` registration.
+- `components/platform/MultiDeviceRoom.tsx`, `app/[locale]/page.tsx` —
+  one `TERMINAL_PHASE_BY_GAME` entry each (`"who-am-i": "resolution"`).
+- `i18n/en.json`, `i18n/es.json` — `WhoAmI.*` and `games.whoAmI.*`
+  namespaces, kept in parity.
+- `tests/unit/who-am-i-game.test.ts` — 15 tests.
+- `docs/ROADMAP.md`, `docs/09_ai/CURRENT_STATE.md`, this file.
 
-### 2. `game_results`/`events` RLS policies were missing on the live DB
-Known since TASK-0024/0025 (see prior handoffs) — the migration file always
-had the right policies, but they were apparently never applied when
-`supabase/migrations/20260723000000_init_schema.sql` was run by hand via
-the SQL Editor back in TASK-0015. The founder re-ran the two `create
-policy ... for insert to authenticated with check (true)` statements.
-
-**Important process note on how this was verified**, because it caused a
-confusing back-and-forth: my first few verification attempts (hitting the
-REST API directly with a real anon-auth JWT) kept failing with
-`42501 — new row violates row-level security policy`, even after the
-founder confirmed the SQL ran successfully and `pg_policies`/
-`information_schema.role_table_grants` all showed exactly the right
-config. **The RLS policy and grants were correct the whole time** — my
-test script was requesting `Prefer: return=representation` (to see the
-inserted row for debugging), which requires a SELECT policy to be visible
-after insert. These tables deliberately have no SELECT policy (reads are
-dashboard/service-role-only, per ADR-0003) — so `return=representation`
-will always 403 on these tables, even though a plain insert (what the real
-app does — `supabase-js`'s `.insert()` without `.select()` uses
-`Prefer: return=minimal` by default) succeeds fine. **Confirmed working**
-once the verification script matched the app's actual request shape (201
-on both tables). Lesson for next time: when verifying an RLS fix via raw
-REST calls, match the exact `Prefer` header the real client library sends
-— don't add `return=representation` "just to see the data," since it
-changes what the RLS check actually has to satisfy.
-
-## Files touched across this stretch
-- `lib/realtime/hooks/useRoomConnection.ts` — diagnostic logging, subscribe
-  timeout, `connectionError` state (PR #15).
-- `components/platform/MultiDeviceRoom.tsx` — real error + retry UI instead
-  of infinite spinner (PR #15).
-- `i18n/en.json`, `i18n/es.json` — `Lobby.connectionError`, `Lobby.retryButton`.
-- `lib/auth/client.ts` — `.trim()` on both Supabase env vars (PR #16).
-- Live Supabase DB (not in git): `game_results`/`events` INSERT policies
-  re-applied by the founder directly in the SQL Editor.
-- Vercel env vars (not in git): `NEXT_PUBLIC_SUPABASE_ANON_KEY` (and
-  `NEXT_PUBLIC_SUPABASE_URL`) re-pasted cleanly by the founder, redeployed.
+## Bug found and fixed during this task's own verification
+Single-device's config screen initially offered timer options (1/2/3 min)
+that didn't include the module's actual default (`300` seconds, 5 min,
+shared with multi-device's config schema) — the `<select>` silently had no
+matching option while the countdown still ran off the real 300s value.
+Fixed by unifying both device modes' timer option lists (3/5/7/10 min +
+unlimited). Also caught (via `read_console_messages` during manual
+testing) a `dispatch()` call happening directly in a component's render
+body instead of inside a `useEffect` — a real React anti-pattern
+(`Cannot update a component while rendering a different component`) in
+`SingleDevice.tsx`'s "round exhausted" safety net. Fixed by moving the
+`roundExhausted` check + `dispatch` into a proper effect, hooks declared
+unconditionally before any early return. Both fixed and re-verified live
+before committing — see the reducer/view diffs.
 
 ## External state (not in git, important for the next agent to know)
 - **Supabase project** is live (`jamrubutlvsfvmqwhbpr`), Anonymous Sign-ins enabled.
 - **Vercel** is connected to GitHub repo and auto-deploys `main`.
 - **GitHub branch protection on `main`** is strict: required status checks must pass before merge.
-- Both known production issues above are now resolved and confirmed live.
-- The two-real-phones manual reconnection check (M1) has **still** never
-  been performed — the only remaining open item from M1/M2's "Done when"
-  criteria. Not blocking, but do it before assuming the platform's
-  resilience story (host migration, reconnection) is proven beyond
-  unit tests.
+- The Realtime connection bug (trailing newline env var) and the
+  `game_results`/`events` RLS gap are both resolved and confirmed live —
+  see prior handoffs in git history if the details are needed again.
+- Who Am I was playtested locally end to end in **single-device** mode only
+  (this dev environment has no live Supabase connection to test
+  multi-device Realtime). **Multi-device Who Am I has not been played by
+  the founder on real devices yet** — do this before marking M3 done.
+- M1's two-real-phones *dedicated* reconnection test (multiple devices,
+  one drops while others stay connected, host migration) still hasn't
+  happened — the "remember the room" feature (merged earlier) proved a
+  *single* device can drop and silently rejoin, which is related but not
+  the same scenario.
 
 ## Pending Tasks
 - None specced yet.
 
 ## Next Suggested Task
-- Do the two-real-phones reconnection check (kill one phone's connection
-  mid-match, confirm it rejoins via its `user_id` without losing its role).
-- Start M3 — Who Am I (`docs/ROADMAP.md`) — second game, deliberately
-  chosen to stress-test that the platform is "just implement a new
-  GameModule." If it isn't, that's a signal ADR-0002 needs revisiting, not
-  a reason to patch around it.
+- Push and merge `feat/who-am-i-game`.
+- Founder playtests a real multi-device Who Am I match; mark M3 ✅ in
+  `docs/ROADMAP.md` once confirmed.
+- Do M1's dedicated two-real-phones reconnection test if it hasn't
+  happened by then.
+- Start M4 — Battleship (`docs/ROADMAP.md`) — deliberately a structurally
+  different game (board state, 1v1 only, no hidden-role mechanic) to prove
+  the platform stretches beyond word/party games. If ADR-0002 needs to
+  grow to support it, that's expected and fine — just do it as a real ADR
+  amendment, not a quiet workaround.

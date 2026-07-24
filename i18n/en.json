@@ -34,6 +34,18 @@
         "hintEasy": "Easy clue (related word)",
         "needsPlayers": "{n} (needs {min}+ players)"
       }
+    },
+    "whoAmI": {
+      "name": "Who Am I?",
+      "description": "Guess your own secret word by asking yes/no questions.",
+      "config": {
+        "timerSeconds": "Round time",
+        "time3min": "3 minutes",
+        "time5min": "5 minutes",
+        "time7min": "7 minutes",
+        "time10min": "10 minutes",
+        "timeUnlimited": "No time limit"
+      }
     }
   },
   "Impostor": {
@@ -98,6 +110,40 @@
       "impostorSurvived": "THE IMPOSTOR SURVIVED!",
       "survivedCelebration": "{names} fooled everyone and walks away with the points. Well played!",
       "secretWordWas": "The secret word was:",
+      "scoresTitle": "Scores",
+      "nextRoundButton": "Next round"
+    }
+  },
+  "WhoAmI": {
+    "config": {
+      "title": "SET UP THE MATCH",
+      "notEnoughPlayers": "Not enough players. Minimum 3 required.",
+      "startButton": "START GAME!",
+      "waitingForHost": "Waiting for the host to set up the match...",
+      "playerNamePlaceholder": "Player {n}",
+      "addPlayerButton": "Add player",
+      "exitButton": "Exit"
+    },
+    "playing": {
+      "othersTitle": "Everyone else",
+      "yourTurn": "It's your turn! Ask something about yourself.",
+      "waitingForTurn": "It's {name}'s turn...",
+      "doneAskingButton": "Asked mine, next",
+      "guessButton": "I think I know who I am",
+      "confirmPrompt": "Say it out loud. Was it correct?",
+      "correctButton": "Yes, got it!",
+      "wrongButton": "No, keep playing",
+      "youGuessed": "You got it!",
+      "keepHelping": "You can keep helping answer everyone else's questions.",
+      "endRoundButton": "End round"
+    },
+    "singleDevice": {
+      "holdFor": "Show everyone but {name}",
+      "guessedButton": "Guessed it!",
+      "passButton": "Pass"
+    },
+    "resolution": {
+      "title": "Round over!",
       "scoresTitle": "Scores",
       "nextRoundButton": "Next round"
     }

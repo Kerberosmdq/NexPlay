@@ -18,6 +18,7 @@ import { saveRoomSession, loadRoomSession, clearRoomSession, type RoomSession } 
 const TERMINAL_PHASE_BY_GAME: Record<string, string> = {
   placeholder: "results",
   impostor: "resolution",
+  "who-am-i": "resolution",
 };
 
 export default function HomePage() {
