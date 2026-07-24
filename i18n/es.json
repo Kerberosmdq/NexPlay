@@ -34,14 +34,15 @@
         "hintDifficulty": "Dificultad de la pista (para el impostor)",
         "hintNone": "Sin pista (imposible)",
         "hintHard": "Pista difícil (categoría de la palabra)",
-        "hintEasy": "Pista fácil (palabra relacionada)"
+        "hintEasy": "Pista fácil (palabra relacionada)",
+        "needsPlayers": "{n} (necesita {min}+ jugadores)"
       }
     }
   },
   "Impostor": {
     "config": {
       "title": "CONFIGURAR PARTIDA",
-      "notEnoughPlayers": "Faltan jugadores. Mínimo 3 jugadores necesarios.",
+      "notEnoughPlayersFor": "Faltan jugadores. Mínimo {min} necesarios.",
       "startButton": "¡COMENZAR JUEGO!",
       "waitingForHost": "Esperando que el anfitrión configure la partida...",
       "playerNamePlaceholder": "Jugador {n}",
@@ -68,7 +69,15 @@
       "votesCount": "Votos: {cast} / {total}",
       "voteRegistered": "Voto registrado",
       "waitingForOthers": "Esperando a los demás...",
-      "revealResultsButton": "Revelar resultados"
+      "revealResultsButton": "Revelar resultados",
+      "eliminatedSpectating": "Fuiste eliminado. Podés seguir mirando, pero ya no votás."
+    },
+    "eliminationResult": {
+      "tie": "¡Empate! Nadie fue eliminado.",
+      "wasImpostor": "{name} era... ¡el impostor! 🎉",
+      "wasInnocent": "{name} era inocente. 😬",
+      "gameContinues": "El juego continúa...",
+      "continueButton": "Siguiente ronda de votación"
     },
     "guessWord": {
       "title": "¡ATRAPARON AL IMPOSTOR!",

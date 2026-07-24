@@ -34,14 +34,15 @@
         "hintDifficulty": "Clue difficulty (for the impostor)",
         "hintNone": "No clue (impossible)",
         "hintHard": "Hard clue (word's category)",
-        "hintEasy": "Easy clue (related word)"
+        "hintEasy": "Easy clue (related word)",
+        "needsPlayers": "{n} (needs {min}+ players)"
       }
     }
   },
   "Impostor": {
     "config": {
       "title": "SET UP THE MATCH",
-      "notEnoughPlayers": "Not enough players. Minimum 3 required.",
+      "notEnoughPlayersFor": "Not enough players. Minimum {min} required.",
       "startButton": "START GAME!",
       "waitingForHost": "Waiting for the host to set up the match...",
       "playerNamePlaceholder": "Player {n}",
@@ -68,7 +69,15 @@
       "votesCount": "Votes: {cast} / {total}",
       "voteRegistered": "Vote registered",
       "waitingForOthers": "Waiting for the others...",
-      "revealResultsButton": "Reveal results"
+      "revealResultsButton": "Reveal results",
+      "eliminatedSpectating": "You were eliminated. You can keep watching, but you no longer vote."
+    },
+    "eliminationResult": {
+      "tie": "It's a tie! Nobody was eliminated.",
+      "wasImpostor": "{name} was... the impostor! 🎉",
+      "wasInnocent": "{name} was innocent. 😬",
+      "gameContinues": "The game continues...",
+      "continueButton": "Next voting round"
     },
     "guessWord": {
       "title": "THE IMPOSTOR WAS CAUGHT!",

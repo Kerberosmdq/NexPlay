@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import type { ImpostorState, ImpostorAction } from "../reducer";
+import { maxImpostorsFor } from "../reducer";
 import { impostorContent } from "../content";
 
 export interface ImpostorSingleDeviceProps {
@@ -33,6 +34,7 @@ function pickWordAndImpostors(players: Player[], locale: string) {
 
 export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDeviceProps) {
   const t = useTranslations("Impostor");
+  const tConfig = useTranslations("games.impostor.config");
   const locale = useLocale();
 
   // Single-device has no realtime player roster, so names are entered
@@ -60,6 +62,10 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
 
   if (state.phase === "config") {
     const validNames = names.map((n) => n.trim()).filter(Boolean);
+    const maxImpostors = maxImpostorsFor(validNames.length);
+    const minPlayersNeeded = 2 * state.impostorCount + 1;
+    const notEnoughPlayers = validNames.length < Math.max(3, minPlayersNeeded);
+
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto bg-white/5 p-8 rounded-3xl border border-white/10">
         <h2 className="text-3xl font-black text-white text-center">{t("config.title")}</h2>
@@ -86,9 +92,32 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
           </button>
         </div>
 
-        {validNames.length < 3 ? (
+        <div className="w-full space-y-2">
+          <label className="text-purple-200 font-bold text-sm">{tConfig("impostorCount")}</label>
+          <select
+            className="w-full bg-[#13072b] border-2 border-[#3b177d] text-white p-3 rounded-xl font-semibold outline-none focus:border-pink-500"
+            value={state.impostorCount}
+            onChange={(e) =>
+              dispatch({
+                type: "SET_CONFIG",
+                impostorCount: parseInt(e.target.value, 10),
+                discussionTimeSeconds: state.discussionTimeSeconds,
+                votingTimeSeconds: state.votingTimeSeconds,
+                hintDifficulty: state.hintDifficulty,
+              })
+            }
+          >
+            {[1, 2, 3].map((n) => (
+              <option key={n} value={n} disabled={n > maxImpostors}>
+                {n > maxImpostors ? tConfig("needsPlayers", { n, min: 2 * n + 1 }) : n}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {notEnoughPlayers ? (
           <div className="bg-red-500/20 text-red-300 p-4 rounded-xl text-center font-bold border border-red-500/30 w-full">
-            {t("config.notEnoughPlayers")}
+            {t("config.notEnoughPlayersFor", { min: Math.max(3, minPlayersNeeded) })}
           </div>
         ) : (
           <button
@@ -198,8 +227,9 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
   }
 
   if (state.phase === "voting") {
-    const voter = roundPlayers[voterIndex];
-    const done = voterIndex >= roundPlayers.length;
+    const aliveRoundPlayers = roundPlayers.filter((p) => state.aliveIds.includes(p.id));
+    const voter = aliveRoundPlayers[voterIndex];
+    const done = voterIndex >= aliveRoundPlayers.length;
 
     if (done) {
       return (
@@ -220,7 +250,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
         <p className="text-purple-300 font-bold uppercase tracking-widest text-sm">{voter?.displayName}</p>
         <h2 className="text-2xl font-bold text-white text-center">{t("voting.title")}</h2>
         <div className="w-full space-y-3">
-          {roundPlayers
+          {aliveRoundPlayers
             .filter((p) => p.id !== voter?.id)
             .map((target) => (
               <button
@@ -237,6 +267,50 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
               </button>
             ))}
         </div>
+      </div>
+    );
+  }
+
+  if (state.phase === "elimination_result") {
+    const elimination = state.lastElimination;
+    const eliminatedPlayer = elimination?.eliminatedId
+      ? roundPlayers.find((p) => p.id === elimination.eliminatedId)
+      : null;
+
+    return (
+      <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-4">
+        {!elimination?.eliminatedId ? (
+          <>
+            <div className="text-5xl">🤝</div>
+            <h2 className="text-2xl font-bold text-white text-center">{t("eliminationResult.tie")}</h2>
+          </>
+        ) : elimination.wasImpostor ? (
+          <>
+            <div className="text-6xl">🕵️</div>
+            <h2 className="text-2xl font-black text-red-400 text-center">
+              {t("eliminationResult.wasImpostor", { name: eliminatedPlayer?.displayName ?? "" })}
+            </h2>
+            <p className="text-purple-200 text-center">{t("eliminationResult.gameContinues")}</p>
+          </>
+        ) : (
+          <>
+            <div className="text-6xl">😬</div>
+            <h2 className="text-2xl font-black text-white text-center">
+              {t("eliminationResult.wasInnocent", { name: eliminatedPlayer?.displayName ?? "" })}
+            </h2>
+            <p className="text-purple-200 text-center">{t("eliminationResult.gameContinues")}</p>
+          </>
+        )}
+
+        <button
+          onClick={() => {
+            setVoterIndex(0);
+            dispatch({ type: "PROCEED_TO_DISCUSSION" });
+          }}
+          className="w-full bg-white text-purple-900 font-black text-xl py-4 rounded-full"
+        >
+          {t("eliminationResult.continueButton")}
+        </button>
       </div>
     );
   }

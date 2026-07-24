@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import type { ImpostorState, ImpostorAction } from "../reducer";
+import { maxImpostorsFor } from "../reducer";
 import { impostorContent } from "../content";
 
 interface PlayerProps {
@@ -59,6 +60,10 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
 
   if (state.phase === "config") {
     if (isHost) {
+      const maxImpostors = maxImpostorsFor(players.length);
+      const minPlayersNeeded = 2 * state.impostorCount + 1;
+      const notEnoughPlayers = players.length < Math.max(3, minPlayersNeeded);
+
       return (
         <div className="flex flex-col items-center justify-center space-y-8 w-full max-w-2xl mx-auto bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-md">
           <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 tracking-tight text-center">
@@ -66,6 +71,29 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
           </h2>
 
           <div className="w-full space-y-6">
+            <div className="flex flex-col space-y-2">
+              <label className="text-purple-200 font-bold">{tConfig("impostorCount")}</label>
+              <select
+                className="bg-[#13072b] border-2 border-[#3b177d] text-white p-4 rounded-xl font-semibold outline-none focus:border-pink-500 transition-colors"
+                value={state.impostorCount}
+                onChange={(e) =>
+                  dispatch({
+                    type: "SET_CONFIG",
+                    impostorCount: parseInt(e.target.value, 10),
+                    discussionTimeSeconds: state.discussionTimeSeconds,
+                    votingTimeSeconds: state.votingTimeSeconds,
+                    hintDifficulty: state.hintDifficulty,
+                  })
+                }
+              >
+                {[1, 2, 3].map((n) => (
+                  <option key={n} value={n} disabled={n > maxImpostors}>
+                    {n > maxImpostors ? tConfig("needsPlayers", { n, min: 2 * n + 1 }) : n}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="flex flex-col space-y-2">
               <label className="text-purple-200 font-bold">{tConfig("hintDifficulty")}</label>
               <select
@@ -109,9 +137,9 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
               </select>
             </div>
 
-            {players.length < 3 ? (
+            {notEnoughPlayers ? (
               <div className="bg-red-500/20 text-red-300 p-4 rounded-xl text-center font-bold border border-red-500/30">
-                {t("config.notEnoughPlayers")}
+                {t("config.notEnoughPlayersFor", { min: Math.max(3, minPlayersNeeded) })}
               </div>
             ) : (
               <button
@@ -235,9 +263,11 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
   }
 
   if (state.phase === "voting") {
+    const alivePlayers = players.filter((p) => state.aliveIds.includes(p.id));
+    const isAlive = state.aliveIds.includes(playerId);
     const hasVoted = !!state.votes[playerId];
     const totalVotes = Object.keys(state.votes).length;
-    const allVoted = totalVotes === players.length;
+    const allVoted = totalVotes === alivePlayers.length;
 
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-4">
@@ -245,12 +275,16 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         <h2 className="text-2xl font-bold text-white text-center">{t("voting.title")}</h2>
 
         <p className="text-lg text-purple-200">
-          {t("voting.votesCount", { cast: totalVotes, total: players.length })}
+          {t("voting.votesCount", { cast: totalVotes, total: alivePlayers.length })}
         </p>
 
-        {!hasVoted ? (
+        {!isAlive ? (
+          <div className="bg-black/20 border border-white/10 p-8 rounded-2xl mt-4 w-full text-center">
+            <p className="text-purple-200/70">{t("voting.eliminatedSpectating")}</p>
+          </div>
+        ) : !hasVoted ? (
           <div className="w-full space-y-3 mt-4">
-            {players
+            {alivePlayers
               .filter((p) => p.id !== playerId)
               .map((target) => (
                 <button
@@ -276,6 +310,49 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             className="mt-8 bg-green-500 text-white font-black text-xl py-4 px-8 rounded-2xl shadow-[0_0_40px_rgba(34,197,94,0.4)] animate-pulse w-full"
           >
             {t("voting.revealResultsButton")}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (state.phase === "elimination_result") {
+    const elimination = state.lastElimination;
+    const eliminatedPlayer = elimination?.eliminatedId
+      ? players.find((p) => p.id === elimination.eliminatedId)
+      : null;
+
+    return (
+      <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-4 px-4">
+        {!elimination?.eliminatedId ? (
+          <>
+            <div className="text-5xl">🤝</div>
+            <h2 className="text-2xl font-bold text-white text-center">{t("eliminationResult.tie")}</h2>
+          </>
+        ) : elimination.wasImpostor ? (
+          <>
+            <div className="text-6xl">🕵️</div>
+            <h2 className="text-2xl font-black text-red-400 text-center">
+              {t("eliminationResult.wasImpostor", { name: eliminatedPlayer?.displayName ?? "" })}
+            </h2>
+            <p className="text-purple-200 text-center">{t("eliminationResult.gameContinues")}</p>
+          </>
+        ) : (
+          <>
+            <div className="text-6xl">😬</div>
+            <h2 className="text-2xl font-black text-white text-center">
+              {t("eliminationResult.wasInnocent", { name: eliminatedPlayer?.displayName ?? "" })}
+            </h2>
+            <p className="text-purple-200 text-center">{t("eliminationResult.gameContinues")}</p>
+          </>
+        )}
+
+        {isHost && (
+          <button
+            onClick={() => dispatch({ type: "PROCEED_TO_DISCUSSION" })}
+            className="bg-white text-purple-900 font-black text-xl py-4 px-12 rounded-full hover:bg-purple-100 transform hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)] w-full"
+          >
+            {t("eliminationResult.continueButton")}
           </button>
         )}
       </div>
