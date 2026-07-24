@@ -14,6 +14,7 @@ function initialState(overrides: Partial<WhoAmIState> = {}): WhoAmIState {
     usedWordIds: [],
     wordAssignments: {},
     guessedIds: [],
+    lostIds: [],
     roundEndsAt: null,
     scores: {},
     ...overrides,
@@ -90,6 +91,46 @@ describe("whoAmIReducer — guessing", () => {
   it("is ignored outside the playing phase", () => {
     const state = initialState({ phase: "config" });
     const next = whoAmIReducer(state, { type: "GUESS_CORRECT", playerId: "p1" });
+    expect(next).toBe(state);
+  });
+});
+
+describe("whoAmIReducer — losing", () => {
+  it("a wrong guess scores nothing and marks that player as lost", () => {
+    let state = startGame(initialState(), ["p1", "p2", "p3", "p4"]);
+    state = whoAmIReducer(state, { type: "GUESS_WRONG", playerId: "p1" });
+    expect(state.scores.p1).toBeUndefined();
+    expect(state.lostIds).toEqual(["p1"]);
+  });
+
+  it("a player who already lost can't retry", () => {
+    let state = startGame(initialState(), ["p1", "p2", "p3", "p4"]);
+    state = whoAmIReducer(state, { type: "GUESS_WRONG", playerId: "p1" });
+    state = whoAmIReducer(state, { type: "GUESS_CORRECT", playerId: "p1" });
+    expect(state.scores.p1).toBeUndefined();
+    expect(state.guessedIds).toEqual([]);
+    expect(state.lostIds).toEqual(["p1"]);
+  });
+
+  it("a player who already guessed correctly can't be marked as lost", () => {
+    let state = startGame(initialState(), ["p1", "p2", "p3", "p4"]);
+    state = whoAmIReducer(state, { type: "GUESS_CORRECT", playerId: "p1" });
+    state = whoAmIReducer(state, { type: "GUESS_WRONG", playerId: "p1" });
+    expect(state.scores.p1).toBe(10);
+    expect(state.lostIds).toEqual([]);
+  });
+
+  it("everyone resolving (guessed or lost) ends the round immediately", () => {
+    let state = startGame(initialState(), ["p1", "p2"]);
+    state = whoAmIReducer(state, { type: "GUESS_WRONG", playerId: "p1" });
+    expect(state.phase).toBe("playing");
+    state = whoAmIReducer(state, { type: "GUESS_CORRECT", playerId: "p2" });
+    expect(state.phase).toBe("resolution");
+  });
+
+  it("is ignored outside the playing phase", () => {
+    const state = initialState({ phase: "config" });
+    const next = whoAmIReducer(state, { type: "GUESS_WRONG", playerId: "p1" });
     expect(next).toBe(state);
   });
 });

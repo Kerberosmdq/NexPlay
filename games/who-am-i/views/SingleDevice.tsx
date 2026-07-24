@@ -185,10 +185,13 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
             {t("singleDevice.guessedButton")}
           </button>
           <button
-            onClick={() => setActiveIndex((i) => i + 1)}
-            className="flex-1 bg-white/10 border-2 border-white/20 text-white font-bold text-xl py-5 rounded-2xl"
+            onClick={() => {
+              if (current) dispatch({ type: "GUESS_WRONG", playerId: current.id });
+              setActiveIndex((i) => i + 1);
+            }}
+            className="flex-1 bg-red-500/20 border-2 border-red-500 text-red-300 font-bold text-xl py-5 rounded-2xl"
           >
-            {t("singleDevice.passButton")}
+            {t("singleDevice.failedButton")}
           </button>
         </div>
       </div>

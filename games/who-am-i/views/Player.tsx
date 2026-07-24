@@ -31,8 +31,8 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
   const playerId = rawPlayerId ?? me?.id ?? "";
   const isHost = me?.isHost || false;
   const hasGuessed = state.guessedIds.includes(playerId);
+  const hasLost = state.lostIds.includes(playerId);
 
-  const [confirmingGuess, setConfirmingGuess] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   useEffect(() => {
@@ -127,6 +127,15 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             </p>
             <p className="text-sm text-green-200/70">{t("playing.keepHelping")}</p>
           </div>
+        ) : hasLost ? (
+          <div className="bg-red-900/30 border border-red-500/30 p-8 rounded-3xl text-center w-full space-y-3">
+            <div className="text-5xl">😬</div>
+            <p className="text-red-300 font-bold text-lg">{t("playing.youLost")}</p>
+            <p className="text-3xl font-black text-white">
+              {myWord?.emoji} {myWord?.word}
+            </p>
+            <p className="text-sm text-red-200/70">{t("playing.keepHelping")}</p>
+          </div>
         ) : (
           <>
             <p className="text-purple-300 text-xs font-black uppercase tracking-widest">
@@ -138,35 +147,20 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
               <p className="text-4xl font-black text-white">{myWord?.word}</p>
             </div>
 
-            {!confirmingGuess ? (
+            <div className="flex space-x-3 w-full">
               <button
-                onClick={() => setConfirmingGuess(true)}
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xl py-5 rounded-2xl"
+                onClick={() => dispatch({ type: "GUESS_CORRECT", playerId })}
+                className="flex-1 bg-green-500/20 border-2 border-green-500 text-green-300 font-black text-xl py-5 rounded-2xl"
               >
-                {t("playing.guessButton")}
+                {t("playing.correctButton")}
               </button>
-            ) : (
-              <div className="w-full space-y-3 bg-black/20 p-4 rounded-2xl border border-white/10">
-                <p className="text-center text-white font-semibold">{t("playing.confirmPrompt")}</p>
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => {
-                      setConfirmingGuess(false);
-                      dispatch({ type: "GUESS_CORRECT", playerId });
-                    }}
-                    className="flex-1 bg-green-500/20 border-2 border-green-500 text-green-300 font-bold py-3 rounded-xl"
-                  >
-                    {t("playing.correctButton")}
-                  </button>
-                  <button
-                    onClick={() => setConfirmingGuess(false)}
-                    className="flex-1 bg-red-500/20 border-2 border-red-500 text-red-300 font-bold py-3 rounded-xl"
-                  >
-                    {t("playing.wrongButton")}
-                  </button>
-                </div>
-              </div>
-            )}
+              <button
+                onClick={() => dispatch({ type: "GUESS_WRONG", playerId })}
+                className="flex-1 bg-red-500/20 border-2 border-red-500 text-red-300 font-black text-xl py-5 rounded-2xl"
+              >
+                {t("playing.wrongButton")}
+              </button>
+            </div>
           </>
         )}
 

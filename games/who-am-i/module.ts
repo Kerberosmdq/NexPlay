@@ -44,6 +44,7 @@ export const whoAmIGameModule: GameModule<WhoAmIConfig, WhoAmIState, WhoAmIActio
     usedWordIds: [],
     wordAssignments: {},
     guessedIds: [],
+    lostIds: [],
     roundEndsAt: null,
     scores: {},
   }),
