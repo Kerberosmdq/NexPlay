@@ -13,8 +13,6 @@ function initialState(overrides: Partial<WhoAmIState> = {}): WhoAmIState {
     playerIds: [],
     usedWordIds: [],
     wordAssignments: {},
-    turnOrder: [],
-    turnIndex: 0,
     guessedIds: [],
     roundEndsAt: null,
     scores: {},
@@ -30,7 +28,6 @@ function startGame(state: WhoAmIState, playerIds: string[], now = 1_000_000): Wh
     type: "START_GAME",
     playerIds,
     assignments,
-    turnOrder: playerIds,
     now,
   });
 }
@@ -41,12 +38,12 @@ describe("whoAmIReducer — config & setup", () => {
     expect(next.timerSeconds).toBe(600);
   });
 
-  it("START_GAME assigns words, seeds turn order, and computes roundEndsAt from the timer", () => {
+  it("START_GAME assigns each player their own word and computes roundEndsAt from the timer", () => {
     const state = startGame(initialState({ timerSeconds: 300 }), ["p1", "p2", "p3"], 1_000_000);
     expect(state.phase).toBe("playing");
     expect(state.wordAssignments.p1).toEqual(W1);
-    expect(state.turnOrder).toEqual(["p1", "p2", "p3"]);
-    expect(state.turnIndex).toBe(0);
+    expect(state.wordAssignments.p2).toEqual(W2);
+    expect(state.wordAssignments.p3).toEqual(W3);
     expect(state.roundEndsAt).toBe(1_000_000 + 300_000);
   });
 
@@ -67,44 +64,12 @@ describe("whoAmIReducer — config & setup", () => {
   });
 });
 
-describe("whoAmIReducer — turn rotation", () => {
-  it("NEXT_TURN advances to the next player", () => {
-    let state = startGame(initialState(), ["p1", "p2", "p3"]);
-    state = whoAmIReducer(state, { type: "NEXT_TURN" });
-    expect(state.turnIndex).toBe(1);
-  });
-
-  it("NEXT_TURN wraps around and skips players who already guessed", () => {
-    let state = startGame(initialState(), ["p1", "p2", "p3"]);
-    state = whoAmIReducer(state, { type: "GUESS_CORRECT", playerId: "p2" }); // p2 out
-    state = whoAmIReducer(state, { type: "NEXT_TURN" }); // from p1 -> skip p2 -> p3
-    expect(state.turnOrder[state.turnIndex]).toBe("p3");
-  });
-
-  it("does nothing once everyone left in the rotation has guessed", () => {
-    // A round where everyone has already guessed resolves immediately (see
-    // the "ends the round" test below) — so to exercise NEXT_TURN's guard
-    // directly, construct that state without going through the reducer.
-    const stuck = initialState({
-      phase: "playing",
-      playerIds: ["p1", "p2"],
-      turnOrder: ["p1", "p2"],
-      turnIndex: 0,
-      guessedIds: ["p1", "p2"],
-    });
-    const next = whoAmIReducer(stuck, { type: "NEXT_TURN" });
-    expect(next).toBe(stuck);
-  });
-});
-
 describe("whoAmIReducer — guessing", () => {
-  it("a correct guess scores points and skips that player's future turns", () => {
+  it("a correct guess scores points and marks that player as guessed", () => {
     let state = startGame(initialState(), ["p1", "p2", "p3", "p4"]);
     state = whoAmIReducer(state, { type: "GUESS_CORRECT", playerId: "p1" });
     expect(state.scores.p1).toBe(10);
     expect(state.guessedIds).toEqual(["p1"]);
-    // p1 was the current asker (turnIndex 0) — turn should move off them.
-    expect(state.turnOrder[state.turnIndex]).not.toBe("p1");
   });
 
   it("guessing twice doesn't double-score", () => {
@@ -146,7 +111,6 @@ describe("whoAmIReducer — ending a round", () => {
     state = whoAmIReducer(state, { type: "PLAY_AGAIN" });
     expect(state.phase).toBe("config");
     expect(state.wordAssignments).toEqual({});
-    expect(state.turnOrder).toEqual([]);
     expect(state.guessedIds).toEqual([]);
     expect(state.roundEndsAt).toBeNull();
     expect(state.scores.p1).toBe(10); // not reset

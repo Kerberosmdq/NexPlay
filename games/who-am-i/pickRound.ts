@@ -1,11 +1,11 @@
 import type { Player } from "@/lib/types/room";
 import { whoAmIContent, type WhoAmIWord } from "./content";
 
-/** Picks one distinct, never-before-used-this-match word per player, and a
- * shuffled turn order. Lives outside the reducer because it uses
- * Math.random() and next-intl's locale — the reducer stays pure per
- * CONVENTIONS.md, this is the one place that isn't. */
-export function pickAssignmentsAndTurnOrder(players: Player[], locale: string, usedWordIds: string[]) {
+/** Picks one distinct, never-before-used-this-match word per player. Lives
+ * outside the reducer because it uses Math.random() and next-intl's
+ * locale — the reducer stays pure per CONVENTIONS.md, this is the one
+ * place that isn't. */
+export function pickAssignments(players: Player[], locale: string, usedWordIds: string[]) {
   const allWords: WhoAmIWord[] = whoAmIContent.locale[locale as "en" | "es"] ?? whoAmIContent.locale.en;
   const usedSet = new Set(usedWordIds);
   const unusedWords = allWords.filter((w) => !usedSet.has(w.id));
@@ -19,7 +19,5 @@ export function pickAssignmentsAndTurnOrder(players: Player[], locale: string, u
     assignments[player.id] = shuffledWords[i % shuffledWords.length];
   });
 
-  const turnOrder = [...players].sort(() => Math.random() - 0.5).map((p) => p.id);
-
-  return { assignments, turnOrder };
+  return { assignments };
 }

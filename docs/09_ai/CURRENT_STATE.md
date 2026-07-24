@@ -109,6 +109,20 @@ M1 and M2 are both complete (see `docs/ROADMAP.md`). M3 — Who Am I (see `docs/
       Removed `games/placeholder/` entirely (game, tests, i18n keys,
       registry entry) — its only purpose was scaffolding for M1 and the
       founder asked for it gone now that two real games exist.
+- [x] **Multi-device Who Am I redesigned to match the real physical game**:
+      the founder caught that the first version had every device showing a
+      *list* of everyone else's words — but the actual intended play
+      pattern is Heads-Up style per device: each phone shows only its own
+      owner's word, held facing outward so everyone but the owner can read
+      it (to learn someone else's word, you look at *their* phone, not
+      your own). Reworked `games/who-am-i/views/Player.tsx` to show the
+      viewer's own word big (with emoji, matching single-device's Heads-Up
+      screen) instead of a roster. Also dropped the turn-rotation UI/state
+      entirely (`turnOrder`/`turnIndex`/`NEXT_TURN`) — it was purely
+      cosmetic (never affected scoring) and the founder wants the family to
+      self-regulate who asks next verbally, same as they already do for
+      single-device. 60 tests (turn-rotation tests removed, since that
+      mechanic no longer exists).
 
 ## Tasks In Progress
 - [ ] None.
