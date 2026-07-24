@@ -33,7 +33,7 @@ const TERMINAL_PHASE_BY_GAME: Record<string, string> = {
 
 export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDeviceRoomProps) {
   const t = useTranslations("Lobby");
-  const { players, gameState, dispatchAction, isConnected } = useRoomConnection({
+  const { players, gameState, dispatchAction, isConnected, connectionError } = useRoomConnection({
     roomCode,
     userId,
     displayName,
@@ -97,6 +97,22 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
       });
     }
   }, [gameState, isHost, players.length]);
+
+  if (connectionError) {
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4 text-center max-w-sm px-4">
+        <div className="text-4xl">⚠️</div>
+        <p className="text-xl font-bold text-red-300">{t("connectionError")}</p>
+        <p className="text-sm text-white/50">{connectionError}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3 rounded-xl"
+        >
+          {t("retryButton")}
+        </button>
+      </div>
+    );
+  }
 
   if (!isConnected) {
     return (

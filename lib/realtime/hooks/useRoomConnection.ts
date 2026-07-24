@@ -5,6 +5,7 @@ import { createRoomChannelTopic, calculateHostMigration } from "../room";
 import type { Player, PresencePayload } from "@/lib/types/room";
 
 const GRACE_PERIOD_MS = 60 * 1000;
+const SUBSCRIBE_TIMEOUT_MS = 12 * 1000;
 
 export function useRoomConnection<TState, TAction>({
   roomCode,
@@ -22,10 +23,11 @@ export function useRoomConnection<TState, TAction>({
   const [players, setPlayers] = useState<Player[]>([]);
   const [gameState, setGameState] = useState<TState>(initialState);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const disconnectTimers = useRef<Record<string, NodeJS.Timeout>>({});
-  
+
   const playersRef = useRef(players);
   const gameStateRef = useRef(gameState);
 
@@ -53,19 +55,43 @@ export function useRoomConnection<TState, TAction>({
   }, [reducer]);
 
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
+    console.log("[useRoomConnection] effect starting for room", roomCode);
 
-    const topic = createRoomChannelTopic(roomCode);
-    const channel = supabase.channel(topic, {
-      config: { presence: { key: userId } },
-    });
-    channelRef.current = channel;
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      console.error("[useRoomConnection] getSupabaseBrowserClient() returned null — missing env vars?");
+      // Deferred so this doesn't count as a synchronous setState-in-effect.
+      setTimeout(() => setConnectionError("missing_supabase_client"), 0);
+      return;
+    }
+
+    let cancelled = false;
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        console.error("[useRoomConnection] timed out waiting for SUBSCRIBED status after", SUBSCRIBE_TIMEOUT_MS, "ms");
+        setConnectionError("timeout");
+      }
+    }, SUBSCRIBE_TIMEOUT_MS);
+
+    let channel: RealtimeChannel;
+    try {
+      const topic = createRoomChannelTopic(roomCode);
+      console.log("[useRoomConnection] creating channel for topic", topic);
+      channel = supabase.channel(topic, {
+        config: { presence: { key: userId } },
+      });
+      channelRef.current = channel;
+    } catch (err) {
+      console.error("[useRoomConnection] supabase.channel() threw:", err);
+      setTimeout(() => setConnectionError("channel_create_failed"), 0);
+      clearTimeout(timeoutId);
+      return;
+    }
 
     channel
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState();
-        
+
         // Convert presence state to player list
         const presentUserIds = new Set<string>();
         let updatedPlayers = [...playersRef.current];
@@ -73,7 +99,7 @@ export function useRoomConnection<TState, TAction>({
         for (const [key, presences] of Object.entries(state)) {
           presentUserIds.add(key);
           const p = presences[0] as unknown as PresencePayload;
-          
+
           const existingIdx = updatedPlayers.findIndex((u) => u.id === key);
           if (existingIdx >= 0) {
             updatedPlayers[existingIdx].isOnline = true;
@@ -86,7 +112,7 @@ export function useRoomConnection<TState, TAction>({
               isOnline: true,
             });
           }
-          
+
           // Clear any disconnect timer if they came back
           if (disconnectTimers.current[key]) {
             clearTimeout(disconnectTimers.current[key]);
@@ -115,7 +141,7 @@ export function useRoomConnection<TState, TAction>({
 
         // Recalculate Host (ADR-0001 §4)
         updatedPlayers = calculateHostMigration(updatedPlayers);
-        
+
         setPlayers(updatedPlayers);
 
         // If we are the newly elected host, broadcast full state to ensure late joiners sync
@@ -138,8 +164,11 @@ export function useRoomConnection<TState, TAction>({
           setGameState(payload.state as TState);
         }
       })
-      .subscribe(async (status) => {
+      .subscribe(async (status, err) => {
+        console.log("[useRoomConnection] subscribe status:", status, err ?? "");
         if (status === "SUBSCRIBED") {
+          clearTimeout(timeoutId);
+          setConnectionError(null);
           setIsConnected(true);
           const presencePayload: PresencePayload = {
             userId,
@@ -147,14 +176,18 @@ export function useRoomConnection<TState, TAction>({
             joinedAt: Date.now(),
           };
           await channel.track(presencePayload);
-        } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
+        } else if (status === "CLOSED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          clearTimeout(timeoutId);
           setIsConnected(false);
+          setConnectionError(status.toLowerCase());
         }
       });
 
     const activeTimers = disconnectTimers.current;
 
     return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
       channel.unsubscribe();
       Object.values(activeTimers).forEach(clearTimeout);
     };
@@ -164,6 +197,7 @@ export function useRoomConnection<TState, TAction>({
     players,
     gameState,
     isConnected,
+    connectionError,
     dispatchAction,
   };
 }

@@ -10,7 +10,9 @@
     "gamesLabel": "Games",
     "playThisButton": "Play this",
     "hostOnlyHint": "Only the host can start",
-    "connecting": "Connecting to the room..."
+    "connecting": "Connecting to the room...",
+    "connectionError": "Couldn't connect to the room.",
+    "retryButton": "Retry"
   },
   "games": {
     "placeholder": {
