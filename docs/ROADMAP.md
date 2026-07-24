@@ -63,12 +63,12 @@ The first real, playable game.
   9-year-old play on equal footing (see `BACKLOG.md` for the broader
   image-support idea if it needs to expand beyond Impostor).
 
-**Status (TASK-0025):** implemented and unit-tested; single-device
-reveal-and-pass verified end to end in-browser. Multi-device was only
-smoke-tested to the config screen (no live Supabase in the dev sandbox used)
-— a real multi-phone round is still needed before this milestone is marked
-✅ done. Word images are not in scope for this pass (tracked in
-`BACKLOG.md`).
+**Status (TASK-0025):** implemented, unit-tested (25 tests), and
+playtested by the founder on 3 real devices through a full multi-round
+match (elimination, scoring, celebration screen) — confirmed working well.
+Not yet playtested: the alive/eliminated roster (needs 4+ devices) and the
+two-real-phones reconnection check (M1 leftover). Word images are not in
+scope for this pass (tracked in `BACKLOG.md`).
 
 **Done when:** the family plays a full real match, both device modes, on
 actual phones, without a developer present to fix anything mid-game.
