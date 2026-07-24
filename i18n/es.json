@@ -10,7 +10,9 @@
     "gamesLabel": "Juegos",
     "playThisButton": "Jugar este",
     "hostOnlyHint": "Solo el host puede iniciar",
-    "connecting": "Conectando a la sala..."
+    "connecting": "Conectando a la sala...",
+    "connectionError": "No se pudo conectar a la sala.",
+    "retryButton": "Reintentar"
   },
   "games": {
     "placeholder": {
