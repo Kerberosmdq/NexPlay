@@ -15,13 +15,6 @@
     "retryButton": "Reintentar"
   },
   "games": {
-    "placeholder": {
-      "name": "Contador Placeholder",
-      "description": "Un contador compartido simple usado para probar la sincronización en tiempo real de la plataforma.",
-      "config": {
-        "initialCount": "Conteo inicial"
-      }
-    },
     "impostor": {
       "name": "El Impostor",
       "description": "Encuentra al impostor antes de que sea demasiado tarde.",
@@ -35,7 +28,7 @@
         "needsPlayers": "{n} (necesita {min}+ jugadores)"
       }
     },
-    "whoAmI": {
+    "who-am-i": {
       "name": "¿Quién Soy?",
       "description": "Adiviná tu propia palabra secreta haciendo preguntas de sí o no.",
       "config": {

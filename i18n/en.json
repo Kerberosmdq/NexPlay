@@ -15,13 +15,6 @@
     "retryButton": "Retry"
   },
   "games": {
-    "placeholder": {
-      "name": "Placeholder Counter",
-      "description": "A simple shared counter used to prove the platform's realtime sync.",
-      "config": {
-        "initialCount": "Starting count"
-      }
-    },
     "impostor": {
       "name": "The Impostor",
       "description": "Find the impostor before it's too late.",
@@ -35,7 +28,7 @@
         "needsPlayers": "{n} (needs {min}+ players)"
       }
     },
-    "whoAmI": {
+    "who-am-i": {
       "name": "Who Am I?",
       "description": "Guess your own secret word by asking yes/no questions.",
       "config": {
