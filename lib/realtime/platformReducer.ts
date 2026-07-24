@@ -1,4 +1,5 @@
 import { impostorGameModule } from "@/games/impostor/module";
+import { whoAmIGameModule } from "@/games/who-am-i/module";
 import { placeholderGameModule } from "@/games/placeholder/module";
 import type { AnyGameModule, GameModule, Player } from "@/lib/types/room";
 
@@ -20,6 +21,7 @@ function toAnyGameModule<TConfig, TState, TAction>(
 // Registry of all available games.
 export const AVAILABLE_GAMES: Record<string, AnyGameModule> = {
   [impostorGameModule.id]: toAnyGameModule(impostorGameModule),
+  [whoAmIGameModule.id]: toAnyGameModule(whoAmIGameModule),
   [placeholderGameModule.id]: toAnyGameModule(placeholderGameModule),
 };
 

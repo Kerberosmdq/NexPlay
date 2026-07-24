@@ -4,7 +4,7 @@ Living status document tracking the current sprint, objectives, completed tasks,
 
 ## Current Sprint
 - Sprint: Sprint 6 - M3 Who Am I
-- Status: Not started
+- Status: Implemented, pending founder playtest
 
 ## Current Objective
 M1 and M2 are both complete (see `docs/ROADMAP.md`). M3 — Who Am I (see `docs/NEXPLAY_PLAN.md` §6): second game, deliberately chosen to stress-test that the platform is truly reusable — should be "just a new GameModule."
@@ -77,16 +77,45 @@ M1 and M2 are both complete (see `docs/ROADMAP.md`). M3 — Who Am I (see `docs/
       itself requesting `return=representation`, which requires a SELECT
       policy that was deliberately never added (reads happen via the
       dashboard/service role, per ADR-0003) — not a real bug.
+- [x] **Remember the room on this device** (`lib/realtime/session.ts`) — a
+      real gap the founder found while doing M1's reconnection check: if a
+      phone's connection dropped and nobody wrote down the room code, that
+      player was locked out for good. Multi-device sessions now persist to
+      `localStorage` and silently rejoin on load via the existing
+      presence-based reconnection (ADR-0001 §4). Same-device only. Founder
+      confirmed it works (killed the connection mid-match, reopened, landed
+      back in the same room). This exercises the same presence-based
+      rejoin code path M1's reconnection check cares about, but solo — it
+      doesn't confirm the specific multi-phone host-migration scenario
+      (one phone drops while others stay connected). See Known Issues.
+- [x] **TASK-0026**: Who Am I (M3) — second game, designed collaboratively
+      with the founder before writing any code (turn-order rotation +
+      anytime self-reported guessing, shared/per-turn timer, Heads-Up-style
+      single-device, dedicated word bank with emoji instead of real art).
+      Built with zero changes to the shared platform beyond one additive
+      registry line and one lookup-table entry (the documented
+      `TERMINAL_PHASE_BY_GAME` extension point) — the reuse test M3 exists
+      for passed. 15 unit tests. Playtested locally end to end
+      (single-device full round; multi-device only to the lobby/config
+      screen — no live Supabase in this dev sandbox).
 
 ## Tasks In Progress
 - [ ] None.
 
 ## Known Issues
-- M1's two-real-phones manual reconnection check was never performed; only unit-test coverage exists for host migration. Not blocking, but should be done before M2 ships to the family.
+- M1's two-real-phones reconnection check (multiple devices in a room,
+  one drops, others stay connected, host migration if needed) has still
+  never been dedicatedly tested. The "remember the room" feature confirms
+  a single device can drop and silently rejoin, which is reassuring but
+  not the same test. Not blocking, but worth doing for real confidence in
+  the resilience story before relying on it under real family chaos.
+- Who Am I's multi-device path hasn't been playtested by the founder yet
+  (only single-device was, locally). Do this before calling M3 done.
 
 ## Next Task
-- Do the two-real-phones reconnection check (M1's last open item), then
-  start M3 (Who Am I) per `docs/ROADMAP.md`.
+- Push/merge the Who Am I branch, then have the founder playtest a real
+  multi-device Who Am I match. Mark M3 ✅ in `docs/ROADMAP.md` once
+  confirmed, then start M4 (Battleship) per `docs/ROADMAP.md`.
 
 ## Last Updated
 - 2026-07-24

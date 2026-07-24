@@ -29,6 +29,7 @@ interface MultiDeviceRoomProps {
 const TERMINAL_PHASE_BY_GAME: Record<string, string> = {
   placeholder: "results",
   impostor: "resolution",
+  "who-am-i": "resolution",
 };
 
 export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDeviceRoomProps) {
