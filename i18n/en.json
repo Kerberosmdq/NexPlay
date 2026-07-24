@@ -82,6 +82,7 @@
       "impostorStoleVictory": "THE IMPOSTOR STOLE THE VICTORY!",
       "innocentVictory": "INNOCENT VICTORY!",
       "impostorSurvived": "THE IMPOSTOR SURVIVED!",
+      "survivedCelebration": "{names} fooled everyone and walks away with the points. Well played!",
       "secretWordWas": "The secret word was:",
       "scoresTitle": "Scores",
       "nextRoundButton": "Next round"

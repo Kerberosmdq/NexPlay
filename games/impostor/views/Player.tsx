@@ -322,15 +322,29 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
 
   if (state.phase === "resolution") {
     const res = state.lastRoundResult;
+    const impostorSurvived = res != null && !res.impostorsCaught;
+    const impostorNames = state.impostorIds
+      .map((id) => players.find((p) => p.id === id)?.displayName)
+      .filter(Boolean)
+      .join(", ");
+
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
-        <h2 className="text-4xl font-black text-white text-center leading-tight">
-          {res?.impostorsCaught
-            ? res.impostorGuessedWord
-              ? t("resolution.impostorStoleVictory")
-              : t("resolution.innocentVictory")
-            : t("resolution.impostorSurvived")}
-        </h2>
+        {impostorSurvived ? (
+          <div className="w-full text-center space-y-3 bg-gradient-to-b from-yellow-500/20 to-transparent border-2 border-yellow-500/40 rounded-3xl py-8 px-4 shadow-[0_0_50px_rgba(234,179,8,0.25)]">
+            <div className="text-6xl">👑</div>
+            <h2 className="text-3xl font-black text-yellow-400 leading-tight">
+              {t("resolution.impostorSurvived")}
+            </h2>
+            <p className="text-lg text-yellow-100/90 font-semibold">
+              {t("resolution.survivedCelebration", { names: impostorNames })}
+            </p>
+          </div>
+        ) : (
+          <h2 className="text-4xl font-black text-white text-center leading-tight">
+            {res?.impostorGuessedWord ? t("resolution.impostorStoleVictory") : t("resolution.innocentVictory")}
+          </h2>
+        )}
 
         <div className="text-xl text-purple-200 text-center">
           {t("resolution.secretWordWas")}

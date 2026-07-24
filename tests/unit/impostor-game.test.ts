@@ -128,8 +128,36 @@ describe("impostorReducer — normal play through all phases", () => {
     state = impostorReducer(state, { type: "IMPOSTOR_GUESS", correct: true });
 
     expect(state.lastRoundResult?.impostorGuessedWord).toBe(true);
-    expect(state.scores.p1).toBe(20);
-    expect(state.scores.p2).toBeUndefined();
+    // A comeback, but smaller than surviving undetected (30) — see
+    // resolveImpostorCount's sibling comment in the reducer for why.
+    expect(state.scores.p1).toBe(10);
+    // The innocents who voted correctly still get credit for the read,
+    // even though the impostor pulled off the comeback.
+    expect(state.scores.p2).toBe(5);
+    expect(state.scores.p3).toBe(5);
+  });
+
+  it("does not give the correct-vote bonus to an innocent who voted for the wrong person", () => {
+    let state = initialState({ impostorCount: 1 });
+    state = impostorReducer(state, {
+      type: "START_GAME",
+      playerIds: ["p1", "p2", "p3", "p4"],
+      shuffledPlayerIds: ["p1", "p2", "p3", "p4"],
+      word: WORD,
+    });
+    state = impostorReducer(state, { type: "PROCEED_TO_DISCUSSION" });
+    state = impostorReducer(state, { type: "SKIP_TO_VOTING" });
+    // p2 and p4 correctly vote for the impostor (p1); p3 votes for p4 (wrong).
+    state = impostorReducer(state, { type: "CAST_VOTE", voterId: "p2", votedId: "p1" });
+    state = impostorReducer(state, { type: "CAST_VOTE", voterId: "p3", votedId: "p4" });
+    state = impostorReducer(state, { type: "CAST_VOTE", voterId: "p4", votedId: "p1" });
+    state = impostorReducer(state, { type: "END_VOTING" });
+    expect(state.phase).toBe("guess_word");
+
+    state = impostorReducer(state, { type: "IMPOSTOR_GUESS", correct: true });
+    expect(state.scores.p2).toBe(5);
+    expect(state.scores.p4).toBe(5);
+    expect(state.scores.p3).toBeUndefined();
   });
 });
 

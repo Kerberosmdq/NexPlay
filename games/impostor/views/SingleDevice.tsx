@@ -266,15 +266,27 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
 
   if (state.phase === "resolution") {
     const res = state.lastRoundResult;
+    const impostorSurvived = res != null && !res.impostorsCaught;
+    const impostorNames = state.impostorIds
+      .map((id) => roundPlayers.find((p) => p.id === id)?.displayName)
+      .filter(Boolean)
+      .join(", ");
+
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4">
-        <h2 className="text-3xl font-black text-white text-center">
-          {res?.impostorsCaught
-            ? res.impostorGuessedWord
-              ? t("resolution.impostorStoleVictory")
-              : t("resolution.innocentVictory")
-            : t("resolution.impostorSurvived")}
-        </h2>
+        {impostorSurvived ? (
+          <div className="w-full text-center space-y-2 bg-gradient-to-b from-yellow-500/20 to-transparent border-2 border-yellow-500/40 rounded-3xl py-6 px-4">
+            <div className="text-5xl">👑</div>
+            <h2 className="text-2xl font-black text-yellow-400">{t("resolution.impostorSurvived")}</h2>
+            <p className="text-base text-yellow-100/90 font-semibold">
+              {t("resolution.survivedCelebration", { names: impostorNames })}
+            </p>
+          </div>
+        ) : (
+          <h2 className="text-3xl font-black text-white text-center">
+            {res?.impostorGuessedWord ? t("resolution.impostorStoleVictory") : t("resolution.innocentVictory")}
+          </h2>
+        )}
         <p className="text-xl text-pink-400 font-black">{state.secretWord?.word}</p>
         <div className="w-full space-y-2">
           {roundPlayers.map((p) => (

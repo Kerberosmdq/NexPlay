@@ -55,6 +55,19 @@ CI doesn't catch either.
 - **Supabase project** is live (`jamrubutlvsfvmqwhbpr`), Anonymous Sign-ins enabled.
 - **Vercel** is connected to GitHub repo and auto-deploys `main`.
 - **GitHub branch protection on `main`** is strict: required status checks must pass before merge.
+- **RLS policy drift on `game_results`/`events`:** the live database is
+  missing the INSERT policies for these two tables, even though they're
+  present in `supabase/migrations/20260723000000_init_schema.sql`. Verified
+  by hitting the REST API directly with a real anonymous-auth JWT: `users`
+  insert succeeds (201), `game_results`/`events` insert fails with Postgres
+  42501 ("new row violates row-level security policy"). Since `users`'
+  policy works with the same session, the other two policies were most
+  likely never actually applied when the migration was run by hand via the
+  SQL Editor (TASK-0015) — this is a repo-vs-live-DB drift, not a code bug.
+  Fix: re-run the two `create policy ... for insert to authenticated with
+  check (true)` statements from the migration file in the SQL Editor. Once
+  fixed, `recordEvent`/`recordGameResult` (already correctly wired and now
+  passing a real auth UUID, not a presence id) should work end to end.
 - The two-real-phones manual reconnection check (M1) has still never been
   performed.
 - Multi-device Impostor was smoke-tested in this session only up to the

@@ -172,8 +172,17 @@ export function impostorReducer(state: ImpostorState, action: ImpostorAction): I
       const pointsAwarded: Record<string, number> = {};
 
       if (action.correct) {
+        // Caught AND guessed the word: a real comeback, but a smaller one
+        // than surviving undetected (30) — being caught still cost them.
         for (const impId of state.impostorIds) {
-          pointsAwarded[impId] = 20;
+          pointsAwarded[impId] = 10;
+        }
+        // The innocents who correctly fingered the impostor did their job —
+        // the impostor's comeback shouldn't erase that entirely.
+        for (const [voterId, votedId] of Object.entries(state.votes)) {
+          if (state.impostorIds.includes(votedId) && !state.impostorIds.includes(voterId)) {
+            pointsAwarded[voterId] = 5;
+          }
         }
       } else {
         for (const pid of state.playerIds) {
