@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useRoomConnection } from "@/lib/realtime/hooks/useRoomConnection";
 import { placeholderGameModule } from "@/games/placeholder/module";
 import { HostView } from "@/games/placeholder/views/Host";
 import { PlayerView } from "@/games/placeholder/views/Player";
+import { recordEvent, recordGameResult } from "@/lib/analytics";
 
 interface MultiDeviceRoomProps {
   roomCode: string;
@@ -25,6 +27,48 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
   // to handle Host Migration if the host reconnects or drops.
   const me = players.find((p) => p.id === userId);
   const isHost = me?.isHost ?? (role === "host");
+
+  // Only the host records durable analytics, so a multi-device room emits
+  // one row per lifecycle event rather than one per connected phone.
+  const roundStartedAt = useRef<number | null>(null);
+  const hasRecordedStart = useRef(false);
+  const hasRecordedFinish = useRef(false);
+
+  useEffect(() => {
+    if (!isHost) return;
+
+    if (gameState.phase === "in-round" && !hasRecordedStart.current) {
+      hasRecordedStart.current = true;
+      roundStartedAt.current = Date.now();
+      recordEvent({
+        event_name: "game_started",
+        game_id: placeholderGameModule.id,
+        mode: "multi-device",
+        player_count: players.length,
+        user_id: userId,
+      });
+    }
+
+    if (gameState.phase === "results" && !hasRecordedFinish.current) {
+      hasRecordedFinish.current = true;
+      const durationSeconds = roundStartedAt.current
+        ? Math.round((Date.now() - roundStartedAt.current) / 1000)
+        : 0;
+      recordGameResult({
+        game_id: placeholderGameModule.id,
+        mode: "multi-device",
+        player_count: players.length,
+        duration_seconds: durationSeconds,
+      });
+      recordEvent({
+        event_name: "game_finished",
+        game_id: placeholderGameModule.id,
+        mode: "multi-device",
+        player_count: players.length,
+        user_id: userId,
+      });
+    }
+  }, [gameState.phase, isHost, players.length, userId]);
 
   if (!isConnected) {
     return (

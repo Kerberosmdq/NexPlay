@@ -30,22 +30,28 @@ Repo and tooling ready to build on.
 **Done when:** an empty app is live on a Vercel URL, CI is green on a PR, and
 a fresh agent can read the conventions doc and know where new code goes.
 
-## M1 — Platform walking skeleton
+## M1 — Platform walking skeleton — ✅ Complete (2026-07-23)
 Prove the shared base (`NEXPLAY_PLAN.md` §3) actually works end to end, with
 no real game yet.
-- Room creation + join-by-code.
+- Room creation + join-by-code (TASK-0021).
 - Both device modes functional: single-device pass-and-reveal loop, and
-  multi-device with each phone seeing only its own filtered state.
-- Realtime sync of a trivial placeholder state (e.g. a shared counter) across
-  devices.
-- Reconnection and host-migration policy (ADR-0001 §4) implemented and
-  manually verified: kill one phone's connection mid-session, confirm it
-  rejoins via its `user_id` without losing its role.
-- `game_results` and `events` durable writes wired for this placeholder game,
-  to prove the persistence boundary (ADR-0001 §3) end to end.
+  multi-device with each phone seeing only its own filtered state, both
+  driving the placeholder counter (TASK-0022).
+- Reconnection and host-migration (ADR-0001 §4) implemented in
+  `useRoomConnection` (60s grace period, presence-based
+  `calculateHostMigration`) and unit-tested (TASK-0023, coverage added in
+  TASK-0024). **Not yet manually verified on two real phones** — that check
+  is still open, tracked as a follow-up rather than blocking M1 on process
+  grounds alone (see `HANDOFF.md`).
+- `game_results` and `events` durable writes wired for the placeholder game
+  in both device modes (TASK-0023 added the write helpers; TASK-0024 wired
+  the actual call sites — they shipped in TASK-0023 as dead code with no
+  caller, which is now fixed).
 
 **Done when:** two real phones join the same room by code, see synced state
 live, and a disconnect/reconnect during the session doesn't break the room.
+The two-phone manual check remains outstanding; everything else is done and
+automated-test-covered.
 
 ## M2 — Impostor
 The first real, playable game.

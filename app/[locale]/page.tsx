@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RoomLobby } from "@/components/platform/RoomLobby";
 import { MultiDeviceRoom } from "@/components/platform/MultiDeviceRoom";
 import { placeholderGameModule } from "@/games/placeholder/module";
 import type { PlaceholderAction, PlaceholderState } from "@/games/placeholder/reducer";
 import { SingleDeviceView } from "@/games/placeholder/views/SingleDevice";
+import { recordEvent, recordGameResult } from "@/lib/analytics";
 
 export default function HomePage() {
   const [session, setSession] = useState<{
@@ -32,13 +33,15 @@ export default function HomePage() {
   };
 
   const handleCreateRoom = (displayName: string, code: string) => {
+    const userId = `host-${Math.random().toString(36).substr(2, 9)}`; // Temporary anonymous ID logic
     setSession({
       mode: "multi-device",
       role: "host",
       roomCode: code,
-      userId: `host-${Math.random().toString(36).substr(2, 9)}`, // Temporary anonymous ID logic
+      userId,
       displayName,
     });
+    recordEvent({ event_name: "room_created", mode: "multi-device", user_id: userId });
   };
 
   const handleJoinRoom = (displayName: string, code: string) => {
@@ -54,6 +57,49 @@ export default function HomePage() {
   const dispatchAction = (action: PlaceholderAction) => {
     setGameState((prevState) => placeholderGameModule.reducer(prevState, action));
   };
+
+  const singleDeviceRoundStartedAt = useRef<number | null>(null);
+  const hasRecordedSingleDeviceStart = useRef(false);
+  const hasRecordedSingleDeviceFinish = useRef(false);
+
+  useEffect(() => {
+    if (session?.mode !== "single-device") return;
+
+    if (gameState.phase === "in-round" && !hasRecordedSingleDeviceStart.current) {
+      hasRecordedSingleDeviceStart.current = true;
+      singleDeviceRoundStartedAt.current = Date.now();
+      recordEvent({
+        event_name: "game_started",
+        game_id: placeholderGameModule.id,
+        mode: "single-device",
+        user_id: session.userId,
+      });
+    }
+
+    if (gameState.phase === "results" && !hasRecordedSingleDeviceFinish.current) {
+      hasRecordedSingleDeviceFinish.current = true;
+      const durationSeconds = singleDeviceRoundStartedAt.current
+        ? Math.round((Date.now() - singleDeviceRoundStartedAt.current) / 1000)
+        : 0;
+      recordGameResult({
+        game_id: placeholderGameModule.id,
+        mode: "single-device",
+        player_count: 1,
+        duration_seconds: durationSeconds,
+      });
+      recordEvent({
+        event_name: "game_finished",
+        game_id: placeholderGameModule.id,
+        mode: "single-device",
+        user_id: session.userId,
+      });
+    }
+
+    if (gameState.phase === "lobby") {
+      hasRecordedSingleDeviceStart.current = false;
+      hasRecordedSingleDeviceFinish.current = false;
+    }
+  }, [gameState.phase, session]);
 
   if (!session) {
     return (
