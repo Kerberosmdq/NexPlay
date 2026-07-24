@@ -118,10 +118,7 @@
       "exitButton": "Salir"
     },
     "playing": {
-      "othersTitle": "Los demás",
-      "yourTurn": "¡Es tu turno! Preguntá algo sobre vos.",
-      "waitingForTurn": "Es el turno de {name}...",
-      "doneAskingButton": "Ya pregunté, siguiente",
+      "showEveryoneElse": "Mostrale esto a todos menos a vos — no mires la pantalla",
       "guessButton": "Creo que sé quién soy",
       "confirmPrompt": "Decilo en voz alta. ¿Era correcto?",
       "correctButton": "¡Sí, acerté!",

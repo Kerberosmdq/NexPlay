@@ -118,10 +118,7 @@
       "exitButton": "Exit"
     },
     "playing": {
-      "othersTitle": "Everyone else",
-      "yourTurn": "It's your turn! Ask something about yourself.",
-      "waitingForTurn": "It's {name}'s turn...",
-      "doneAskingButton": "Asked mine, next",
+      "showEveryoneElse": "Show this to everyone but you — don't look at the screen",
       "guessButton": "I think I know who I am",
       "confirmPrompt": "Say it out loud. Was it correct?",
       "correctButton": "Yes, got it!",

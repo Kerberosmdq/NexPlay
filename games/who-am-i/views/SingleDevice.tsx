@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import type { WhoAmIState, WhoAmIAction } from "../reducer";
-import { pickAssignmentsAndTurnOrder } from "../pickRound";
+import { pickAssignments } from "../pickRound";
 
 export interface WhoAmISingleDeviceProps {
   state: WhoAmIState;
@@ -128,14 +128,13 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
           <button
             onClick={() => {
               const players = makeLocalPlayers(validNames);
-              const { assignments, turnOrder } = pickAssignmentsAndTurnOrder(players, locale, state.usedWordIds);
+              const { assignments } = pickAssignments(players, locale, state.usedWordIds);
               setNames(validNames);
               setActiveIndex(0);
               dispatch({
                 type: "START_GAME",
                 playerIds: players.map((p) => p.id),
                 assignments,
-                turnOrder,
                 now: Date.now(),
               });
             }}

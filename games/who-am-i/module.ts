@@ -43,8 +43,6 @@ export const whoAmIGameModule: GameModule<WhoAmIConfig, WhoAmIState, WhoAmIActio
     playerIds: players.map((p) => p.id),
     usedWordIds: [],
     wordAssignments: {},
-    turnOrder: [],
-    turnIndex: 0,
     guessedIds: [],
     roundEndsAt: null,
     scores: {},

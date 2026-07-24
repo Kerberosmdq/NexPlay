@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import type { WhoAmIState, WhoAmIAction } from "../reducer";
-import { pickAssignmentsAndTurnOrder } from "../pickRound";
+import { pickAssignments } from "../pickRound";
 
 interface PlayerProps {
   state: WhoAmIState;
@@ -85,12 +85,11 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             ) : (
               <button
                 onClick={() => {
-                  const { assignments, turnOrder } = pickAssignmentsAndTurnOrder(players, locale, state.usedWordIds);
+                  const { assignments } = pickAssignments(players, locale, state.usedWordIds);
                   dispatch({
                     type: "START_GAME",
                     playerIds: players.map((p) => p.id),
                     assignments,
-                    turnOrder,
                     now: Date.now(),
                   });
                 }}
@@ -113,57 +112,31 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
   }
 
   if (state.phase === "playing") {
-    const currentAsker = players.find((p) => p.id === state.turnOrder[state.turnIndex]);
-    const isMyTurn = currentAsker?.id === playerId;
+    const myWord = state.wordAssignments[playerId];
 
     return (
-      <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
-        <div className="text-3xl font-black text-white">
-          {timeLeft === null ? "∞" : formatTime(timeLeft)}
-        </div>
-
-        <div className="w-full bg-black/20 rounded-2xl border border-white/10 p-4 space-y-2">
-          <p className="text-[10px] font-black uppercase tracking-widest text-purple-300">
-            {t("playing.othersTitle")}
-          </p>
-          {players
-            .filter((p) => p.id !== playerId)
-            .map((p) => {
-              const word = state.wordAssignments[p.id];
-              return (
-                <div key={p.id} className="flex items-center justify-between bg-white/5 px-3 py-2 rounded-xl">
-                  <span className="font-bold text-white">{p.displayName}</span>
-                  <span className="text-lg">
-                    {word?.emoji} {word?.word}
-                  </span>
-                </div>
-              );
-            })}
-        </div>
+      <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4 text-center">
+        <div className="text-3xl font-black text-white">{timeLeft === null ? "∞" : formatTime(timeLeft)}</div>
 
         {hasGuessed ? (
-          <div className="bg-green-900/30 border border-green-500/30 p-6 rounded-2xl text-center w-full space-y-2">
-            <div className="text-4xl">🎉</div>
-            <p className="text-green-300 font-bold">{t("playing.youGuessed")}</p>
-            <p className="text-2xl font-black text-white">
-              {state.wordAssignments[playerId]?.emoji} {state.wordAssignments[playerId]?.word}
+          <div className="bg-green-900/30 border border-green-500/30 p-8 rounded-3xl text-center w-full space-y-3">
+            <div className="text-5xl">🎉</div>
+            <p className="text-green-300 font-bold text-lg">{t("playing.youGuessed")}</p>
+            <p className="text-3xl font-black text-white">
+              {myWord?.emoji} {myWord?.word}
             </p>
             <p className="text-sm text-green-200/70">{t("playing.keepHelping")}</p>
           </div>
         ) : (
           <>
-            <p className="text-purple-200 text-center">
-              {isMyTurn ? t("playing.yourTurn") : t("playing.waitingForTurn", { name: currentAsker?.displayName ?? "" })}
+            <p className="text-purple-300 text-xs font-black uppercase tracking-widest">
+              {t("playing.showEveryoneElse")}
             </p>
 
-            {isMyTurn && (
-              <button
-                onClick={() => dispatch({ type: "NEXT_TURN" })}
-                className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl"
-              >
-                {t("playing.doneAskingButton")}
-              </button>
-            )}
+            <div className="w-full bg-[#13072b] border-4 border-[#3b177d] rounded-3xl p-10 space-y-4">
+              <div className="text-8xl">{myWord?.emoji}</div>
+              <p className="text-4xl font-black text-white">{myWord?.word}</p>
+            </div>
 
             {!confirmingGuess ? (
               <button
@@ -198,10 +171,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         )}
 
         {isHost && (
-          <button
-            onClick={() => dispatch({ type: "END_ROUND" })}
-            className="text-xs text-purple-300 underline"
-          >
+          <button onClick={() => dispatch({ type: "END_ROUND" })} className="text-xs text-purple-300 underline">
             {t("playing.endRoundButton")}
           </button>
         )}
