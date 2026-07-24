@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import type { ImpostorState, ImpostorAction } from "../reducer";
@@ -32,31 +32,12 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
   const tConfig = useTranslations("games.impostor.config");
   const locale = useLocale();
   const [showRole, setShowRole] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(0);
 
   const me = players.find((p) => p.id === rawPlayerId) ?? players.find((p) => p.isHost);
   const playerId = rawPlayerId ?? me?.id ?? "";
   const isHost = me?.isHost || false;
   const isImpostor = state.impostorIds.includes(playerId);
   const secretWord = state.secretWord;
-
-  useEffect(() => {
-    if (state.phase === "discussion" && state.discussionTimeSeconds > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTimeLeft(state.discussionTimeSeconds);
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            if (isHost) dispatch({ type: "SKIP_TO_VOTING" });
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [state.phase, state.discussionTimeSeconds, dispatch, isHost]);
 
   if (state.phase === "config") {
     if (isHost) {
@@ -80,7 +61,6 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
                   dispatch({
                     type: "SET_CONFIG",
                     impostorCount: parseInt(e.target.value, 10),
-                    discussionTimeSeconds: state.discussionTimeSeconds,
                     votingTimeSeconds: state.votingTimeSeconds,
                     hintDifficulty: state.hintDifficulty,
                   })
@@ -103,7 +83,6 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
                   dispatch({
                     type: "SET_CONFIG",
                     impostorCount: state.impostorCount,
-                    discussionTimeSeconds: state.discussionTimeSeconds,
                     votingTimeSeconds: state.votingTimeSeconds,
                     hintDifficulty: e.target.value as ImpostorState["hintDifficulty"],
                   })
@@ -112,28 +91,6 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
                 <option value="none">{tConfig("hintNone")}</option>
                 <option value="hard">{tConfig("hintHard")}</option>
                 <option value="easy">{tConfig("hintEasy")}</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col space-y-2">
-              <label className="text-purple-200 font-bold">{tConfig("discussionTimeSeconds")}</label>
-              <select
-                className="bg-[#13072b] border-2 border-[#3b177d] text-white p-4 rounded-xl font-semibold outline-none focus:border-pink-500 transition-colors"
-                value={state.discussionTimeSeconds}
-                onChange={(e) =>
-                  dispatch({
-                    type: "SET_CONFIG",
-                    impostorCount: state.impostorCount,
-                    discussionTimeSeconds: parseInt(e.target.value, 10),
-                    votingTimeSeconds: state.votingTimeSeconds,
-                    hintDifficulty: state.hintDifficulty,
-                  })
-                }
-              >
-                <option value={60}>{tConfig("time1min")}</option>
-                <option value={120}>{tConfig("time2min")}</option>
-                <option value={180}>{tConfig("time3min")}</option>
-                <option value={0}>{tConfig("timeUnlimited")}</option>
               </select>
             </div>
 
@@ -231,17 +188,14 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
   }
 
   if (state.phase === "discussion") {
+    const everyoneSpoke = state.turnIndex >= state.turnOrder.length;
+    const currentSpeakerId = everyoneSpoke ? null : state.turnOrder[state.turnIndex];
+    const currentSpeaker = players.find((p) => p.id === currentSpeakerId);
+    const isMyTurn = currentSpeakerId === playerId;
+
     return (
       <div className="flex flex-col items-center justify-center space-y-6 text-center mt-10 px-4">
         <h2 className="text-3xl font-bold text-purple-300">{t("discussion.title")}</h2>
-
-        {state.discussionTimeSeconds > 0 ? (
-          <div className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-pink-200 drop-shadow-[0_0_20px_rgba(236,72,153,0.5)]">
-            {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
-          </div>
-        ) : (
-          <div className="text-6xl font-black text-white/50 py-10">∞</div>
-        )}
 
         <div className="bg-black/30 p-6 rounded-2xl border border-white/10 max-w-sm w-full">
           <div className="text-4xl mb-4">{isImpostor ? "🕵️" : "💬"}</div>
@@ -249,6 +203,24 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             {isImpostor ? t("discussion.impostorTip") : t("discussion.innocentTip")}
           </p>
         </div>
+
+        {everyoneSpoke ? (
+          <p className="text-purple-200 font-bold">{t("discussion.everyoneSpoke")}</p>
+        ) : isMyTurn ? (
+          <div className="w-full max-w-sm space-y-4">
+            <p className="text-2xl font-black text-yellow-300 animate-pulse">{t("discussion.yourTurn")}</p>
+            <button
+              onClick={() => dispatch({ type: "NEXT_TURN" })}
+              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xl py-5 rounded-2xl"
+            >
+              {t("discussion.saidMyWord")}
+            </button>
+          </div>
+        ) : (
+          <p className="text-purple-200">
+            {t("discussion.waitingForTurn", { name: currentSpeaker?.displayName ?? "" })}
+          </p>
+        )}
 
         {isHost && (
           <button

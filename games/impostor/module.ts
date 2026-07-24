@@ -8,14 +8,12 @@ import type { ImpostorState, ImpostorAction } from "./reducer";
 
 export interface ImpostorConfig {
   impostorCount: number;
-  discussionTimeSeconds: number;
   votingTimeSeconds: number;
   hintDifficulty: HintDifficulty;
 }
 
 const DEFAULT_CONFIG: ImpostorConfig = {
   impostorCount: 1,
-  discussionTimeSeconds: 60,
   votingTimeSeconds: 15,
   hintDifficulty: "easy",
 };
@@ -35,17 +33,6 @@ export const impostorGameModule: GameModule<ImpostorConfig, ImpostorState, Impos
       min: 1,
       max: 3,
       default: DEFAULT_CONFIG.impostorCount,
-    },
-    discussionTimeSeconds: {
-      type: "select",
-      labelKey: "games.impostor.config.discussionTimeSeconds",
-      options: [
-        { value: "60", labelKey: "games.impostor.config.time1min" },
-        { value: "120", labelKey: "games.impostor.config.time2min" },
-        { value: "180", labelKey: "games.impostor.config.time3min" },
-        { value: "0", labelKey: "games.impostor.config.timeUnlimited" },
-      ],
-      default: String(DEFAULT_CONFIG.discussionTimeSeconds),
     },
     votingTimeSeconds: {
       type: "number",
@@ -70,13 +57,14 @@ export const impostorGameModule: GameModule<ImpostorConfig, ImpostorState, Impos
   setup: (players: Player[], config: ImpostorConfig): ImpostorState => ({
     phase: "config",
     impostorCount: config.impostorCount,
-    discussionTimeSeconds: config.discussionTimeSeconds,
     votingTimeSeconds: config.votingTimeSeconds,
     hintDifficulty: config.hintDifficulty,
     secretWord: null,
     impostorIds: [],
     playerIds: players.map((p) => p.id),
     aliveIds: [],
+    turnOrder: [],
+    turnIndex: 0,
     votes: {},
     lastElimination: null,
     scores: {},

@@ -25,11 +25,6 @@
       "description": "Encuentra al impostor antes de que sea demasiado tarde.",
       "config": {
         "impostorCount": "Cantidad de impostores",
-        "discussionTimeSeconds": "Tiempo de discusión",
-        "time1min": "1 minuto",
-        "time2min": "2 minutos",
-        "time3min": "3 minutos",
-        "timeUnlimited": "Sin límite de tiempo",
         "votingTimeSeconds": "Tiempo de votación (segundos)",
         "hintDifficulty": "Dificultad de la pista (para el impostor)",
         "hintNone": "Sin pista (imposible)",
@@ -62,7 +57,11 @@
       "title": "Tiempo de Hablar",
       "impostorTip": "¡Finge que sabes la palabra! Que no te descubran.",
       "innocentTip": "Di una palabra o frase relacionada para probar tu inocencia.",
-      "goToVoteButton": "¡Ir a votación ahora!"
+      "yourTurn": "¡Es tu turno! Decí tu palabra en voz alta.",
+      "saidMyWord": "Ya dije mi palabra",
+      "waitingForTurn": "Es el turno de {name}...",
+      "everyoneSpoke": "Todos hablaron. Cuando quieran, pasen a votar.",
+      "goToVoteButton": "Ir a votación"
     },
     "voting": {
       "title": "¿Quién es el impostor?",
@@ -77,7 +76,7 @@
       "wasImpostor": "{name} era... ¡el impostor! 🎉",
       "wasInnocent": "{name} era inocente. 😬",
       "gameContinues": "El juego continúa...",
-      "continueButton": "Siguiente ronda de votación"
+      "continueButton": "Continuar"
     },
     "guessWord": {
       "title": "¡ATRAPARON AL IMPOSTOR!",

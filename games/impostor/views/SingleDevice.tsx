@@ -101,7 +101,6 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
               dispatch({
                 type: "SET_CONFIG",
                 impostorCount: parseInt(e.target.value, 10),
-                discussionTimeSeconds: state.discussionTimeSeconds,
                 votingTimeSeconds: state.votingTimeSeconds,
                 hintDifficulty: state.hintDifficulty,
               })
@@ -209,10 +208,34 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
   }
 
   if (state.phase === "discussion") {
+    const everyoneSpoke = state.turnIndex >= state.turnOrder.length;
+    const currentSpeakerId = everyoneSpoke ? null : state.turnOrder[state.turnIndex];
+    const currentSpeaker = roundPlayers.find((p) => p.id === currentSpeakerId);
+    const isImpostorSpeaking = currentSpeakerId ? state.impostorIds.includes(currentSpeakerId) : false;
+
     return (
       <div className="flex flex-col items-center justify-center space-y-6 text-center mt-10 px-4">
         <h2 className="text-3xl font-bold text-purple-300">{t("discussion.title")}</h2>
-        <p className="text-lg text-white/70 max-w-sm">{t("discussion.innocentTip")}</p>
+
+        {everyoneSpoke ? (
+          <p className="text-lg text-white/70 max-w-sm">{t("discussion.everyoneSpoke")}</p>
+        ) : (
+          <>
+            <p className="text-purple-300 font-bold uppercase tracking-widest text-sm">
+              {currentSpeaker?.displayName}
+            </p>
+            <p className="text-lg text-white/70 max-w-sm">
+              {isImpostorSpeaking ? t("discussion.impostorTip") : t("discussion.innocentTip")}
+            </p>
+            <button
+              onClick={() => dispatch({ type: "NEXT_TURN" })}
+              className="w-full max-w-sm bg-white text-purple-900 font-black text-xl py-4 rounded-full"
+            >
+              {t("discussion.saidMyWord")}
+            </button>
+          </>
+        )}
+
         <button
           onClick={() => {
             setVoterIndex(0);

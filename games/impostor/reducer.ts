@@ -14,7 +14,6 @@ export interface ImpostorState {
 
   // Config
   impostorCount: number;
-  discussionTimeSeconds: number; // 0 = unlimited
   votingTimeSeconds: number;
   hintDifficulty: HintDifficulty;
 
@@ -23,6 +22,12 @@ export interface ImpostorState {
   impostorIds: string[]; // fixed for the whole match, set at START_GAME
   playerIds: string[]; // fixed for the whole match, set at START_GAME
   aliveIds: string[]; // shrinks by one (or stays the same, on a tie) each round
+
+  // Discussion — each alive player takes a turn saying one word/clue aloud,
+  // in order, before the group can move to voting. Reset every time a new
+  // discussion round starts (from role_reveal, or after elimination_result).
+  turnOrder: string[];
+  turnIndex: number; // index into turnOrder of whose turn it currently is
 
   // Voting — reset at the start of every voting round
   votes: Record<string, string>; // voterId -> votedId
@@ -45,7 +50,6 @@ export type ImpostorAction =
   | {
       type: "SET_CONFIG";
       impostorCount: number;
-      discussionTimeSeconds: number;
       votingTimeSeconds: number;
       hintDifficulty: HintDifficulty;
     }
@@ -54,6 +58,7 @@ export type ImpostorAction =
   // reducer itself stays pure and unit-testable per CONVENTIONS.md.
   | { type: "START_GAME"; playerIds: string[]; shuffledPlayerIds: string[]; word: ImpostorWord }
   | { type: "PROCEED_TO_DISCUSSION" }
+  | { type: "NEXT_TURN" } // current player said their word; advance to the next one
   | { type: "SKIP_TO_VOTING" }
   | { type: "CAST_VOTE"; voterId: string; votedId: string }
   | { type: "END_VOTING" } // Tallies the round's votes: eliminates someone, ties, or ends the match
@@ -104,7 +109,6 @@ export function impostorReducer(state: ImpostorState, action: ImpostorAction): I
       return {
         ...state,
         impostorCount: action.impostorCount,
-        discussionTimeSeconds: action.discussionTimeSeconds,
         votingTimeSeconds: action.votingTimeSeconds,
         hintDifficulty: action.hintDifficulty,
       };
@@ -122,6 +126,8 @@ export function impostorReducer(state: ImpostorState, action: ImpostorAction): I
         impostorIds,
         playerIds: action.playerIds,
         aliveIds: action.playerIds,
+        turnOrder: [],
+        turnIndex: 0,
         votes: {},
         lastElimination: null,
         lastRoundResult: null,
@@ -130,7 +136,15 @@ export function impostorReducer(state: ImpostorState, action: ImpostorAction): I
 
     case "PROCEED_TO_DISCUSSION":
       if (state.phase !== "role_reveal" && state.phase !== "elimination_result") return state;
-      return { ...state, phase: "discussion" };
+      // A fresh speaking order for this round — everyone still alive gets a
+      // turn to say one word/clue before the group can vote.
+      return { ...state, phase: "discussion", turnOrder: state.aliveIds, turnIndex: 0 };
+
+    case "NEXT_TURN": {
+      if (state.phase !== "discussion") return state;
+      if (state.turnIndex >= state.turnOrder.length) return state; // everyone already spoke
+      return { ...state, turnIndex: state.turnIndex + 1 };
+    }
 
     case "SKIP_TO_VOTING":
       if (state.phase !== "discussion") return state;
@@ -265,6 +279,8 @@ export function impostorReducer(state: ImpostorState, action: ImpostorAction): I
         secretWord: null,
         impostorIds: [],
         aliveIds: [],
+        turnOrder: [],
+        turnIndex: 0,
         votes: {},
         lastElimination: null,
         lastRoundResult: null,

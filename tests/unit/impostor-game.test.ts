@@ -13,13 +13,14 @@ function initialState(overrides: Partial<ImpostorState> = {}): ImpostorState {
   return {
     phase: "config",
     impostorCount: 1,
-    discussionTimeSeconds: 60,
     votingTimeSeconds: 15,
     hintDifficulty: "easy",
     secretWord: null,
     impostorIds: [],
     playerIds: [],
     aliveIds: [],
+    turnOrder: [],
+    turnIndex: 0,
     votes: {},
     lastElimination: null,
     scores: {},
@@ -66,12 +67,36 @@ describe("impostorReducer — single round (3 players, 1 impostor)", () => {
     const next = impostorReducer(state, {
       type: "SET_CONFIG",
       impostorCount: 2,
-      discussionTimeSeconds: 120,
       votingTimeSeconds: 30,
       hintDifficulty: "hard",
     });
     expect(next.impostorCount).toBe(2);
     expect(next.hintDifficulty).toBe("hard");
+  });
+
+  it("PROCEED_TO_DISCUSSION seeds a fresh speaking order from aliveIds", () => {
+    let state = startGame(initialState({ impostorCount: 1 }), ["p1", "p2", "p3"]);
+    state = impostorReducer(state, { type: "PROCEED_TO_DISCUSSION" });
+    expect(state.turnOrder).toEqual(["p1", "p2", "p3"]);
+    expect(state.turnIndex).toBe(0);
+  });
+
+  it("NEXT_TURN advances through the speaking order and stops at the end", () => {
+    let state = startGame(initialState({ impostorCount: 1 }), ["p1", "p2", "p3"]);
+    state = impostorReducer(state, { type: "PROCEED_TO_DISCUSSION" });
+    state = impostorReducer(state, { type: "NEXT_TURN" });
+    expect(state.turnIndex).toBe(1);
+    state = impostorReducer(state, { type: "NEXT_TURN" });
+    state = impostorReducer(state, { type: "NEXT_TURN" });
+    expect(state.turnIndex).toBe(3); // everyone has spoken
+    const afterEnd = impostorReducer(state, { type: "NEXT_TURN" });
+    expect(afterEnd).toBe(state); // ignored once nobody's left to speak
+  });
+
+  it("NEXT_TURN is ignored outside the discussion phase", () => {
+    const state = initialState({ phase: "voting", turnOrder: ["p1"], turnIndex: 0 });
+    const next = impostorReducer(state, { type: "NEXT_TURN" });
+    expect(next).toBe(state);
   });
 
   it("START_GAME picks impostors from shuffledPlayerIds and seeds aliveIds", () => {
