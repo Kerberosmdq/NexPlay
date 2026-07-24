@@ -11,6 +11,7 @@ import {
   type PlatformAction,
 } from "@/lib/realtime/platformReducer";
 import { recordEvent, recordGameResult } from "@/lib/analytics";
+import { saveRoomSession, loadRoomSession, clearRoomSession, type RoomSession } from "@/lib/realtime/session";
 
 // Mirrors MultiDeviceRoom's TERMINAL_PHASE_BY_GAME — see the comment there
 // for why this per-game lookup exists instead of a generic contract field.
@@ -20,13 +21,22 @@ const TERMINAL_PHASE_BY_GAME: Record<string, string> = {
 };
 
 export default function HomePage() {
-  const [session, setSession] = useState<{
-    mode: "single-device" | "multi-device";
-    role: "host" | "player";
-    roomCode: string;
-    userId: string;
-    displayName: string;
-  } | null>(null);
+  const [session, setSession] = useState<RoomSession | null>(null);
+
+  // On first load, silently rejoin whatever multi-device room this device
+  // was last in — the fix for "the connection dropped and nobody wrote
+  // down the room code." Single-device sessions aren't remembered; there's
+  // no server-side room to rejoin and the local game state isn't persisted.
+  useEffect(() => {
+    // Deliberately deferred to an effect (not a lazy useState initializer)
+    // so the server-rendered/first-hydration pass always renders the
+    // lobby, then the client swaps in the remembered session right after —
+    // reading localStorage during the initial render would produce a
+    // client/server markup mismatch.
+    const remembered = loadRoomSession();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (remembered) setSession(remembered);
+  }, []);
 
   const [platformState, setPlatformState] = useState(createInitialPlatformState());
 
@@ -43,24 +53,33 @@ export default function HomePage() {
 
   const handleCreateRoom = (displayName: string, code: string) => {
     const userId = `host-${Math.random().toString(36).substr(2, 9)}`; // Temporary anonymous ID logic
-    setSession({
+    const newSession: RoomSession = {
       mode: "multi-device",
       role: "host",
       roomCode: code,
       userId,
       displayName,
-    });
+    };
+    setSession(newSession);
+    saveRoomSession(newSession);
     recordEvent({ event_name: "room_created", mode: "multi-device" });
   };
 
   const handleJoinRoom = (displayName: string, code: string) => {
-    setSession({
+    const newSession: RoomSession = {
       mode: "multi-device",
       role: "player",
       roomCode: code,
       userId: `player-${Math.random().toString(36).substr(2, 9)}`, // Temporary anonymous ID logic
       displayName,
-    });
+    };
+    setSession(newSession);
+    saveRoomSession(newSession);
+  };
+
+  const handleExit = () => {
+    setSession(null);
+    clearRoomSession();
   };
 
   const dispatchAction = (action: PlatformAction) => {
@@ -134,7 +153,7 @@ export default function HomePage() {
           {session.displayName}
         </span>
         <button
-          onClick={() => setSession(null)}
+          onClick={handleExit}
           className="text-xs text-red-400 hover:text-red-300 font-semibold"
         >
           ✕
@@ -145,7 +164,7 @@ export default function HomePage() {
         <SingleDeviceGamePicker
           platformState={platformState}
           dispatch={dispatchAction}
-          onExit={() => setSession(null)}
+          onExit={handleExit}
         />
       )}
 
