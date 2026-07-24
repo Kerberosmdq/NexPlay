@@ -72,7 +72,6 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
         game_id: activeGameId,
         mode: "multi-device",
         player_count: players.length,
-        user_id: userId,
       });
     }
 
@@ -95,10 +94,9 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
         game_id: activeGameId,
         mode: "multi-device",
         player_count: players.length,
-        user_id: userId,
       });
     }
-  }, [gameState, isHost, players.length, userId]);
+  }, [gameState, isHost, players.length]);
 
   if (!isConnected) {
     return (

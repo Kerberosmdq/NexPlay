@@ -50,7 +50,7 @@ export default function HomePage() {
       userId,
       displayName,
     });
-    recordEvent({ event_name: "room_created", mode: "multi-device", user_id: userId });
+    recordEvent({ event_name: "room_created", mode: "multi-device" });
   };
 
   const handleJoinRoom = (displayName: string, code: string) => {
@@ -90,7 +90,6 @@ export default function HomePage() {
         event_name: "game_started",
         game_id: activeGameId,
         mode: "single-device",
-        user_id: session.userId,
       });
     }
 
@@ -112,7 +111,6 @@ export default function HomePage() {
         event_name: "game_finished",
         game_id: activeGameId,
         mode: "single-device",
-        user_id: session.userId,
       });
     }
   }, [platformState, session]);
