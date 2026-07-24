@@ -119,18 +119,17 @@
     },
     "playing": {
       "showEveryoneElse": "Show this to everyone but you — don't look at the screen",
-      "guessButton": "I think I know who I am",
-      "confirmPrompt": "Say it out loud. Was it correct?",
-      "correctButton": "Yes, got it!",
-      "wrongButton": "No, keep playing",
+      "correctButton": "Got it",
+      "wrongButton": "Didn't get it",
       "youGuessed": "You got it!",
+      "youLost": "You didn't get it. No points this round.",
       "keepHelping": "You can keep helping answer everyone else's questions.",
       "endRoundButton": "End round"
     },
     "singleDevice": {
       "holdFor": "Show everyone but {name}",
       "guessedButton": "Guessed it!",
-      "passButton": "Pass"
+      "failedButton": "Didn't get it"
     },
     "resolution": {
       "title": "Round over!",

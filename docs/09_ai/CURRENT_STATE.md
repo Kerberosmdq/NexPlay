@@ -123,6 +123,19 @@ M1 and M2 are both complete (see `docs/ROADMAP.md`). M3 — Who Am I (see `docs/
       self-regulate who asks next verbally, same as they already do for
       single-device. 60 tests (turn-rotation tests removed, since that
       mechanic no longer exists).
+- [x] **Who Am I: direct guess buttons + wrong guess ends your round**:
+      the founder pointed out the "Creo que sé quién soy" → confirm-dialog
+      flow was backwards — you say the word out loud *before* touching the
+      screen, so there's nothing left to confirm. Replaced it with two
+      always-visible buttons, "Acerté"/"No acerté", firing `GUESS_CORRECT`/
+      new `GUESS_WRONG` directly. Also changed the rule itself: a wrong
+      guess now permanently ends that player's round (added `lostIds` to
+      `WhoAmIState`, mirroring `guessedIds` but with no points and no
+      retry) — previously a wrong guess had zero consequence and could be
+      retried indefinitely. Single-device's "Pasar" button was renamed
+      "No acertó" and now dispatches `GUESS_WRONG` too, for the same rule
+      in both modes. 65 tests. Playtested locally end to end
+      (single-device, 3 players, mixed correct/wrong outcomes).
 
 ## Tasks In Progress
 - [ ] None.

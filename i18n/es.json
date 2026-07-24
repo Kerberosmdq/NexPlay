@@ -119,18 +119,17 @@
     },
     "playing": {
       "showEveryoneElse": "Mostrale esto a todos menos a vos — no mires la pantalla",
-      "guessButton": "Creo que sé quién soy",
-      "confirmPrompt": "Decilo en voz alta. ¿Era correcto?",
-      "correctButton": "¡Sí, acerté!",
-      "wrongButton": "No, seguir jugando",
+      "correctButton": "Acerté",
+      "wrongButton": "No acerté",
       "youGuessed": "¡Acertaste!",
+      "youLost": "No acertaste. Ya no sumás puntos esta ronda.",
       "keepHelping": "Podés seguir ayudando a contestar preguntas de los demás.",
       "endRoundButton": "Terminar ronda"
     },
     "singleDevice": {
       "holdFor": "Mostrale esto a todos menos a {name}",
       "guessedButton": "¡Adivinó!",
-      "passButton": "Pasar"
+      "failedButton": "No acertó"
     },
     "resolution": {
       "title": "¡Fin de la ronda!",
