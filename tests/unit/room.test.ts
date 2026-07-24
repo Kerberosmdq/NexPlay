@@ -79,4 +79,39 @@ describe("Room State & Host Migration", () => {
     const result = calculateHostMigration(players);
     expect(result.every((p) => !p.isHost)).toBe(true);
   });
+
+  it("returns an empty array unchanged", () => {
+    expect(calculateHostMigration([])).toEqual([]);
+  });
+
+  it("elects the oldest online player as host when no player is flagged host yet", () => {
+    const players: Player[] = [
+      { id: "p1", displayName: "Alice", isHost: false, joinedAt: 3000, isOnline: true },
+      { id: "p2", displayName: "Bob", isHost: false, joinedAt: 1000, isOnline: true },
+    ];
+
+    const result = calculateHostMigration(players);
+    expect(result.find((p) => p.id === "p2")?.isHost).toBe(true);
+    expect(result.find((p) => p.id === "p1")?.isHost).toBe(false);
+  });
+
+  it("rejoining player regains host if they were the original host and are back online", () => {
+    // Simulates the reconnection flow: host drops, migrates, then host returns.
+    const disconnected: Player[] = [
+      { id: "host-1", displayName: "Alice (Host)", isHost: true, joinedAt: 1000, isOnline: false },
+      { id: "p2", displayName: "Bob", isHost: false, joinedAt: 2000, isOnline: true },
+    ];
+    const afterMigration = calculateHostMigration(disconnected);
+    expect(afterMigration.find((p) => p.id === "p2")?.isHost).toBe(true);
+
+    const reconnected = afterMigration.map((p) =>
+      p.id === "host-1" ? { ...p, isOnline: true } : p
+    );
+    const afterReconnect = calculateHostMigration(reconnected);
+    // Per ADR-0001 §4, host is a role attached to the room, not a permanent
+    // property of a device — the previous host does NOT automatically regain
+    // it just by reconnecting; the migrated host stays host.
+    expect(afterReconnect.find((p) => p.id === "p2")?.isHost).toBe(true);
+    expect(afterReconnect.find((p) => p.id === "host-1")?.isHost).toBe(false);
+  });
 });
