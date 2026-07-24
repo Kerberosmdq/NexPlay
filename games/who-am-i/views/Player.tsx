@@ -24,7 +24,7 @@ function formatTime(totalSeconds: number): string {
 
 export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: PlayerProps) {
   const t = useTranslations("WhoAmI");
-  const tConfig = useTranslations("games.whoAmI.config");
+  const tConfig = useTranslations("games.who-am-i.config");
   const locale = useLocale();
 
   const me = players.find((p) => p.id === rawPlayerId) ?? players.find((p) => p.isHost);

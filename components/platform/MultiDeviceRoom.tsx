@@ -27,7 +27,6 @@ interface MultiDeviceRoomProps {
 // event fires. Follow-up: consider adding this to GameModule (ADR-0002) if a
 // third game needs it too.
 const TERMINAL_PHASE_BY_GAME: Record<string, string> = {
-  placeholder: "results",
   impostor: "resolution",
   "who-am-i": "resolution",
 };

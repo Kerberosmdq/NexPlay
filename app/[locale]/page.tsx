@@ -16,7 +16,6 @@ import { saveRoomSession, loadRoomSession, clearRoomSession, type RoomSession } 
 // Mirrors MultiDeviceRoom's TERMINAL_PHASE_BY_GAME — see the comment there
 // for why this per-game lookup exists instead of a generic contract field.
 const TERMINAL_PHASE_BY_GAME: Record<string, string> = {
-  placeholder: "results",
   impostor: "resolution",
   "who-am-i": "resolution",
 };

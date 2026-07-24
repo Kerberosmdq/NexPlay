@@ -98,6 +98,17 @@ M1 and M2 are both complete (see `docs/ROADMAP.md`). M3 — Who Am I (see `docs/
       for passed. 15 unit tests. Playtested locally end to end
       (single-device full round; multi-device only to the lobby/config
       screen — no live Supabase in this dev sandbox).
+- [x] **Post-merge fixes found by the founder on the live deployment**:
+      (1) Who Am I's card in the room lobby showed the raw i18n key
+      `games.who-am-i.description` instead of translated text — the
+      catalog used `whoAmI` (camelCase) under `games.*`, but
+      `RoomWaitingLobby.tsx` derives the description key from `game.id`
+      directly (`"who-am-i"`, kebab-case, matching Impostor/placeholder's
+      convention where id and i18n key were always identical). Renamed the
+      catalog key and every `games.whoAmI.*` reference to match. (2)
+      Removed `games/placeholder/` entirely (game, tests, i18n keys,
+      registry entry) — its only purpose was scaffolding for M1 and the
+      founder asked for it gone now that two real games exist.
 
 ## Tasks In Progress
 - [ ] None.

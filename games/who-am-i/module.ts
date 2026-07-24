@@ -16,7 +16,7 @@ const DEFAULT_CONFIG: WhoAmIConfig = {
 export const whoAmIGameModule: GameModule<WhoAmIConfig, WhoAmIState, WhoAmIAction> = {
   id: "who-am-i",
   meta: {
-    name: "games.whoAmI.name",
+    name: "games.who-am-i.name",
     minPlayers: 3,
     maxPlayers: 12,
     supportedModes: ["single-device", "multi-device"],
@@ -24,13 +24,13 @@ export const whoAmIGameModule: GameModule<WhoAmIConfig, WhoAmIState, WhoAmIActio
   configSchema: {
     timerSeconds: {
       type: "select",
-      labelKey: "games.whoAmI.config.timerSeconds",
+      labelKey: "games.who-am-i.config.timerSeconds",
       options: [
-        { value: "180", labelKey: "games.whoAmI.config.time3min" },
-        { value: "300", labelKey: "games.whoAmI.config.time5min" },
-        { value: "420", labelKey: "games.whoAmI.config.time7min" },
-        { value: "600", labelKey: "games.whoAmI.config.time10min" },
-        { value: "0", labelKey: "games.whoAmI.config.timeUnlimited" },
+        { value: "180", labelKey: "games.who-am-i.config.time3min" },
+        { value: "300", labelKey: "games.who-am-i.config.time5min" },
+        { value: "420", labelKey: "games.who-am-i.config.time7min" },
+        { value: "600", labelKey: "games.who-am-i.config.time10min" },
+        { value: "0", labelKey: "games.who-am-i.config.timeUnlimited" },
       ],
       default: String(DEFAULT_CONFIG.timerSeconds),
     },

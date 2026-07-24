@@ -31,7 +31,7 @@ function formatTime(totalSeconds: number): string {
 
 export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDeviceProps) {
   const t = useTranslations("WhoAmI");
-  const tConfig = useTranslations("games.whoAmI.config");
+  const tConfig = useTranslations("games.who-am-i.config");
   const locale = useLocale();
 
   // Single-device has no realtime player roster, so names are entered
