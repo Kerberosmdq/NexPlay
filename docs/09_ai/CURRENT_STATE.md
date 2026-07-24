@@ -44,15 +44,31 @@ M1 is complete (see `docs/ROADMAP.md`). M2 — Impostor (see `docs/NEXPLAY_PLAN.
 - [x] **TASK-0022**: Multi-device & Single-device placeholder state synchronization UI (`games/placeholder/` & `components/platform/`).
 - [x] **TASK-0023**: Reconnection resilience, host migration, and `lib/analytics` write helpers (`lib/realtime/hooks/useRoomConnection.ts`, `lib/analytics/`). No task spec doc was written for this one before starting — process gap, noted so it isn't repeated.
 - [x] **TASK-0024**: Closed the M1 gap left by TASK-0023 — `recordGameResult`/`recordEvent` were defined but never called (dead code); wired real call sites into both device-mode lifecycles, added unit tests for `calculateHostMigration` edge cases, marked M1 ✅ in `docs/ROADMAP.md`.
+- [x] **TASK-0025**: Impostor game (M2) — both device modes. Reworked an
+      uncommitted, un-specced batch of prior work (game selector +
+      first-pass Impostor module) into ADR-0002 compliance: `GameModule`
+      contract fixed (`meta`/`configSchema`/`content`, no `any`), ES+EN
+      `LocalizedContentPack` (105 words), all UI strings moved to
+      `next-intl`, a real reveal-and-pass `SingleDeviceView`, reducer made
+      pure (word/impostor selection injected by the caller, not
+      `Math.random()` inside the reducer), 11 unit tests. Manually
+      smoke-tested in-browser end to end (multi-device lobby → config →
+      role reveal, and a full single-device round through resolution).
 
 ## Tasks In Progress
-- [ ] **TASK-0025**: Impostor game (M2), first real game on the platform.
+- [ ] None.
 
 ## Known Issues
 - M1's two-real-phones manual reconnection check was never performed; only unit-test coverage exists for host migration. Not blocking, but should be done before M2 ships to the family.
+- Multi-device Impostor was only smoke-tested up to the config screen in
+  this sandbox (no live Supabase connection available here); a real
+  multi-phone round (role reveal → voting → resolution) synced over
+  Realtime has not been manually verified yet.
 
 ## Next Task
-- **TASK-0025**: Impostor game — both device modes, ADR-0002-compliant `GameModule` (see `docs/09_ai/tasks/TASK-0025-impostor-game.md`).
+- Push `feat/close-m1-gap` and `feat/impostor-game`, open PRs, get CI green,
+  merge. Then manually verify a real multi-phone Impostor match before
+  considering M2 fully done, and start M3 (Who Am I) per `docs/ROADMAP.md`.
 
 ## Last Updated
-- 2026-07-23
+- 2026-07-24

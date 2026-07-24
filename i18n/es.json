@@ -2,5 +2,89 @@
   "Home": {
     "title": "NexPlay",
     "subtitle": "Estamos construyendo la base de la plataforma. Los juegos llegan pronto."
+  },
+  "Lobby": {
+    "roomCodeLabel": "Código de Sala",
+    "shareHint": "Comparte este código para que otros se unan.",
+    "playersLabel": "Jugadores",
+    "gamesLabel": "Juegos",
+    "playThisButton": "Jugar este",
+    "hostOnlyHint": "Solo el host puede iniciar",
+    "connecting": "Conectando a la sala..."
+  },
+  "games": {
+    "placeholder": {
+      "name": "Contador Placeholder",
+      "description": "Un contador compartido simple usado para probar la sincronización en tiempo real de la plataforma.",
+      "config": {
+        "initialCount": "Conteo inicial"
+      }
+    },
+    "impostor": {
+      "name": "El Impostor",
+      "description": "Encuentra al impostor antes de que sea demasiado tarde.",
+      "config": {
+        "impostorCount": "Cantidad de impostores",
+        "discussionTimeSeconds": "Tiempo de discusión",
+        "time1min": "1 minuto",
+        "time2min": "2 minutos",
+        "time3min": "3 minutos",
+        "timeUnlimited": "Sin límite de tiempo",
+        "votingTimeSeconds": "Tiempo de votación (segundos)",
+        "hintDifficulty": "Dificultad de la pista (para el impostor)",
+        "hintNone": "Sin pista (imposible)",
+        "hintHard": "Pista difícil (categoría de la palabra)",
+        "hintEasy": "Pista fácil (palabra relacionada)"
+      }
+    }
+  },
+  "Impostor": {
+    "config": {
+      "title": "CONFIGURAR PARTIDA",
+      "notEnoughPlayers": "Faltan jugadores. Mínimo 3 jugadores necesarios.",
+      "startButton": "¡COMENZAR JUEGO!",
+      "waitingForHost": "Esperando que el anfitrión configure la partida...",
+      "playerNamePlaceholder": "Jugador {n}",
+      "addPlayerButton": "Agregar jugador",
+      "exitButton": "Salir"
+    },
+    "roleReveal": {
+      "title": "Tu Rol Secreto",
+      "holdToReveal": "Mantén presionado para ver",
+      "dontLetOthersLook": "¡Que nadie más mire tu pantalla!",
+      "youAreImpostor": "¡ERES EL IMPOSTOR!",
+      "yourClue": "Tu pista:",
+      "secretWordIs": "La palabra secreta es:",
+      "continueButton": "Continuar (todos listos)"
+    },
+    "discussion": {
+      "title": "Tiempo de Hablar",
+      "impostorTip": "¡Finge que sabes la palabra! Que no te descubran.",
+      "innocentTip": "Di una palabra o frase relacionada para probar tu inocencia.",
+      "goToVoteButton": "¡Ir a votación ahora!"
+    },
+    "voting": {
+      "title": "¿Quién es el impostor?",
+      "votesCount": "Votos: {cast} / {total}",
+      "voteRegistered": "Voto registrado",
+      "waitingForOthers": "Esperando a los demás...",
+      "revealResultsButton": "Revelar resultados"
+    },
+    "guessWord": {
+      "title": "¡ATRAPARON AL IMPOSTOR!",
+      "impostorPrompt": "Di la palabra secreta en voz alta. ¡Es tu última oportunidad de robar los puntos!",
+      "innocentsPrompt": "El impostor debe decir la palabra secreta en voz alta. ¿La sabrá?",
+      "hostControls": "Controles de host",
+      "guessedCorrectly": "¡Adivinó!",
+      "guessedWrong": "Falló"
+    },
+    "resolution": {
+      "impostorStoleVictory": "¡EL IMPOSTOR ROBÓ LA VICTORIA!",
+      "innocentVictory": "¡VICTORIA INOCENTE!",
+      "impostorSurvived": "¡EL IMPOSTOR SOBREVIVIÓ!",
+      "secretWordWas": "La palabra secreta era:",
+      "scoresTitle": "Puntuaciones",
+      "nextRoundButton": "Siguiente ronda"
+    }
   }
 }

@@ -53,7 +53,7 @@ live, and a disconnect/reconnect during the session doesn't break the room.
 The two-phone manual check remains outstanding; everything else is done and
 automated-test-covered.
 
-## M2 — Impostor
+## M2 — Impostor — 🚧 In Progress
 The first real, playable game.
 - Both device modes.
 - Categories + words content pack (kid-safe, ES/EN), optional clue for the
@@ -62,6 +62,13 @@ The first real, playable game.
 - Word content includes images/icons alongside text so a 7-year-old and a
   9-year-old play on equal footing (see `BACKLOG.md` for the broader
   image-support idea if it needs to expand beyond Impostor).
+
+**Status (TASK-0025):** implemented and unit-tested; single-device
+reveal-and-pass verified end to end in-browser. Multi-device was only
+smoke-tested to the config screen (no live Supabase in the dev sandbox used)
+— a real multi-phone round is still needed before this milestone is marked
+✅ done. Word images are not in scope for this pass (tracked in
+`BACKLOG.md`).
 
 **Done when:** the family plays a full real match, both device modes, on
 actual phones, without a developer present to fix anything mid-game.
