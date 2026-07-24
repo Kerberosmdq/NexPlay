@@ -21,6 +21,7 @@ function initialState(overrides: Partial<ImpostorState> = {}): ImpostorState {
     aliveIds: [],
     turnOrder: [],
     turnIndex: 0,
+    usedWordIds: [],
     votes: {},
     lastElimination: null,
     scores: {},
@@ -142,7 +143,7 @@ describe("impostorReducer — single round (3 players, 1 impostor)", () => {
     expect(state.scores.p3).toBe(5);
   });
 
-  it("PLAY_AGAIN resets phase, roles and alive list", () => {
+  it("PLAY_AGAIN resets phase, roles and alive list — but not usedWordIds", () => {
     let state = startGame(initialState({ impostorCount: 1 }), ["p1", "p2", "p3"]);
     state = voteRound(state, [
       ["p2", "p1"],
@@ -153,6 +154,29 @@ describe("impostorReducer — single round (3 players, 1 impostor)", () => {
     expect(state.phase).toBe("config");
     expect(state.secretWord).toBeNull();
     expect(state.aliveIds).toEqual([]);
+    // The word stays "used" across PLAY_AGAIN — a word must never repeat
+    // within the same match, only the config/roles reset.
+    expect(state.usedWordIds).toEqual([WORD.id]);
+  });
+
+  it("START_GAME records the word as used, appending across rounds", () => {
+    const WORD_2: ImpostorWord = { id: "b2", word: "Cat", category: "Animal", easyHint: "Meow" };
+    let state = startGame(initialState({ impostorCount: 1 }), ["p1", "p2", "p3"]);
+    expect(state.usedWordIds).toEqual([WORD.id]);
+
+    state = voteRound(state, [
+      ["p2", "p1"],
+      ["p3", "p1"],
+    ]);
+    state = impostorReducer(state, { type: "IMPOSTOR_GUESS", correct: false });
+    state = impostorReducer(state, { type: "PLAY_AGAIN" });
+    state = impostorReducer(state, {
+      type: "START_GAME",
+      playerIds: ["p1", "p2", "p3"],
+      shuffledPlayerIds: ["p1", "p2", "p3"],
+      word: WORD_2,
+    });
+    expect(state.usedWordIds).toEqual([WORD.id, WORD_2.id]);
   });
 });
 

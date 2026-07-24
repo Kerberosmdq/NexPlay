@@ -71,6 +71,10 @@
       "revealResultsButton": "Revelar resultados",
       "eliminatedSpectating": "Fuiste eliminado. Podés seguir mirando, pero ya no votás."
     },
+    "roster": {
+      "title": "En juego",
+      "eliminated": "eliminado"
+    },
     "eliminationResult": {
       "tie": "¡Empate! Nadie fue eliminado.",
       "wasImpostor": "{name} era... ¡el impostor! 🎉",

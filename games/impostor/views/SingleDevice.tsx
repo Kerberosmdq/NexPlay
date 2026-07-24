@@ -5,7 +5,8 @@ import { useTranslations, useLocale } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import type { ImpostorState, ImpostorAction } from "../reducer";
 import { maxImpostorsFor } from "../reducer";
-import { impostorContent } from "../content";
+import { pickWordAndImpostors } from "../pickRound";
+import { PlayerRoster } from "./PlayerRoster";
 
 export interface ImpostorSingleDeviceProps {
   state: ImpostorState;
@@ -23,13 +24,6 @@ function makeLocalPlayers(names: string[]): Player[] {
     joinedAt: now + i,
     isOnline: true,
   }));
-}
-
-function pickWordAndImpostors(players: Player[], locale: string) {
-  const words = impostorContent.locale[locale as "en" | "es"] ?? impostorContent.locale.en;
-  const word = words[Math.floor(Math.random() * words.length)];
-  const shuffledPlayerIds = [...players].sort(() => Math.random() - 0.5).map((p) => p.id);
-  return { word, shuffledPlayerIds };
 }
 
 export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDeviceProps) {
@@ -122,7 +116,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
           <button
             onClick={() => {
               const players = makeLocalPlayers(validNames);
-              const { word, shuffledPlayerIds } = pickWordAndImpostors(players, locale);
+              const { word, shuffledPlayerIds } = pickWordAndImpostors(players, locale, state.usedWordIds);
               setNames(validNames);
               setRevealIndex(0);
               setVoterIndex(0);
@@ -217,6 +211,8 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
       <div className="flex flex-col items-center justify-center space-y-6 text-center mt-10 px-4">
         <h2 className="text-3xl font-bold text-purple-300">{t("discussion.title")}</h2>
 
+        <PlayerRoster players={roundPlayers} aliveIds={state.aliveIds} />
+
         {everyoneSpoke ? (
           <p className="text-lg text-white/70 max-w-sm">{t("discussion.everyoneSpoke")}</p>
         ) : (
@@ -272,6 +268,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-4">
         <p className="text-purple-300 font-bold uppercase tracking-widest text-sm">{voter?.displayName}</p>
         <h2 className="text-2xl font-bold text-white text-center">{t("voting.title")}</h2>
+        <PlayerRoster players={roundPlayers} aliveIds={state.aliveIds} />
         <div className="w-full space-y-3">
           {aliveRoundPlayers
             .filter((p) => p.id !== voter?.id)

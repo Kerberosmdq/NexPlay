@@ -69,6 +69,7 @@ export const impostorGameModule: GameModule<ImpostorConfig, ImpostorState, Impos
     lastElimination: null,
     scores: {},
     lastRoundResult: null,
+    usedWordIds: [],
   }),
 
   reducer: impostorReducer,

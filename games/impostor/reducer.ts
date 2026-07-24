@@ -22,6 +22,7 @@ export interface ImpostorState {
   impostorIds: string[]; // fixed for the whole match, set at START_GAME
   playerIds: string[]; // fixed for the whole match, set at START_GAME
   aliveIds: string[]; // shrinks by one (or stays the same, on a tie) each round
+  usedWordIds: string[]; // every word played this session — never repeats within one match (across PLAY_AGAIN rounds)
 
   // Discussion — each alive player takes a turn saying one word/clue aloud,
   // in order, before the group can move to voting. Reset every time a new
@@ -131,6 +132,7 @@ export function impostorReducer(state: ImpostorState, action: ImpostorAction): I
         votes: {},
         lastElimination: null,
         lastRoundResult: null,
+        usedWordIds: [...state.usedWordIds, action.word.id],
       };
     }
 

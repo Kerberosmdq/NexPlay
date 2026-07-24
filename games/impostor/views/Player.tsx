@@ -5,7 +5,8 @@ import { useTranslations, useLocale } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import type { ImpostorState, ImpostorAction } from "../reducer";
 import { maxImpostorsFor } from "../reducer";
-import { impostorContent } from "../content";
+import { pickWordAndImpostors } from "../pickRound";
+import { PlayerRoster } from "./PlayerRoster";
 
 interface PlayerProps {
   state: ImpostorState;
@@ -16,15 +17,6 @@ interface PlayerProps {
   playerId?: string;
   roomCode: string;
   dispatch: (action: ImpostorAction) => void;
-}
-
-function pickWordAndImpostors(players: Player[], locale: string) {
-  const words = impostorContent.locale[locale as "en" | "es"] ?? impostorContent.locale.en;
-  const word = words[Math.floor(Math.random() * words.length)];
-  const shuffledPlayerIds = [...players]
-    .sort(() => Math.random() - 0.5)
-    .map((p) => p.id);
-  return { word, shuffledPlayerIds };
 }
 
 export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: PlayerProps) {
@@ -101,7 +93,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             ) : (
               <button
                 onClick={() => {
-                  const { word, shuffledPlayerIds } = pickWordAndImpostors(players, locale);
+                  const { word, shuffledPlayerIds } = pickWordAndImpostors(players, locale, state.usedWordIds);
                   dispatch({
                     type: "START_GAME",
                     playerIds: players.map((p) => p.id),
@@ -197,6 +189,8 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
       <div className="flex flex-col items-center justify-center space-y-6 text-center mt-10 px-4">
         <h2 className="text-3xl font-bold text-purple-300">{t("discussion.title")}</h2>
 
+        <PlayerRoster players={players} aliveIds={state.aliveIds} />
+
         <div className="bg-black/30 p-6 rounded-2xl border border-white/10 max-w-sm w-full">
           <div className="text-4xl mb-4">{isImpostor ? "🕵️" : "💬"}</div>
           <p className="text-lg text-white font-semibold">
@@ -249,6 +243,8 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         <p className="text-lg text-purple-200">
           {t("voting.votesCount", { cast: totalVotes, total: alivePlayers.length })}
         </p>
+
+        <PlayerRoster players={players} aliveIds={state.aliveIds} />
 
         {!isAlive ? (
           <div className="bg-black/20 border border-white/10 p-8 rounded-2xl mt-4 w-full text-center">
