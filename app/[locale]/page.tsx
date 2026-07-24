@@ -1,12 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { RoomLobby } from "@/components/platform/RoomLobby";
 import { MultiDeviceRoom } from "@/components/platform/MultiDeviceRoom";
-import { placeholderGameModule } from "@/games/placeholder/module";
-import type { PlaceholderAction, PlaceholderState } from "@/games/placeholder/reducer";
-import { SingleDeviceView } from "@/games/placeholder/views/SingleDevice";
+import {
+  platformReducer,
+  createInitialPlatformState,
+  AVAILABLE_GAMES,
+  type PlatformAction,
+} from "@/lib/realtime/platformReducer";
 import { recordEvent, recordGameResult } from "@/lib/analytics";
+
+// Mirrors MultiDeviceRoom's TERMINAL_PHASE_BY_GAME — see the comment there
+// for why this per-game lookup exists instead of a generic contract field.
+const TERMINAL_PHASE_BY_GAME: Record<string, string> = {
+  placeholder: "results",
+  impostor: "resolution",
+};
 
 export default function HomePage() {
   const [session, setSession] = useState<{
@@ -17,9 +28,7 @@ export default function HomePage() {
     displayName: string;
   } | null>(null);
 
-  const [gameState, setGameState] = useState<PlaceholderState>(
-    placeholderGameModule.setup([], { initialCount: 0 })
-  );
+  const [platformState, setPlatformState] = useState(createInitialPlatformState());
 
   const handleStartSingleDevice = (displayName: string) => {
     setSession({
@@ -29,7 +38,7 @@ export default function HomePage() {
       userId: "user-local",
       displayName,
     });
-    setGameState(placeholderGameModule.setup([], { initialCount: 0 }));
+    setPlatformState(createInitialPlatformState());
   };
 
   const handleCreateRoom = (displayName: string, code: string) => {
@@ -41,7 +50,7 @@ export default function HomePage() {
       userId,
       displayName,
     });
-    recordEvent({ event_name: "room_created", mode: "multi-device", user_id: userId });
+    recordEvent({ event_name: "room_created", mode: "multi-device" });
   };
 
   const handleJoinRoom = (displayName: string, code: string) => {
@@ -54,8 +63,8 @@ export default function HomePage() {
     });
   };
 
-  const dispatchAction = (action: PlaceholderAction) => {
-    setGameState((prevState) => placeholderGameModule.reducer(prevState, action));
+  const dispatchAction = (action: PlatformAction) => {
+    setPlatformState((prev) => platformReducer(prev, action));
   };
 
   const singleDeviceRoundStartedAt = useRef<number | null>(null);
@@ -65,41 +74,46 @@ export default function HomePage() {
   useEffect(() => {
     if (session?.mode !== "single-device") return;
 
-    if (gameState.phase === "in-round" && !hasRecordedSingleDeviceStart.current) {
+    if (platformState.status === "LOBBY") {
+      hasRecordedSingleDeviceStart.current = false;
+      hasRecordedSingleDeviceFinish.current = false;
+      return;
+    }
+
+    const activeGameId = platformState.activeGameId;
+    if (!activeGameId) return;
+
+    if (!hasRecordedSingleDeviceStart.current) {
       hasRecordedSingleDeviceStart.current = true;
       singleDeviceRoundStartedAt.current = Date.now();
       recordEvent({
         event_name: "game_started",
-        game_id: placeholderGameModule.id,
+        game_id: activeGameId,
         mode: "single-device",
-        user_id: session.userId,
       });
     }
 
-    if (gameState.phase === "results" && !hasRecordedSingleDeviceFinish.current) {
+    const terminalPhase = TERMINAL_PHASE_BY_GAME[activeGameId];
+    const currentPhase = (platformState.gameState as { phase?: string } | null)?.phase;
+
+    if (terminalPhase && currentPhase === terminalPhase && !hasRecordedSingleDeviceFinish.current) {
       hasRecordedSingleDeviceFinish.current = true;
       const durationSeconds = singleDeviceRoundStartedAt.current
         ? Math.round((Date.now() - singleDeviceRoundStartedAt.current) / 1000)
         : 0;
       recordGameResult({
-        game_id: placeholderGameModule.id,
+        game_id: activeGameId,
         mode: "single-device",
         player_count: 1,
         duration_seconds: durationSeconds,
       });
       recordEvent({
         event_name: "game_finished",
-        game_id: placeholderGameModule.id,
+        game_id: activeGameId,
         mode: "single-device",
-        user_id: session.userId,
       });
     }
-
-    if (gameState.phase === "lobby") {
-      hasRecordedSingleDeviceStart.current = false;
-      hasRecordedSingleDeviceFinish.current = false;
-    }
-  }, [gameState.phase, session]);
+  }, [platformState, session]);
 
   if (!session) {
     return (
@@ -117,19 +131,19 @@ export default function HomePage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-transparent text-white space-y-4">
       <div className="w-full max-w-md flex justify-between items-center px-2">
         <span className="text-xs text-slate-400">
-          Hola, <strong className="text-white">{session.displayName}</strong>
+          {session.displayName}
         </span>
         <button
           onClick={() => setSession(null)}
           className="text-xs text-red-400 hover:text-red-300 font-semibold"
         >
-          ✕ Salir de Sala
+          ✕
         </button>
       </div>
 
       {session.mode === "single-device" && (
-        <SingleDeviceView
-          state={gameState}
+        <SingleDeviceGamePicker
+          platformState={platformState}
           dispatch={dispatchAction}
           onExit={() => setSession(null)}
         />
@@ -145,4 +159,42 @@ export default function HomePage() {
       )}
     </main>
   );
+}
+
+function SingleDeviceGamePicker({
+  platformState,
+  dispatch,
+  onExit,
+}: {
+  platformState: ReturnType<typeof createInitialPlatformState>;
+  dispatch: (action: PlatformAction) => void;
+  onExit: () => void;
+}) {
+  const t = useTranslations("Lobby");
+  const tGame = useTranslations();
+
+  if (platformState.status === "LOBBY") {
+    return (
+      <div className="w-full max-w-md space-y-4">
+        <h3 className="text-2xl font-bold text-white text-center">{t("gamesLabel")}</h3>
+        {Object.values(AVAILABLE_GAMES).map((game) => (
+          <button
+            key={game.id}
+            onClick={() => dispatch({ type: "PLATFORM_START_GAME", gameId: game.id, players: [] })}
+            className="w-full bg-gradient-to-r from-purple-900/50 to-pink-900/50 border border-pink-500/30 p-4 rounded-2xl text-white font-bold text-xl"
+          >
+            {tGame(game.meta.name)}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  const activeGame = platformState.activeGameId ? AVAILABLE_GAMES[platformState.activeGameId] : null;
+  if (!activeGame) return null;
+
+  const gameDispatch = (action: unknown) => dispatch({ type: "GAME_ACTION", action });
+
+  const View = activeGame.views.singleDevice;
+  return <View state={platformState.gameState} players={[]} dispatch={gameDispatch} onExit={onExit} />;
 }

@@ -1,24 +1,45 @@
 import { initialPlaceholderState, placeholderReducer } from "./reducer";
-import type { PlaceholderState } from "./reducer";
-import type { Player } from "@/lib/types/room";
+import type { PlaceholderState, PlaceholderAction } from "./reducer";
+import { HostView } from "./views/Host";
+import { PlayerView } from "./views/Player";
+import { SingleDeviceView } from "./views/SingleDevice";
+import type { Player, GameModule } from "@/lib/types/room";
 
 export interface PlaceholderConfig {
-  initialCount?: number;
+  initialCount: number;
 }
 
-export const placeholderGameModule = {
+export const placeholderGameModule: GameModule<
+  PlaceholderConfig,
+  PlaceholderState,
+  PlaceholderAction
+> = {
   id: "placeholder",
   meta: {
-    name: "game.placeholder.name",
+    name: "games.placeholder.name",
     minPlayers: 1,
     maxPlayers: 10,
-    supportedModes: ["single-device", "multi-device"] as const,
+    supportedModes: ["single-device", "multi-device"],
   },
-  setup(players: Player[], config?: PlaceholderConfig): PlaceholderState {
+  configSchema: {
+    initialCount: {
+      type: "number",
+      labelKey: "games.placeholder.config.initialCount",
+      min: 0,
+      max: 100,
+      default: 0,
+    },
+  },
+  setup(players: Player[], config: PlaceholderConfig): PlaceholderState {
     return {
       ...initialPlaceholderState,
-      count: config?.initialCount ?? 0,
+      count: config.initialCount,
     };
   },
   reducer: placeholderReducer,
+  views: {
+    host: HostView,
+    player: PlayerView,
+    singleDevice: SingleDeviceView,
+  },
 };

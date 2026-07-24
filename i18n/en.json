@@ -2,5 +2,102 @@
   "Home": {
     "title": "NexPlay",
     "subtitle": "Platform foundations are being built. Games are coming soon."
+  },
+  "Lobby": {
+    "roomCodeLabel": "Room Code",
+    "shareHint": "Share this code so others can join.",
+    "playersLabel": "Players",
+    "gamesLabel": "Games",
+    "playThisButton": "Play this",
+    "hostOnlyHint": "Only the host can start",
+    "connecting": "Connecting to the room..."
+  },
+  "games": {
+    "placeholder": {
+      "name": "Placeholder Counter",
+      "description": "A simple shared counter used to prove the platform's realtime sync.",
+      "config": {
+        "initialCount": "Starting count"
+      }
+    },
+    "impostor": {
+      "name": "The Impostor",
+      "description": "Find the impostor before it's too late.",
+      "config": {
+        "impostorCount": "Number of impostors",
+        "votingTimeSeconds": "Voting time (seconds)",
+        "hintDifficulty": "Clue difficulty (for the impostor)",
+        "hintNone": "No clue (impossible)",
+        "hintHard": "Hard clue (word's category)",
+        "hintEasy": "Easy clue (related word)",
+        "needsPlayers": "{n} (needs {min}+ players)"
+      }
+    }
+  },
+  "Impostor": {
+    "config": {
+      "title": "SET UP THE MATCH",
+      "notEnoughPlayersFor": "Not enough players. Minimum {min} required.",
+      "startButton": "START GAME!",
+      "waitingForHost": "Waiting for the host to set up the match...",
+      "playerNamePlaceholder": "Player {n}",
+      "addPlayerButton": "Add player",
+      "exitButton": "Exit"
+    },
+    "roleReveal": {
+      "title": "Your Secret Role",
+      "holdToReveal": "Hold to reveal",
+      "dontLetOthersLook": "Don't let anyone else see your screen!",
+      "youAreImpostor": "YOU ARE THE IMPOSTOR!",
+      "yourClue": "Your clue:",
+      "secretWordIs": "The secret word is:",
+      "continueButton": "Continue (everyone ready)"
+    },
+    "discussion": {
+      "title": "Discussion Time",
+      "impostorTip": "Pretend you know the word! Don't get caught.",
+      "innocentTip": "Say a related word or phrase to prove you're innocent.",
+      "yourTurn": "It's your turn! Say your word out loud.",
+      "saidMyWord": "I said my word",
+      "waitingForTurn": "It's {name}'s turn...",
+      "everyoneSpoke": "Everyone spoke. Move to voting whenever you're ready.",
+      "goToVoteButton": "Go to vote"
+    },
+    "voting": {
+      "title": "Who is the impostor?",
+      "votesCount": "Votes: {cast} / {total}",
+      "voteRegistered": "Vote registered",
+      "waitingForOthers": "Waiting for the others...",
+      "revealResultsButton": "Reveal results",
+      "eliminatedSpectating": "You were eliminated. You can keep watching, but you no longer vote."
+    },
+    "roster": {
+      "title": "In play",
+      "eliminated": "eliminated"
+    },
+    "eliminationResult": {
+      "tie": "It's a tie! Nobody was eliminated.",
+      "wasImpostor": "{name} was... the impostor! 🎉",
+      "wasInnocent": "{name} was innocent. 😬",
+      "gameContinues": "The game continues...",
+      "continueButton": "Continue"
+    },
+    "guessWord": {
+      "title": "THE IMPOSTOR WAS CAUGHT!",
+      "impostorPrompt": "Say the secret word out loud. It's your last chance to steal the points!",
+      "innocentsPrompt": "The impostor must say the secret word out loud. Will they know it?",
+      "hostControls": "Host controls",
+      "guessedCorrectly": "Guessed it!",
+      "guessedWrong": "Got it wrong"
+    },
+    "resolution": {
+      "impostorStoleVictory": "THE IMPOSTOR STOLE THE VICTORY!",
+      "innocentVictory": "INNOCENT VICTORY!",
+      "impostorSurvived": "THE IMPOSTOR SURVIVED!",
+      "survivedCelebration": "{names} fooled everyone and walks away with the points. Well played!",
+      "secretWordWas": "The secret word was:",
+      "scoresTitle": "Scores",
+      "nextRoundButton": "Next round"
+    }
   }
 }

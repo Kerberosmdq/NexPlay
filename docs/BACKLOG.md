@@ -23,6 +23,11 @@
   - (none captured yet beyond the initial kid-safe set for M2)
 
 ## Product/UX ideas
+- **Player avatars.** A small set of selectable avatars (icons/illustrations)
+  each player picks when joining a room, shown next to their name everywhere
+  (lobby, reveal, voting, resolution). Purely visual/identity — no gameplay
+  impact. Raised during TASK-0025 playtesting as a "nice for the family"
+  idea, explicitly deferred to be scoped later, not built opportunistically.
 - **Image-based words/prompts more broadly.** M2 already includes images for
   Impostor specifically so the 7-year-old and 9-year-old play evenly. Consider
   whether this should become a platform-level content requirement (every
