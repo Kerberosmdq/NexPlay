@@ -149,8 +149,8 @@ code tasks it queues (system → direction → identity/polish) are next.
       against the app live in a browser, found no enforced visual system:
       `app/tokens.css` has zero consumers, 43 raw hex values are hand-
       written across 7 files, the same primary button is implemented six
-      different ways, the entry screen fails WCAG AA contrast in six
-      measured places, and the Impostor reveal references an animation
+      different ways, the entry screen's two action buttons fail WCAG AA
+      contrast, and the Impostor reveal references an animation
       class from an uninstalled package (verified `animationName: "none"`
       live). Produced `BDR-0001` (direction: Paper & Felt, with a penumbra
       treatment reserved for secret reveals — three directions explored

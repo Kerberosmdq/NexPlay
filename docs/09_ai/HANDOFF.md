@@ -16,6 +16,21 @@ Document template for transferring task execution context between AI sessions an
   the time this task edited it — no conflict, just noting the timing in
   case anyone is confused about why this branch's diff doesn't include
   that game-logic change (it's already on `main` independently).
+- **Correction made before this PR merged:** the original measurement pass
+  reported six WCAG AA contrast failures on the entry screen. Four of
+  those were a false positive — a bug in the measurement script itself,
+  which parsed the browser's `lab(...)` color notation as if it were an
+  `rgb(...)` triple on a 0–255 scale, wildly understating those colors'
+  actual luminance. Re-measured properly (canvas-normalizing each color,
+  then converting `lab()` from its D50 reference white to D65 via a
+  Bradford adaptation before computing luminance): those four label
+  elements are actually fine (10.8:1 and 6.97:1, both comfortably over the
+  4.5:1 minimum). Only **two** real failures exist — both action buttons
+  (`#FF8C00` and `#8B5CF6` with white text). `BDR-0001`, `ADR-0004`,
+  `TASK-0027`, `CURRENT_STATE.md`, and this file were all corrected to say
+  "two," not "six," before merge. If a contrast number from this
+  milestone's history looks off, `lab()`-vs-`rgb()` parsing is the first
+  thing to suspect in any similar live-measurement script.
 
 ## What's in this task
 A founder request for an exhaustive UX/UI audit ("busca mejoras visuales,
@@ -43,9 +58,9 @@ Founder's two explicit choices that shaped this task:
 ## Why this task matters beyond "one more doc"
 `ADR-0001` §1 already *said* "no component hardcodes a raw value" — it was
 never enforced, and the audit's numbers show what that costs in practice
-(zero token consumers, 43 hardcoded hex values, six contrast failures, a
-signature animation that silently does nothing because its package was
-never installed). `ADR-0004` is what makes that clause a checked contract
+(zero token consumers, 43 hardcoded hex values, two button-contrast
+failures, a signature animation that silently does nothing because its
+package was never installed). `ADR-0004` is what makes that clause a checked contract
 instead of a sentence nobody follows. Skipping this paperwork and jumping
 straight to repainting components would very likely reproduce the same
 failure mode with new colors — which is exactly what the audit found wrong

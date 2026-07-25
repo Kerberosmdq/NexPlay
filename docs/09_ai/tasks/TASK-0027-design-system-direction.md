@@ -3,8 +3,8 @@
 ### Goal
 Close the gap a full UX/UI audit surfaced: NexPlay has no enforced design
 system (`app/tokens.css` has zero consumers; 43 hand-written hex values are
-scattered across 7 files; the entry screen fails WCAG AA contrast in six
-places; the "reveal" animation the plan calls "the" signature moment
+scattered across 7 files; the entry screen's two action buttons fail WCAG
+AA contrast; the "reveal" animation the plan calls "the" signature moment
 references a CSS class that doesn't exist). Per `PROJECT_CONSTITUTION.md`
 Article 10 and `NEXPLAY_PLAN.md` §7.2 rule 3, a shared visual contract needs
 its own decision records *before* multiple screens get rebuilt against it —

@@ -106,8 +106,8 @@ founder on real devices** — do that before marking this milestone ✅.
 scope creep): a full UX/UI audit of M0–M3 as shipped found the app has no
 enforced visual system — `app/tokens.css` has zero consumers, 43 raw hex
 values are hand-written across 7 files, the same button is implemented six
-different ways, the entry screen fails WCAG AA contrast in six places, and
-the Impostor reveal — the plan's own example of a moment that "should feel
+different ways, the entry screen's two action buttons fail WCAG AA
+contrast, and the Impostor reveal — the plan's own example of a moment that "should feel
 like an event" — references an animation class from a package that isn't
 installed. This milestone exists to fix the *foundation*, not just repaint
 screens, before M4 (Battleship) adds a third game's worth of UI on top of

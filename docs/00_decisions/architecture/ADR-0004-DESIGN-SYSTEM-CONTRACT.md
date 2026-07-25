@@ -47,11 +47,15 @@ shipped (M0–M3) found the gap precisely:
 - The same UI concept — a primary call-to-action button — is implemented
   **six different ways** with no shared component, because
   `components/ui/` is empty (a README only).
-- Measured directly on the running app at 375×812: **six WCAG AA contrast
-  failures** on the entry screen alone, the worst being white text on
-  `#FF8C00` at 2.33:1 against a 4.5:1 requirement — caused by
-  `--color-text-muted` being defined as a decorative purple that then gets
-  used as if it were readable body text.
+- Measured directly on the running app at 375×812 (properly, via canvas
+  color normalization — an earlier pass miscounted four passing purple
+  labels as failures due to a color-space parsing bug in the measurement
+  script itself, corrected before this ADR was written): **two WCAG AA
+  contrast failures** on the entry screen, both action buttons — white
+  text on `#FF8C00` at 2.33:1, and white text on `#8B5CF6` at 4.23:1,
+  against a 4.5:1 requirement. Both share the same root cause: white was
+  chosen as the universal button foreground without checking it against
+  each background's actual lightness.
 - The game's signature moment — the Impostor role reveal, which
   `NEXPLAY_PLAN.md` §5 explicitly calls out as needing to "feel like an
   event, not a page load" — is animated with `animate-in fade-in zoom-in`,
@@ -119,8 +123,8 @@ Every `action-*` and `text-*` pair added to the token file gets a unit test
 (same spirit as `ADR-0002`'s "reducers must be pure and unit-tested")
 asserting a ≥4.5:1 contrast ratio between the pair's foreground and
 background. A new token pair without a passing test is not merged — this
-is the mechanism that prevents the audit's six failures from recurring
-under a new color scheme.
+is the mechanism that prevents the audit's two button-contrast failures
+from recurring under a new color scheme.
 
 ### 5. Migration is scheduled, not silent
 This ADR governs all *new* UI work immediately. The six existing views

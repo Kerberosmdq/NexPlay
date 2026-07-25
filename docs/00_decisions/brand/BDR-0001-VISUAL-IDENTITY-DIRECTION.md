@@ -38,9 +38,10 @@ Accepted.
 A full UX/UI audit of the shipped app (M0–M3) found that NexPlay currently
 has no visual identity — it has six competing button treatments, zero
 components consuming `app/tokens.css`, 43 hand-written hex values across 7
-files, no trace of the Nex hexagon anywhere on screen, and six measured
-WCAG AA contrast failures on the entry screen alone (e.g. white text on
-`#FF8C00` at 2.33:1, requiring 4.5:1). None of this is a matter of taste —
+files, no trace of the Nex hexagon anywhere on screen, and two measured
+WCAG AA contrast failures on the entry screen's action buttons (white text
+on `#FF8C00` at 2.33:1 and white text on `#8B5CF6` at 4.23:1, both against
+a 4.5:1 requirement). None of this is a matter of taste —
 it is the direct, measurable consequence of `NEXPLAY_PLAN.md` §5's "design
 tokens first" principle never having been enforced.
 
