@@ -101,9 +101,49 @@ locally end to end in single-device, multi-device only smoke-tested to the
 lobby (no live Supabase in the dev sandbox). **Not yet playtested by the
 founder on real devices** — do that before marking this milestone ✅.
 
+## M3.5 — Design System & Visual Identity — 🚧 Started (2026-07-24)
+**Explicit scope decision, written here per the rule below** (not silent
+scope creep): a full UX/UI audit of M0–M3 as shipped found the app has no
+enforced visual system — `app/tokens.css` has zero consumers, 43 raw hex
+values are hand-written across 7 files, the same button is implemented six
+different ways, the entry screen fails WCAG AA contrast in six places, and
+the Impostor reveal — the plan's own example of a moment that "should feel
+like an event" — references an animation class from a package that isn't
+installed. This milestone exists to fix the *foundation*, not just repaint
+screens, before M4 (Battleship) adds a third game's worth of UI on top of
+the same cracks.
+
+This does **not** block or get blocked by M3's still-outstanding founder
+playtest of multi-device Who Am I, or M1's still-outstanding two-real-
+phones reconnection test — both remain open, tracked independently (see
+Known Issues in `docs/09_ai/CURRENT_STATE.md`).
+
+- **Paperwork (TASK-0027, done):** `BDR-0001` (visual direction: Paper &
+  Felt, with a penumbra treatment reserved for secret reveals — three
+  directions explored per Article 10) and `ADR-0004` (semantic tokens,
+  mandatory `components/ui/` primitives, a named motion vocabulary,
+  contrast checked by unit test) accepted; `docs/04_design/FEEL.md`
+  written.
+- **Code task 1 — System:** implement `ADR-0004`'s tokens and primitive
+  set; port the *existing* 6 views to them with no visual change yet, to
+  prove the system holds what already exists before it's asked to hold
+  something new.
+- **Code task 2 — Direction:** apply `BDR-0001`'s Paper & Felt direction
+  (and the penumbra reveal) screen by screen.
+- **Code task 3 — Identity & polish:** the real Nex hexagon (favicon, PWA
+  manifest + icons so the app installs to a home screen), a visible
+  language switcher (retiring the bilingual labels this same audit found
+  in `RoomLobby.tsx`), copy/share for the room code, and an accessibility
+  pass against `ADR-0004`'s contrast tests.
+
+**Done when:** all 6 existing views run on the new tokens/primitives with
+no raw hex literals outside `components/ui/`, the reveal moment actually
+animates, contrast tests pass for every action/text token pair, and the
+hexagon appears as the app's icon.
+
 ## M4 — Battleship
 Third game — deliberately chosen to prove the platform isn't just for
-word-guessing games.
+word-guessing games. Built on top of M3.5's system, not the pre-M3.5 UI.
 - 1 vs 1 board game, both players on their own device (single-device mode may
   not make sense here — confirm during design, don't force it).
 
@@ -111,9 +151,14 @@ word-guessing games.
 "impostor-style" hidden role) fits the same `GameModule` contract.
 
 ## M5 — Presentable
-Ready to show people outside the family.
-- Landing/marketing surface, visual polish pass, accessibility pass.
-- Full ES/EN coverage across UI and content.
+Ready to show people outside the family. Its "visual polish pass" was
+originally scoped here; M3.5 moved the foundational part of that work
+earlier (see above) because it was blocking distinctiveness for M4 and
+beyond, not because M5 itself changed shape. What's left for M5 is the
+outward-facing layer built *on* M3.5's system:
+- Landing/marketing surface.
+- Full ES/EN coverage across UI and content (the visible language switcher
+  ships in M3.5; this is the remaining content-completeness pass).
 - Pre-public-launch privacy/legal review for minors (flagged in ADR-0003) —
   revisit before any real public rollout, not before.
 
