@@ -3,155 +3,121 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: TASK-0029
-- **Title**: Apply the Paper & Felt Direction (M3.5 code task 2)
+- **Task ID**: TASK-0030
+- **Title**: Hexagon Identity & PWA Icons (M3.5 code task 3a)
 
 ## Current Branch
-- `feat/paper-and-felt-direction`, branched off `main` after `PR #25`
-  (`TASK-0028`, tokens/primitives/motion) merged — this branch is on top
-  of that, not stacked on an unmerged one.
+- `feat/hexagon-identity-and-pwa`, branched off `main` after `PR #26`
+  (`TASK-0029`, Paper & Felt direction) merged.
 
 ## What's in this task
-`TASK-0028` proved the token/primitive system holds what already shipped.
-This task is the payoff: `BDR-0001`'s actual Paper & Felt direction and
-penumbra reveal, applied for real.
+`BDR-0001` §4 said "the hexagon is real... used as the app icon, favicon,
+and PWA install icon." This task makes that literally true, rather than
+the placeholder inline SVG hexagon accent `TASK-0029` added to the lobby
+header as a preview.
 
-1. **`app/tokens.css` repainted**, not restructured — same token *names*
-   as `TASK-0028`, all-new *values* per `BDR-0001`'s anchors: parchment
-   ground (`#EFE6D6`), ink (`#2B2118`), felt-green primary action
-   (`#1F6B52`), terracotta secondary (darkened to `#A8481F` — `#C0562A`
-   alone sits just under 4.5:1 with white text), wine-red danger
-   (`#8A1030`). Two small additions beyond `BDR-0001`'s literal anchors,
-   both justified by things that broke when the ground flipped from dark
-   to light: `--color-success-surface`/`--color-danger-surface` (pale-tint
-   banner pairs — the old dark-theme translucent `bg-green-900/30` pattern
-   has no light-theme equivalent without a real token), and `--color-gold`
-   (a readable dark gold for point values, since `text-yellow-400` reads
-   fine on a dark card and fails badly on parchment).
-2. **Typography wired for real** (`BDR-0001` §3): Bevan (condensed
-   display, for headlines/branding), Nunito (humanist body/UI), Space
-   Mono (room codes/timers/scores) — all self-hosted via `next/font/google`
-   in `app/[locale]/layout.tsx`. This also retires the audit's font-
-   loading finding: `app/globals.css`'s external Google Fonts `@import`
-   and the `* { font-family: ... !important }` override are both gone.
-3. **`RevealCard` now implements the actual penumbra look**: a `fixed
-   inset-0` scrim dims to `--color-penumbra-ground` while the card itself
-   glows with `--color-penumbra-glow`, only while held/revealed. Four new
-   tokens exist for this (`--color-on-penumbra`, `-muted`,
-   `-penumbra-danger`, `-penumbra-success`) because the dark ground needs
-   its *own* readable text colors — reusing the light-theme action/status
-   pairs there would fail contrast outright (they were validated against
-   parchment, not a near-black background). Who Am I does **not** get this
-   treatment: its actual mechanic is showing your word to *other* people,
-   not hiding it from yourself, so there's no "private reveal" moment to
-   dramatize — the BDR's rule 5 ("penumbra is earned") argued against
-   spreading it somewhere it doesn't structurally apply.
-4. **All 6 views + the lobby re-skinned for real** — every `text-white`,
-   dark translucent surface (`bg-green-900/30`, `bg-black/20`, etc.), and
-   status color reconsidered against the light ground. `RoomLobby.tsx`'s
-   decorative confetti-SVG background and two-tone wordmark — the one
-   thing `TASK-0028` deliberately left as raw hex because it was "getting
-   replaced, not migrated" — is now actually replaced: a flat
-   `surface-raised` card, a small inline hexagon SVG accent (felt green,
-   `BDR-0001` §4's brand anchor previewed ahead of code task 3's real icon
-   system), and the wordmark in Bevan/ink instead of a purple/yellow
-   gradient.
+**The mark itself came from the founder, not from code.** In conversation,
+we looked at two existing hexagon marks from the founder's other Nex-
+family apps and worked out the shared grammar together: a point-up
+hexagon outline, two small circular "connector node" pins sitting on the
+left/right mid-height vertices (each linked inward by a short stub line —
+a circuit-board-pin motif), and an app-specific interior icon in a single
+brand color. I wrote an image-generation prompt applying that grammar to
+NexPlay specifically (felt green `#1F6B52`, a six-sided die face as the
+interior icon — the most universal "tabletop game" symbol, fitting
+`BDR-0001`'s physical Paper & Felt world). The founder ran that prompt
+through an external image tool and dropped the result at
+`public/NexPlay_Logo.png`.
 
-## Two real bugs found and fixed during this task's own browser verification
+**This task's actual work was turning that one source PNG into a real
+icon set:**
+1. Found the mark's tight bounding box within the (non-square, mostly
+   transparent) source image by scanning its alpha channel in-browser via
+   canvas.
+2. `sharp` — a transitive dependency Next.js already installs for image
+   optimization, but not resolvable via a plain top-level `require`
+   (verified: `Cannot find module 'sharp'`) — was reachable by requiring
+   its actual `node_modules/.pnpm/sharp@0.34.5/node_modules/sharp` path
+   directly. `scripts/generate-icons.mjs` uses that to crop, resize, and
+   composite onto appropriately-backgrounded square canvases: `app/icon.png`
+   (512px, transparent — Next.js App Router auto-serves this as the
+   favicon), `app/apple-icon.png` (180px, **opaque parchment background**
+   — transparent apple-touch-icons render with a black fill on iOS, so
+   this one deliberately isn't transparent like the others),
+   `public/icons/icon-192.png`/`icon-512.png` (PWA manifest, "any"
+   purpose, transparent), `public/icons/icon-maskable-512.png` (PWA
+   manifest, "maskable" purpose — opaque background *and* extra padding,
+   since Android's shape mask crops right to the icon's edges and a
+   maskable icon must survive that crop with its mark still intact).
+3. `app/manifest.ts` (Next.js's file-based, auto-linked convention — no
+   manual `<link rel="manifest">` needed) wires those icons plus
+   `theme_color` (felt green) and `background_color` (parchment).
+   `viewport.themeColor` in `layout.tsx` covers the other half (mobile
+   Chrome's address-bar tint, which reads from `<meta name="theme-color">`
+   independently of the manifest).
+4. Deleted the Next.js scaffold leftovers the original audit flagged:
+   `app/favicon.ico` (the default Next.js logo — superseded by
+   `app/icon.png`) and `public/{file,globe,next,vercel,window}.svg` (never
+   referenced anywhere, just scaffold cruft).
 
-**1. A circular CSS custom-property reference silently broke every display
-heading.** `app/tokens.css`'s `:root` block had
-`--font-display: var(--font-display, "Bevan", ui-serif, serif)` — this
-looks like "use Bevan, or a serif fallback," but it's actually
-self-referential: `next/font`'s `variable` option *already* sets
-`--font-display` on `<html>` to the real loaded font stack, and `:root`
-*is* `<html>`, so this rule was trying to define `--font-display` in terms
-of itself. Per spec, a custom property whose computed value contains a
-cycle becomes invalid — not "falls back to the parenthesized default" as
-the syntax visually suggests. Every element using `font-display` silently
-rendered in the browser's default serif (verified live:
-`getComputedStyle(h1).fontFamily === "Times New Roman"`). This bug almost
-certainly existed in the *original* Outfit/Geist Mono setup too — it was
-just invisible because `globals.css`'s old `!important` override painted
-over it. Fixed by deleting the redundant `:root` redeclaration entirely
-and trusting `next/font`'s own `<html>`-level variable (which already
-includes its own generated fallback, e.g. `"Bevan", "Bevan Fallback"`).
-
-**2. The `transition-*` + concurrent-animation rendering bug from
-`TASK-0028` recurred twice more, and this time it got a systemic fix
-instead of a one-off patch.** `TASK-0028`'s handoff already documented one
-instance (`CodeInput`'s tiles). This task hit it again: `RevealCard`'s
-penumbra scrim had `transition-opacity duration-300` and got stuck showing
-`opacity: 0` in the DOM despite its `className` correctly including
-`opacity-95` (confirmed by reading both in the same query — this is not a
-before/after-render timing mismatch). Then `Button`'s `danger` variant did
-the same thing right after a phase transition (`transition-colors` stuck
-on the *previous* variant's background/text color, again with a verifiably
-correct `className`). Waiting and re-querying did **not** self-heal either
-case — these are stuck, not slow. Given three independent occurrences, all
-involving a `transition-*` utility co-occurring with unrelated
-animation/DOM activity elsewhere on the page (never a case of two
-transitions racing on the *same* element), the fix this time was
-systemic: removed `transition-colors` from `Button` entirely (all four
-variants) and the two leftover `transition-colors` instances on native
-`<select>` elements, rather than patching each button/element that
-happened to get caught by it. None of these transitions were load-bearing
-UX — a button's color changing instantly on click/hover reads fine — so
-removing them trades a barely-noticeable hover polish for eliminating a
-whole bug class. **If a future agent sees a "className is right but the
-color/opacity is wrong" bug during browser verification here, check for a
-`transition-*` utility on that element before assuming the component logic
-is broken — this is now three-for-three.**
+**A scope note, written down rather than left implicit:** the original
+`docs/ROADMAP.md` "Code task 3 — Identity & polish" entry bundled the
+hexagon/PWA work with a language switcher, room-code share, and an
+accessibility pass. This task split that into 3a (done here) and 3b (not
+started) so the PR stayed reviewable — see `docs/ROADMAP.md`'s M3.5
+section for the explicit split.
 
 ## Files Modified / Added
-- `app/tokens.css` (repainted), `app/[locale]/layout.tsx` (fonts),
-  `app/globals.css` (font cleanup)
-- `components/ui/RevealCard.tsx` (penumbra look), `Button.tsx`
-  (`transition-colors` removed), `CodeInput.tsx`/`PlayerChip.tsx`
-  (`accent-mint`/`accent-rose` tokens removed — repointed to
-  `action-primary`)
-- `components/platform/RoomLobby.tsx` (full re-skin, hexagon accent),
-  `RoomWaitingLobby.tsx`, `MultiDeviceRoom.tsx`
-- `app/[locale]/page.tsx`
-- `games/impostor/views/Player.tsx`, `SingleDevice.tsx` (`select`
-  `transition-colors` removed)
-- `games/who-am-i/views/Player.tsx` (`select` `transition-colors`
-  removed), `SingleDevice.tsx`
-- `tests/unit/design-tokens.test.ts` (new pairs: success/danger surfaces,
-  gold, penumbra text — 17 assertions total)
-- `docs/09_ai/tasks/TASK-0029-paper-and-felt-direction.md` (new),
-  `docs/09_ai/CURRENT_STATE.md`, `docs/ROADMAP.md`, this file
+- `app/icon.png`, `app/apple-icon.png` (new, binary)
+- `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png`
+  (new, binary)
+- `public/NexPlay_Logo.png` (source asset, provided by the founder)
+- `app/manifest.ts` (new)
+- `scripts/generate-icons.mjs` (new — kept, not throwaway, for
+  regenerating the set if the source logo ever changes)
+- `app/[locale]/layout.tsx` (`viewport.themeColor` added)
+- Deleted: `app/favicon.ico`, `public/file.svg`, `public/globe.svg`,
+  `public/next.svg`, `public/vercel.svg`, `public/window.svg`
+- `docs/09_ai/tasks/TASK-0030-hexagon-identity-and-pwa.md` (new),
+  `docs/ROADMAP.md` (3a/3b split), `docs/09_ai/CURRENT_STATE.md`, this
+  file
 
 ## External state (not in git, important for the next agent to know)
 - Same as prior handoffs: Supabase live, Vercel auto-deploying `main`,
   strict branch protection. Unchanged by this task.
-- The dev server in this environment binds whatever port is free
-  (`autoPort: true`); at the time of this task's verification it happened
-  to land on `:3000` since the other project on this machine wasn't
-  running. Don't assume a fixed port.
-- The `element.click()` vs. full pointer/mouse event sequence tooling
-  quirk from `TASK-0028`'s handoff still applies — use the full
-  `pointerdown → mousedown → pointerup → mouseup → click` sequence for
-  reliable programmatic clicks during browser verification here.
+- `scripts/generate-icons.mjs` hardcodes the source mark's bounding box
+  (`{ left: 192, top: 42, width: 285, height: 291 }`, found by scanning
+  `public/NexPlay_Logo.png`'s alpha channel). If the founder ever
+  regenerates or replaces that source PNG with a different composition,
+  this bounding box needs re-deriving — don't assume it still applies to
+  a new file with the same name.
+- `sharp`'s only reachable path in this repo is
+  `node_modules/.pnpm/sharp@0.34.5/node_modules/sharp` — a plain
+  `require("sharp")`/`import "sharp"` will fail (it's a transitive
+  dependency of Next.js's own image optimization, not a direct one this
+  project declares). If a future task needs image processing again,
+  either reuse that path or add `sharp` as a real `devDependency` instead
+  of relying on the nested copy staying at this exact version.
 
 ## Pending Tasks
-- **M3.5 code task 3 (Identity & polish):** the real Nex hexagon as an
-  actual favicon/PWA manifest/app icon system (this task only added a
-  small inline SVG preview in the lobby header — not the real icon
-  files), per-game hexagon-interior marks (`BDR-0001` §4: a mask
-  silhouette for Impostor, a question mark for Who Am I, a grid for
-  Battleship later), a visible language switcher (retires
-  `RoomLobby.tsx`'s remaining bilingual labels — untouched by this task
-  since it's a copy/i18n concern, not a tokens/palette one), room-code
-  copy/share affordance, and a final accessibility pass.
+- **M3.5 code task 3b (Polish):** a visible language switcher (retires
+  `RoomLobby.tsx`'s remaining bilingual labels — untouched by this task,
+  since it's a copy/i18n concern, not an icon/manifest one), room-code
+  copy/share affordance, and a final accessibility pass against
+  `ADR-0004`'s contrast tests. This is the last M3.5 code task before M4.
+- **Backlog, not scoped anywhere yet:** per-game hexagon-interior marks
+  (`BDR-0001` §4: a mask silhouette for Impostor, a question mark for Who
+  Am I, a grid for Battleship later) — decorative in-app accents for each
+  game's own screens, distinct from the one app-level icon this task
+  built. Worth a `docs/BACKLOG.md` entry if it isn't there already.
 - Founder playtest of multi-device Who Am I on real phones (M3's last open
   item — independent of all of the above).
 - M1's dedicated two-real-phones reconnection test (independent, still
   open from earlier handoffs).
 
 ## Next Suggested Task
-- M3.5 code task 3: hexagon/PWA/language switcher/room-code share/a11y
-  pass — the last of the three queued code tasks, after which M4
-  (Battleship) can start on a genuinely finished design system.
+- M3.5 code task 3b: language switcher + room-code share + accessibility
+  pass — the last thing standing between M3.5 and starting M4
+  (Battleship).
 - Founder's multi-device Who Am I playtest remains independent and can
   happen whenever.

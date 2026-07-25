@@ -3,9 +3,9 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 8 - M3.5 Design System & Visual Identity (code task 2 of 3)
-- Status: Paper & Felt palette + typography + penumbra reveal shipped;
-  code task 3 (hexagon/PWA/language switcher/a11y pass) queued next
+- Sprint: Sprint 9 - M3.5 Design System & Visual Identity (code task 3b)
+- Status: Hexagon identity + PWA icons shipped; language switcher/room-code
+  share/a11y pass (code task 3b) queued next — last step before M4
 
 ## Current Objective
 M1 and M2 are complete; M3 is implemented but still awaiting the founder's
@@ -15,9 +15,12 @@ system (see `BDR-0001`/`ADR-0004` for specifics), which opened milestone
 **M3.5** in `docs/ROADMAP.md` as an explicit scope decision ahead of M4
 (Battleship), so a third game doesn't get built on the same unenforced
 styling the audit found. TASK-0027 (paperwork), TASK-0028 (tokens +
-primitives + motion, code task 1), and TASK-0029 (Paper & Felt direction +
-penumbra reveal, code task 2) are all done; code task 3 (hexagon/PWA/
-language switcher/a11y pass) is next.
+primitives + motion), TASK-0029 (Paper & Felt direction + penumbra
+reveal), and TASK-0030 (hexagon identity + PWA icons, code task 3a — a
+deliberate split of the original code task 3, written in
+`docs/ROADMAP.md`) are all done. Code task 3b (language switcher,
+room-code share, accessibility pass) is the last thing standing between
+M3.5 and starting M4.
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -238,6 +241,31 @@ language switcher/a11y pass) is next.
       single-device Impostor (reveal with visible penumbra) →
       discussion → voting → resolution, and Who Am I's playing phase,
       all manually verified in-browser with zero console errors.
+- [x] **TASK-0030**: Hexagon Identity & PWA Icons (M3.5 code task 3a) —
+      made `BDR-0001` §4 literally true. The founder generated the actual
+      hexagon mark (a die inside the hexagon, felt green, following the
+      same hexagon-outline + side-connector-node grammar already used
+      across the founder's other Nex-family apps) via an external image
+      tool, from a prompt built collaboratively in conversation. Processed
+      via `sharp` (required directly from its pnpm store path, since it's
+      a nested/transitive dependency — `scripts/generate-icons.mjs` kept
+      in the repo for regeneration if the source logo ever changes) into
+      `app/icon.png` (favicon), `app/apple-icon.png` (180×180, opaque
+      parchment background — transparent apple-touch-icons render with a
+      black fill on iOS), and three PWA manifest icons (192/512 "any",
+      512 "maskable" with extra padding for Android's shape mask).
+      `app/manifest.ts` added (Next.js App Router's auto-linked
+      convention) with `theme_color` (felt green) and `background_color`
+      (parchment); `viewport.themeColor` wired in `layout.tsx` for the
+      mobile-browser-chrome half. Removed the scaffold leftovers the
+      original audit flagged: `app/favicon.ico` and five unused
+      `public/*.svg` files. Split "Code task 3" into 3a (this task) and
+      3b (language switcher, room-code share, a11y pass) in
+      `docs/ROADMAP.md`, an explicit scope decision rather than a silent
+      one. Verified live: `<link rel="icon">`, `<link rel="apple-touch-
+      icon">`, and `<link rel="manifest">` all present and correctly
+      linked; every icon URL and `/manifest.webmanifest` fetch returns
+      200 with correct content; zero console errors.
 
 ## Tasks In Progress
 - [ ] None.
@@ -256,12 +284,11 @@ language switcher/a11y pass) is next.
 - Two independent threads, neither blocking the other:
   1. Founder playtests a real multi-device Who Am I match; mark M3 ✅ in
      `docs/ROADMAP.md` once confirmed.
-  2. M3.5's third code task: the real Nex hexagon (favicon, PWA manifest +
-     icons), a visible language switcher (retires `RoomLobby.tsx`'s
-     bilingual labels for good), a room-code copy/share affordance, and a
-     final accessibility pass.
-- M4 (Battleship) starts after M3.5's three code tasks are done, per the
-  updated `docs/ROADMAP.md` — not built on the pre-M3.5 styling.
+  2. M3.5's code task 3b: a visible language switcher (retires
+     `RoomLobby.tsx`'s bilingual labels for good), a room-code copy/share
+     affordance, and a final accessibility pass.
+- M4 (Battleship) starts after code task 3b is done, per the updated
+  `docs/ROADMAP.md` — not built on the pre-M3.5 styling.
 
 ## Last Updated
 - 2026-07-25

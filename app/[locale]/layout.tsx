@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bevan, Nunito, Space_Mono } from "next/font/google";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { notFound } from "next/navigation";
@@ -33,6 +33,13 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: "NexPlay — Juegos de mesa digitales",
   description: "Juega en familia y amigos en tiempo real.",
+};
+
+// BDR-0001 §4: the hexagon is real — this is the browser-chrome half of
+// that (mobile Chrome's address bar tint); app/manifest.ts covers the
+// installed-app half.
+export const viewport: Viewport = {
+  themeColor: "#1f6b52",
 };
 
 export function generateStaticParams() {
