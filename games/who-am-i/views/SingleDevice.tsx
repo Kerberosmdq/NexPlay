@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import type { WhoAmIState, WhoAmIAction } from "../reducer";
 import { pickAssignments } from "../pickRound";
+import { Button, Card, Scoreboard } from "@/components/ui";
 
 export interface WhoAmISingleDeviceProps {
   state: WhoAmIState;
@@ -80,8 +81,8 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
     const notEnoughPlayers = validNames.length < 3;
 
     return (
-      <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto bg-white/5 p-8 rounded-3xl border border-white/10">
-        <h2 className="text-3xl font-black text-white text-center">{t("config.title")}</h2>
+      <Card className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto">
+        <h2 className="text-3xl font-black text-ink text-center">{t("config.title")}</h2>
 
         <div className="w-full space-y-3">
           {names.map((name, i) => (
@@ -94,21 +95,18 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
                 setNames(next);
               }}
               placeholder={t("config.playerNamePlaceholder", { n: i + 1 })}
-              className="w-full bg-[#13072b] border-2 border-[#3b177d] text-white p-3 rounded-xl font-semibold outline-none focus:border-pink-500"
+              className="w-full bg-surface-sunken border-2 border-line text-ink p-3 rounded-xl font-semibold outline-none focus-visible:border-focus"
             />
           ))}
-          <button
-            onClick={() => setNames([...names, ""])}
-            className="w-full py-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl"
-          >
+          <Button variant="ghost" onClick={() => setNames([...names, ""])}>
             + {t("config.addPlayerButton")}
-          </button>
+          </Button>
         </div>
 
         <div className="w-full space-y-2">
-          <label className="text-purple-200 font-bold text-sm">{tConfig("timerSeconds")}</label>
+          <label className="text-ink-muted font-bold text-sm">{tConfig("timerSeconds")}</label>
           <select
-            className="w-full bg-[#13072b] border-2 border-[#3b177d] text-white p-3 rounded-xl font-semibold outline-none focus:border-pink-500"
+            className="w-full bg-surface-sunken border-2 border-line text-ink p-3 rounded-xl font-semibold outline-none focus-visible:border-focus"
             value={state.timerSeconds}
             onChange={(e) => dispatch({ type: "SET_CONFIG", timerSeconds: parseInt(e.target.value, 10) })}
           >
@@ -125,7 +123,8 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
             {t("config.notEnoughPlayers")}
           </div>
         ) : (
-          <button
+          <Button
+            variant="primary"
             onClick={() => {
               const players = makeLocalPlayers(validNames);
               const { assignments } = pickAssignments(players, locale, state.usedWordIds);
@@ -138,18 +137,18 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
                 now: Date.now(),
               });
             }}
-            className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xl py-5 rounded-2xl"
+            className="text-xl py-5"
           >
             {t("config.startButton")}
-          </button>
+          </Button>
         )}
 
         {onExit && (
-          <button onClick={onExit} className="text-xs text-purple-300 underline">
+          <button onClick={onExit} className="text-xs text-ink-muted underline">
             {t("config.exitButton")}
           </button>
         )}
-      </div>
+      </Card>
     );
   }
 
@@ -161,16 +160,16 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
 
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4 text-center">
-        <p className="text-purple-300 font-bold uppercase tracking-widest text-sm">
+        <p className="text-ink-muted font-bold uppercase tracking-widest text-sm">
           {t("singleDevice.holdFor", { name: current?.displayName ?? "" })}
         </p>
 
-        <div className="w-full bg-[#13072b] border-4 border-[#3b177d] rounded-3xl p-10 space-y-4">
+        <div className="w-full bg-surface-raised border-4 border-line rounded-3xl p-10 space-y-4">
           <div className="text-8xl">{word?.emoji}</div>
-          <p className="text-4xl font-black text-white">{word?.word}</p>
+          <p className="text-4xl font-black text-ink">{word?.word}</p>
         </div>
 
-        <div className="text-2xl font-black text-white">
+        <div className="text-2xl font-black text-ink">
           {state.timerSeconds <= 0 ? "∞" : formatTime(turnSecondsLeft)}
         </div>
 
@@ -201,34 +200,35 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
   if (state.phase === "resolution") {
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
-        <h2 className="text-3xl font-black text-white text-center">{t("resolution.title")}</h2>
-        <div className="w-full space-y-2">
-          {roundPlayers.map((p) => {
+        <h2 className="text-3xl font-black text-ink text-center">{t("resolution.title")}</h2>
+        <Scoreboard
+          entries={roundPlayers.map((p) => {
             const word = state.wordAssignments[p.id];
             const guessedIt = state.guessedIds.includes(p.id);
-            return (
-              <div key={p.id} className="flex justify-between items-center bg-black/20 p-3 rounded-xl">
-                <div className="flex items-center space-x-2">
-                  <span>{guessedIt ? "✅" : "❌"}</span>
-                  <span className="text-white font-bold">{p.displayName}</span>
-                  <span className="text-white/60 text-sm">
+            return {
+              id: p.id,
+              icon: <span>{guessedIt ? "✅" : "❌"}</span>,
+              label: (
+                <>
+                  <span className="text-ink font-bold">{p.displayName}</span>
+                  <span className="text-ink-muted text-sm ml-2">
                     {word?.emoji} {word?.word}
                   </span>
-                </div>
-                <span className="text-yellow-400 font-black">{state.scores[p.id] || 0} pts</span>
-              </div>
-            );
+                </>
+              ),
+              value: <span className="text-yellow-400 font-black">{state.scores[p.id] || 0} pts</span>,
+            };
           })}
-        </div>
-        <button
+        />
+        <Button
+          variant="ghost"
           onClick={() => {
             setActiveIndex(0);
             dispatch({ type: "PLAY_AGAIN" });
           }}
-          className="w-full bg-white text-purple-900 font-black text-xl py-4 rounded-full"
         >
           {t("resolution.nextRoundButton")}
-        </button>
+        </Button>
       </div>
     );
   }

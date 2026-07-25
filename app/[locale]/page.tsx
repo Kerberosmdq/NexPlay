@@ -12,6 +12,7 @@ import {
 } from "@/lib/realtime/platformReducer";
 import { recordEvent, recordGameResult } from "@/lib/analytics";
 import { saveRoomSession, loadRoomSession, clearRoomSession, type RoomSession } from "@/lib/realtime/session";
+import { Button, Screen } from "@/components/ui";
 
 // Mirrors MultiDeviceRoom's TERMINAL_PHASE_BY_GAME — see the comment there
 // for why this per-game lookup exists instead of a generic contract field.
@@ -147,35 +148,25 @@ export default function HomePage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-transparent text-white space-y-4">
-      <div className="w-full max-w-md flex justify-between items-center px-2">
-        <span className="text-xs text-slate-400">
-          {session.displayName}
-        </span>
-        <button
-          onClick={handleExit}
-          className="text-xs text-red-400 hover:text-red-300 font-semibold"
-        >
-          ✕
-        </button>
-      </div>
+    <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-transparent text-ink space-y-4">
+      <Screen displayName={session.displayName} onExit={handleExit}>
+        {session.mode === "single-device" && (
+          <SingleDeviceGamePicker
+            platformState={platformState}
+            dispatch={dispatchAction}
+            onExit={handleExit}
+          />
+        )}
 
-      {session.mode === "single-device" && (
-        <SingleDeviceGamePicker
-          platformState={platformState}
-          dispatch={dispatchAction}
-          onExit={handleExit}
-        />
-      )}
-
-      {session.mode === "multi-device" && (
-        <MultiDeviceRoom
-          roomCode={session.roomCode}
-          userId={session.userId}
-          displayName={session.displayName}
-          role={session.role}
-        />
-      )}
+        {session.mode === "multi-device" && (
+          <MultiDeviceRoom
+            roomCode={session.roomCode}
+            userId={session.userId}
+            displayName={session.displayName}
+            role={session.role}
+          />
+        )}
+      </Screen>
     </main>
   );
 }
@@ -195,15 +186,16 @@ function SingleDeviceGamePicker({
   if (platformState.status === "LOBBY") {
     return (
       <div className="w-full max-w-md space-y-4">
-        <h3 className="text-2xl font-bold text-white text-center">{t("gamesLabel")}</h3>
+        <h3 className="text-2xl font-bold text-ink text-center">{t("gamesLabel")}</h3>
         {Object.values(AVAILABLE_GAMES).map((game) => (
-          <button
+          <Button
             key={game.id}
+            variant="primary"
             onClick={() => dispatch({ type: "PLATFORM_START_GAME", gameId: game.id, players: [] })}
-            className="w-full bg-gradient-to-r from-purple-900/50 to-pink-900/50 border border-pink-500/30 p-4 rounded-2xl text-white font-bold text-xl"
+            className="text-xl"
           >
             {tGame(game.meta.name)}
-          </button>
+          </Button>
         ))}
       </div>
     );

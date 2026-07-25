@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import type { WhoAmIState, WhoAmIAction } from "../reducer";
 import { pickAssignments } from "../pickRound";
+import { Button, Card, Scoreboard, WaitingState } from "@/components/ui";
 
 interface PlayerProps {
   state: WhoAmIState;
@@ -57,16 +58,16 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
     if (isHost) {
       const notEnoughPlayers = players.length < 3;
       return (
-        <div className="flex flex-col items-center justify-center space-y-8 w-full max-w-2xl mx-auto bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-md">
+        <Card className="flex flex-col items-center justify-center space-y-8 w-full max-w-2xl mx-auto">
           <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 tracking-tight text-center">
             {t("config.title")}
           </h2>
 
           <div className="w-full space-y-6">
             <div className="flex flex-col space-y-2">
-              <label className="text-purple-200 font-bold">{tConfig("timerSeconds")}</label>
+              <label className="text-ink-muted font-bold">{tConfig("timerSeconds")}</label>
               <select
-                className="bg-[#13072b] border-2 border-[#3b177d] text-white p-4 rounded-xl font-semibold outline-none focus:border-pink-500 transition-colors"
+                className="bg-surface-sunken border-2 border-line text-ink p-4 rounded-xl font-semibold outline-none focus-visible:border-focus transition-colors"
                 value={state.timerSeconds}
                 onChange={(e) => dispatch({ type: "SET_CONFIG", timerSeconds: parseInt(e.target.value, 10) })}
               >
@@ -83,7 +84,8 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
                 {t("config.notEnoughPlayers")}
               </div>
             ) : (
-              <button
+              <Button
+                variant="primary"
                 onClick={() => {
                   const { assignments } = pickAssignments(players, locale, state.usedWordIds);
                   dispatch({
@@ -93,22 +95,17 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
                     now: Date.now(),
                   });
                 }}
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-black text-2xl py-6 rounded-2xl shadow-[0_0_40px_rgba(236,72,153,0.4)] transform hover:scale-[1.02] active:scale-95 transition-all"
+                className="text-2xl py-6"
               >
                 {t("config.startButton")}
-              </button>
+              </Button>
             )}
           </div>
-        </div>
+        </Card>
       );
     }
 
-    return (
-      <div className="flex flex-col items-center justify-center space-y-4 text-center mt-20">
-        <div className="animate-spin text-4xl">⏳</div>
-        <p className="text-xl text-purple-200">{t("config.waitingForHost")}</p>
-      </div>
-    );
+    return <WaitingState label={t("config.waitingForHost")} />;
   }
 
   if (state.phase === "playing") {
@@ -116,13 +113,13 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
 
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4 text-center">
-        <div className="text-3xl font-black text-white">{timeLeft === null ? "∞" : formatTime(timeLeft)}</div>
+        <div className="text-3xl font-black text-ink">{timeLeft === null ? "∞" : formatTime(timeLeft)}</div>
 
         {hasGuessed ? (
           <div className="bg-green-900/30 border border-green-500/30 p-8 rounded-3xl text-center w-full space-y-3">
             <div className="text-5xl">🎉</div>
             <p className="text-green-300 font-bold text-lg">{t("playing.youGuessed")}</p>
-            <p className="text-3xl font-black text-white">
+            <p className="text-3xl font-black text-ink">
               {myWord?.emoji} {myWord?.word}
             </p>
             <p className="text-sm text-green-200/70">{t("playing.keepHelping")}</p>
@@ -131,20 +128,20 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
           <div className="bg-red-900/30 border border-red-500/30 p-8 rounded-3xl text-center w-full space-y-3">
             <div className="text-5xl">😬</div>
             <p className="text-red-300 font-bold text-lg">{t("playing.youLost")}</p>
-            <p className="text-3xl font-black text-white">
+            <p className="text-3xl font-black text-ink">
               {myWord?.emoji} {myWord?.word}
             </p>
             <p className="text-sm text-red-200/70">{t("playing.keepHelping")}</p>
           </div>
         ) : (
           <>
-            <p className="text-purple-300 text-xs font-black uppercase tracking-widest">
+            <p className="text-ink-muted text-xs font-black uppercase tracking-widest">
               {t("playing.showEveryoneElse")}
             </p>
 
-            <div className="w-full bg-[#13072b] border-4 border-[#3b177d] rounded-3xl p-10 space-y-4">
+            <div className="w-full bg-surface-raised border-4 border-line rounded-3xl p-10 space-y-4">
               <div className="text-8xl">{myWord?.emoji}</div>
-              <p className="text-4xl font-black text-white">{myWord?.word}</p>
+              <p className="text-4xl font-black text-ink">{myWord?.word}</p>
             </div>
 
             <div className="flex space-x-3 w-full">
@@ -165,7 +162,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         )}
 
         {isHost && (
-          <button onClick={() => dispatch({ type: "END_ROUND" })} className="text-xs text-purple-300 underline">
+          <button onClick={() => dispatch({ type: "END_ROUND" })} className="text-xs text-ink-muted underline">
             {t("playing.endRoundButton")}
           </button>
         )}
@@ -176,37 +173,35 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
   if (state.phase === "resolution") {
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
-        <h2 className="text-3xl font-black text-white text-center">{t("resolution.title")}</h2>
+        <h2 className="text-3xl font-black text-ink text-center">{t("resolution.title")}</h2>
 
-        <div className="w-full bg-white/10 rounded-3xl p-6 backdrop-blur-md space-y-3">
-          <h3 className="text-xl font-bold text-purple-300 mb-4 border-b border-white/10 pb-2">
-            {t("resolution.scoresTitle")}
-          </h3>
-          {players.map((p) => {
-            const word = state.wordAssignments[p.id];
-            const guessedIt = state.guessedIds.includes(p.id);
-            return (
-              <div key={p.id} className="flex justify-between items-center bg-black/20 p-3 rounded-xl">
-                <div className="flex items-center space-x-3">
-                  <span className="text-xl">{guessedIt ? "✅" : "❌"}</span>
-                  <span className="text-lg font-bold text-white truncate max-w-[100px]">{p.displayName}</span>
-                  <span className="text-white/60 text-sm">
-                    {word?.emoji} {word?.word}
-                  </span>
-                </div>
-                <span className="text-xl font-black text-yellow-400">{state.scores[p.id] || 0} pts</span>
-              </div>
-            );
-          })}
-        </div>
+        <Card className="w-full space-y-3">
+          <Scoreboard
+            title={t("resolution.scoresTitle")}
+            entries={players.map((p) => {
+              const word = state.wordAssignments[p.id];
+              const guessedIt = state.guessedIds.includes(p.id);
+              return {
+                id: p.id,
+                icon: <span className="text-xl">{guessedIt ? "✅" : "❌"}</span>,
+                label: (
+                  <>
+                    <span className="text-lg font-bold text-ink truncate max-w-[100px]">{p.displayName}</span>
+                    <span className="text-ink-muted text-sm ml-2">
+                      {word?.emoji} {word?.word}
+                    </span>
+                  </>
+                ),
+                value: <span className="text-xl font-black text-yellow-400">{state.scores[p.id] || 0} pts</span>,
+              };
+            })}
+          />
+        </Card>
 
         {isHost && (
-          <button
-            onClick={() => dispatch({ type: "PLAY_AGAIN" })}
-            className="w-full bg-white text-purple-900 font-black text-xl py-4 px-12 rounded-full hover:bg-purple-100 shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all"
-          >
+          <Button variant="ghost" onClick={() => dispatch({ type: "PLAY_AGAIN" })} className="px-12">
             {t("resolution.nextRoundButton")}
-          </button>
+          </Button>
         )}
       </div>
     );
