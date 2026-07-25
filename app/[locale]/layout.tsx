@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit, Geist_Mono } from "next/font/google";
+import { Bevan, Nunito, Space_Mono } from "next/font/google";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
@@ -7,15 +7,27 @@ import "../globals.css";
 
 import { AuthProvider } from "@/components/platform/AuthProvider";
 
-const outfit = Outfit({
-  variable: "--font-sans",
+// BDR-0001 §3: a condensed display face, a humanist body/UI face, and a
+// monospace face for room codes/timers/scores. All three self-hosted via
+// next/font — this retires the audit's font-loading finding (Outfit and
+// Geist Mono loaded but unused, Plus Jakarta Sans pulled from an external
+// Google Fonts @import and forced with !important).
+const bevan = Bevan({
+  variable: "--font-display",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+  weight: ["400"],
 });
 
-const geistMono = Geist_Mono({
+const nunito = Nunito({
+  variable: "--font-sans",
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800", "900"],
+});
+
+const spaceMono = Space_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
@@ -43,9 +55,9 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`${outfit.variable} ${geistMono.variable} h-full antialiased font-sans`}
+      className={`${bevan.variable} ${nunito.variable} ${spaceMono.variable} h-full antialiased font-sans`}
     >
-      <body className="min-h-full flex flex-col bg-[#0b0518] text-white selection:bg-purple-500 selection:text-white">
+      <body className="min-h-full flex flex-col bg-surface text-ink selection:bg-action-primary selection:text-on-primary">
         <NextIntlClientProvider>
           <AuthProvider>{children}</AuthProvider>
         </NextIntlClientProvider>

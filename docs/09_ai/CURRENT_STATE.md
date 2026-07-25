@@ -3,9 +3,9 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 7 - M3.5 Design System & Visual Identity (code task 1 of 3)
-- Status: Tokens, `components/ui/` primitives, and motion vocabulary
-  shipped; code tasks 2 (direction) and 3 (identity/polish) queued next
+- Sprint: Sprint 8 - M3.5 Design System & Visual Identity (code task 2 of 3)
+- Status: Paper & Felt palette + typography + penumbra reveal shipped;
+  code task 3 (hexagon/PWA/language switcher/a11y pass) queued next
 
 ## Current Objective
 M1 and M2 are complete; M3 is implemented but still awaiting the founder's
@@ -14,10 +14,10 @@ the below). A full UX/UI audit of the shipped app found no enforced visual
 system (see `BDR-0001`/`ADR-0004` for specifics), which opened milestone
 **M3.5** in `docs/ROADMAP.md` as an explicit scope decision ahead of M4
 (Battleship), so a third game doesn't get built on the same unenforced
-styling the audit found. TASK-0027 (paperwork) and TASK-0028 (tokens +
-primitives + motion, code task 1) are both done; code tasks 2 (BDR-0001's
-Paper & Felt direction) and 3 (hexagon/PWA/language switcher/a11y pass)
-are next.
+styling the audit found. TASK-0027 (paperwork), TASK-0028 (tokens +
+primitives + motion, code task 1), and TASK-0029 (Paper & Felt direction +
+penumbra reveal, code task 2) are all done; code task 3 (hexagon/PWA/
+language switcher/a11y pass) is next.
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -193,6 +193,51 @@ are next.
       tests pass; full lobby → single-device Impostor → reveal →
       discussion → voting → resolution flow manually verified in-browser
       with zero console errors.
+- [x] **TASK-0029**: Apply the Paper & Felt Direction (M3.5 code task 2) —
+      `app/tokens.css`'s palette replaced with `BDR-0001`'s anchors:
+      parchment ground (`#EFE6D6`), ink (`#2B2118`), felt-green primary
+      action (`#1F6B52`), terracotta secondary (darkened to `#A8481F` for
+      AA — `#C0562A` alone sits under 4.5:1 with white text), a wine-red
+      danger action (`#8A1030`), plus new success/danger status-banner
+      pairs and a `--color-gold` points highlight. Three self-hosted
+      typefaces wired via `next/font` per `BDR-0001` §3 (Bevan for
+      display/headlines, Nunito for body/UI, Space Mono for room
+      codes/timers/scores) — this also retired the audit's font-loading
+      finding (the external Google Fonts `@import` and the `!important`
+      override are both gone from `globals.css`). `RevealCard` now
+      implements the actual penumbra treatment: a fixed full-screen scrim
+      dims to `--color-penumbra-ground` while a card glows with
+      `--color-penumbra-glow`, verified live (`opacity: 0.95` on the
+      scrim, `animationName: "nx-reveal"` still firing). Four new
+      `--color-on-penumbra*`/`--color-penumbra-danger/success` tokens
+      exist because the reveal's dark ground needs its own readable text
+      colors, not the light-theme pairs. All 13 (now 17) contrast
+      assertions pass; zero raw hex literals remain anywhere outside
+      `app/tokens.css` (no exceptions needed this time — the decorative
+      art `TASK-0028` had left untouched got actually replaced here).
+      Two real bugs found and fixed during browser verification: (1) a
+      circular CSS custom-property self-reference
+      (`--font-display: var(--font-display, "Bevan", ...)` inside the
+      very `:root` rule defining `--font-display`) made every display
+      heading silently fall back to the browser's default serif instead
+      of Bevan — fixed by removing the redundant `:root` redeclaration
+      entirely and relying on `next/font`'s own `<html>`-level variable.
+      (2) The same "className is correct but computed style is stuck
+      wrong" rendering bug `TASK-0028` found in `CodeInput` recurred
+      twice more — on `RevealCard`'s penumbra scrim (`transition-opacity`
+      stuck at `opacity: 0` despite the `opacity-95` class being present)
+      and on `Button`'s `danger` variant right after a phase transition
+      (`transition-colors` stuck showing the wrong bg/text color). Rather
+      than patch each occurrence, removed `transition-colors` from
+      `Button` globally and the leftover `transition-colors` on two
+      `<select>` elements — the pattern is specifically CSS
+      transitions co-occurring with concurrent animation/DOM-churn
+      activity elsewhere on the page; none of these transitions were
+      load-bearing UX, so removing them eliminates the bug class instead
+      of chasing individual instances. 82 unit tests pass; full lobby →
+      single-device Impostor (reveal with visible penumbra) →
+      discussion → voting → resolution, and Who Am I's playing phase,
+      all manually verified in-browser with zero console errors.
 
 ## Tasks In Progress
 - [ ] None.
@@ -211,10 +256,10 @@ are next.
 - Two independent threads, neither blocking the other:
   1. Founder playtests a real multi-device Who Am I match; mark M3 ✅ in
      `docs/ROADMAP.md` once confirmed.
-  2. M3.5's first code task: implement `ADR-0004`'s tokens and
-     `components/ui/` primitives, porting the 6 existing views onto them
-     with no visual change yet (proves the system holds what already
-     exists before M3.5's second task changes how it looks).
+  2. M3.5's third code task: the real Nex hexagon (favicon, PWA manifest +
+     icons), a visible language switcher (retires `RoomLobby.tsx`'s
+     bilingual labels for good), a room-code copy/share affordance, and a
+     final accessibility pass.
 - M4 (Battleship) starts after M3.5's three code tasks are done, per the
   updated `docs/ROADMAP.md` — not built on the pre-M3.5 styling.
 

@@ -137,7 +137,7 @@ export default function HomePage() {
 
   if (!session) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-transparent text-white">
+      <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-transparent text-ink">
         <RoomLobby
           onStartSingleDevice={handleStartSingleDevice}
           onCreateRoom={handleCreateRoom}
@@ -186,7 +186,7 @@ function SingleDeviceGamePicker({
   if (platformState.status === "LOBBY") {
     return (
       <div className="w-full max-w-md space-y-4">
-        <h3 className="text-2xl font-bold text-ink text-center">{t("gamesLabel")}</h3>
+        <h3 className="font-display text-2xl text-ink text-center">{t("gamesLabel")}</h3>
         {Object.values(AVAILABLE_GAMES).map((game) => (
           <Button
             key={game.id}

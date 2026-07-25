@@ -82,7 +82,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
 
     return (
       <Card className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto">
-        <h2 className="text-3xl font-black text-ink text-center">{t("config.title")}</h2>
+        <h2 className="font-display text-3xl text-ink text-center">{t("config.title")}</h2>
 
         <div className="w-full space-y-3">
           {names.map((name, i) => (
@@ -119,7 +119,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
         </div>
 
         {notEnoughPlayers ? (
-          <div className="bg-red-500/20 text-red-300 p-4 rounded-xl text-center font-bold border border-red-500/30 w-full">
+          <div className="bg-danger-surface text-on-danger-surface p-4 rounded-xl text-center font-bold border border-action-danger/30 w-full">
             {t("config.notEnoughPlayers")}
           </div>
         ) : (
@@ -166,32 +166,32 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
 
         <div className="w-full bg-surface-raised border-4 border-line rounded-3xl p-10 space-y-4">
           <div className="text-8xl">{word?.emoji}</div>
-          <p className="text-4xl font-black text-ink">{word?.word}</p>
+          <p className="font-display text-4xl text-ink">{word?.word}</p>
         </div>
 
-        <div className="text-2xl font-black text-ink">
+        <div className="font-mono text-2xl font-bold text-ink">
           {state.timerSeconds <= 0 ? "∞" : formatTime(turnSecondsLeft)}
         </div>
 
         <div className="flex space-x-4 w-full">
-          <button
+          <Button
+            variant="primary"
             onClick={() => {
               if (current) dispatch({ type: "GUESS_CORRECT", playerId: current.id });
               setActiveIndex((i) => i + 1);
             }}
-            className="flex-1 bg-green-500/20 border-2 border-green-500 text-green-300 font-black text-xl py-5 rounded-2xl"
           >
             {t("singleDevice.guessedButton")}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="danger"
             onClick={() => {
               if (current) dispatch({ type: "GUESS_WRONG", playerId: current.id });
               setActiveIndex((i) => i + 1);
             }}
-            className="flex-1 bg-red-500/20 border-2 border-red-500 text-red-300 font-bold text-xl py-5 rounded-2xl"
           >
             {t("singleDevice.failedButton")}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -200,26 +200,28 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
   if (state.phase === "resolution") {
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
-        <h2 className="text-3xl font-black text-ink text-center">{t("resolution.title")}</h2>
-        <Scoreboard
-          entries={roundPlayers.map((p) => {
-            const word = state.wordAssignments[p.id];
-            const guessedIt = state.guessedIds.includes(p.id);
-            return {
-              id: p.id,
-              icon: <span>{guessedIt ? "✅" : "❌"}</span>,
-              label: (
-                <>
-                  <span className="text-ink font-bold">{p.displayName}</span>
-                  <span className="text-ink-muted text-sm ml-2">
-                    {word?.emoji} {word?.word}
-                  </span>
-                </>
-              ),
-              value: <span className="text-yellow-400 font-black">{state.scores[p.id] || 0} pts</span>,
-            };
-          })}
-        />
+        <h2 className="font-display text-3xl text-ink text-center">{t("resolution.title")}</h2>
+        <Card className="w-full">
+          <Scoreboard
+            entries={roundPlayers.map((p) => {
+              const word = state.wordAssignments[p.id];
+              const guessedIt = state.guessedIds.includes(p.id);
+              return {
+                id: p.id,
+                icon: <span>{guessedIt ? "✅" : "❌"}</span>,
+                label: (
+                  <>
+                    <span className="text-ink font-bold">{p.displayName}</span>
+                    <span className="text-ink-muted text-sm ml-2">
+                      {word?.emoji} {word?.word}
+                    </span>
+                  </>
+                ),
+                value: <span className="font-mono text-gold font-bold">{state.scores[p.id] || 0} pts</span>,
+              };
+            })}
+          />
+        </Card>
         <Button
           variant="ghost"
           onClick={() => {

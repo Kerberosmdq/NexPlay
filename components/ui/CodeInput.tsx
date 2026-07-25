@@ -50,20 +50,20 @@ export function CodeInput({ label, value, onChange, length = 4, autoFocus }: Cod
               key={idx}
               className={`w-14 h-16 sm:w-16 sm:h-20 rounded-2xl flex items-center justify-center bg-surface-well border-4 ${
                 filled
-                  ? "border-accent-mint scale-105"
+                  ? "border-action-primary scale-105"
                   : isCurrent
                     ? "border-focus motion-pulse"
                     : "border-line"
               }`}
               style={
                 filled
-                  ? { boxShadow: "0 0 20px color-mix(in srgb, var(--color-accent-mint) 65%, transparent)" }
+                  ? { boxShadow: "0 0 20px color-mix(in srgb, var(--color-action-primary) 45%, transparent)" }
                   : isCurrent
-                    ? { boxShadow: "0 0 20px color-mix(in srgb, var(--color-focus) 65%, transparent)" }
+                    ? { boxShadow: "0 0 20px color-mix(in srgb, var(--color-focus) 45%, transparent)" }
                     : undefined
               }
             >
-              <span className="text-3xl sm:text-4xl font-black text-accent-mint tracking-widest">{char}</span>
+              <span className="font-mono text-3xl sm:text-4xl font-bold text-action-primary tracking-widest">{char}</span>
             </div>
           );
         })}

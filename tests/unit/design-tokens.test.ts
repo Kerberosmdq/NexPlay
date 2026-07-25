@@ -53,6 +53,8 @@ describe("design tokens — WCAG AA contrast (ADR-0004 §4)", () => {
     ["action-primary", "color-action-primary", "color-on-primary"],
     ["action-secondary", "color-action-secondary", "color-on-secondary"],
     ["action-danger", "color-action-danger", "color-on-danger"],
+    ["success-surface", "color-success-surface", "color-on-success-surface"],
+    ["danger-surface", "color-danger-surface", "color-on-danger-surface"],
   ];
 
   it.each(actionPairs)("%s bg/on pair meets AA (>=4.5:1)", (_name, bgKey, fgKey) => {
@@ -69,6 +71,13 @@ describe("design tokens — WCAG AA contrast (ADR-0004 §4)", () => {
     ["ink-muted on surface", "color-ink-muted", "color-surface"],
     ["ink-muted on surface-raised", "color-ink-muted", "color-surface-raised"],
     ["ink-muted on surface-sunken", "color-ink-muted", "color-surface-sunken"],
+    ["ink-muted on surface-well", "color-ink-muted", "color-surface-well"],
+    ["gold on surface", "color-gold", "color-surface"],
+    ["gold on surface-raised", "color-gold", "color-surface-raised"],
+    ["on-penumbra on penumbra-ground", "color-on-penumbra", "color-penumbra-ground"],
+    ["on-penumbra-muted on penumbra-ground", "color-on-penumbra-muted", "color-penumbra-ground"],
+    ["penumbra-danger on penumbra-ground", "color-penumbra-danger", "color-penumbra-ground"],
+    ["penumbra-success on penumbra-ground", "color-penumbra-success", "color-penumbra-ground"],
   ];
 
   it.each(textOnSurfaces)("%s meets AA (>=4.5:1)", (_name, fgKey, bgKey) => {

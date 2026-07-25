@@ -59,15 +59,13 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
       const notEnoughPlayers = players.length < 3;
       return (
         <Card className="flex flex-col items-center justify-center space-y-8 w-full max-w-2xl mx-auto">
-          <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 tracking-tight text-center">
-            {t("config.title")}
-          </h2>
+          <h2 className="font-display text-4xl text-ink text-center">{t("config.title")}</h2>
 
           <div className="w-full space-y-6">
             <div className="flex flex-col space-y-2">
               <label className="text-ink-muted font-bold">{tConfig("timerSeconds")}</label>
               <select
-                className="bg-surface-sunken border-2 border-line text-ink p-4 rounded-xl font-semibold outline-none focus-visible:border-focus transition-colors"
+                className="bg-surface-sunken border-2 border-line text-ink p-4 rounded-xl font-semibold outline-none focus-visible:border-focus"
                 value={state.timerSeconds}
                 onChange={(e) => dispatch({ type: "SET_CONFIG", timerSeconds: parseInt(e.target.value, 10) })}
               >
@@ -80,7 +78,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             </div>
 
             {notEnoughPlayers ? (
-              <div className="bg-red-500/20 text-red-300 p-4 rounded-xl text-center font-bold border border-red-500/30">
+              <div className="bg-danger-surface text-on-danger-surface p-4 rounded-xl text-center font-bold border border-action-danger/30">
                 {t("config.notEnoughPlayers")}
               </div>
             ) : (
@@ -113,25 +111,23 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
 
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4 text-center">
-        <div className="text-3xl font-black text-ink">{timeLeft === null ? "∞" : formatTime(timeLeft)}</div>
+        <div className="font-mono text-3xl font-bold text-ink">{timeLeft === null ? "∞" : formatTime(timeLeft)}</div>
 
         {hasGuessed ? (
-          <div className="bg-green-900/30 border border-green-500/30 p-8 rounded-3xl text-center w-full space-y-3">
+          <div className="bg-success-surface border border-action-primary/30 p-8 rounded-3xl text-center w-full space-y-3">
             <div className="text-5xl">🎉</div>
-            <p className="text-green-300 font-bold text-lg">{t("playing.youGuessed")}</p>
-            <p className="text-3xl font-black text-ink">
+            <p className="text-on-success-surface font-bold text-lg">{t("playing.youGuessed")}</p>
+            <p className="font-display text-3xl text-ink">
               {myWord?.emoji} {myWord?.word}
             </p>
-            <p className="text-sm text-green-200/70">{t("playing.keepHelping")}</p>
           </div>
         ) : hasLost ? (
-          <div className="bg-red-900/30 border border-red-500/30 p-8 rounded-3xl text-center w-full space-y-3">
+          <div className="bg-danger-surface border border-action-danger/30 p-8 rounded-3xl text-center w-full space-y-3">
             <div className="text-5xl">😬</div>
-            <p className="text-red-300 font-bold text-lg">{t("playing.youLost")}</p>
-            <p className="text-3xl font-black text-ink">
+            <p className="text-on-danger-surface font-bold text-lg">{t("playing.youLost")}</p>
+            <p className="font-display text-3xl text-ink">
               {myWord?.emoji} {myWord?.word}
             </p>
-            <p className="text-sm text-red-200/70">{t("playing.keepHelping")}</p>
           </div>
         ) : (
           <>
@@ -141,22 +137,16 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
 
             <div className="w-full bg-surface-raised border-4 border-line rounded-3xl p-10 space-y-4">
               <div className="text-8xl">{myWord?.emoji}</div>
-              <p className="text-4xl font-black text-ink">{myWord?.word}</p>
+              <p className="font-display text-4xl text-ink">{myWord?.word}</p>
             </div>
 
             <div className="flex space-x-3 w-full">
-              <button
-                onClick={() => dispatch({ type: "GUESS_CORRECT", playerId })}
-                className="flex-1 bg-green-500/20 border-2 border-green-500 text-green-300 font-black text-xl py-5 rounded-2xl"
-              >
+              <Button variant="primary" onClick={() => dispatch({ type: "GUESS_CORRECT", playerId })}>
                 {t("playing.correctButton")}
-              </button>
-              <button
-                onClick={() => dispatch({ type: "GUESS_WRONG", playerId })}
-                className="flex-1 bg-red-500/20 border-2 border-red-500 text-red-300 font-black text-xl py-5 rounded-2xl"
-              >
+              </Button>
+              <Button variant="danger" onClick={() => dispatch({ type: "GUESS_WRONG", playerId })}>
                 {t("playing.wrongButton")}
-              </button>
+              </Button>
             </div>
           </>
         )}
@@ -173,7 +163,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
   if (state.phase === "resolution") {
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
-        <h2 className="text-3xl font-black text-ink text-center">{t("resolution.title")}</h2>
+        <h2 className="font-display text-3xl text-ink text-center">{t("resolution.title")}</h2>
 
         <Card className="w-full space-y-3">
           <Scoreboard
@@ -192,7 +182,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
                     </span>
                   </>
                 ),
-                value: <span className="text-xl font-black text-yellow-400">{state.scores[p.id] || 0} pts</span>,
+                value: <span className="font-mono text-xl font-bold text-gold">{state.scores[p.id] || 0} pts</span>,
               };
             })}
           />
