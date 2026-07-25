@@ -12,6 +12,7 @@ import {
 } from "@/lib/realtime/platformReducer";
 import { recordEvent, recordGameResult } from "@/lib/analytics";
 import { saveRoomSession, loadRoomSession, clearRoomSession, type RoomSession } from "@/lib/realtime/session";
+import { useWakeLock } from "@/lib/hooks/useWakeLock";
 import { Button, Screen } from "@/components/ui";
 
 // Mirrors MultiDeviceRoom's TERMINAL_PHASE_BY_GAME — see the comment there
@@ -23,6 +24,11 @@ const TERMINAL_PHASE_BY_GAME: Record<string, string> = {
 
 export default function HomePage() {
   const [session, setSession] = useState<RoomSession | null>(null);
+
+  // A family passes one phone around for a whole match — the screen
+  // shouldn't lock mid-round. Only held while a session (lobby wait or
+  // active game) is open, not on the entry screen.
+  useWakeLock(session !== null);
 
   // On first load, silently rejoin whatever multi-device room this device
   // was last in — the fix for "the connection dropped and nobody wrote
