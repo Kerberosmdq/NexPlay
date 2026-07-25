@@ -146,17 +146,34 @@ Known Issues in `docs/09_ai/CURRENT_STATE.md`).
   literals remain anywhere outside `app/tokens.css` — the decorative art
   `TASK-0028` had left as a documented exception got actually replaced,
   not just tokenized. 17 contrast assertions pass.
-- **Code task 3 — Identity & polish:** the real Nex hexagon (favicon, PWA
-  manifest + icons so the app installs to a home screen), a visible
-  language switcher (retiring the bilingual labels this same audit found
-  in `RoomLobby.tsx`), copy/share for the room code, and an accessibility
-  pass against `ADR-0004`'s contrast tests.
+- **Code task 3a — Hexagon identity & PWA (TASK-0030, done):** split out
+  of the original "Identity & polish" entry below so each PR stays
+  reviewable. The founder generated the actual hexagon mark (a die inside
+  the hexagon, in felt green, following the same hexagon-outline +
+  side-connector-node grammar already used across the other Nex-family
+  apps) via an external image tool from a prompt built collaboratively in
+  conversation — not from any code here. Processed via `sharp`
+  (`scripts/generate-icons.mjs`, kept for regeneration if the source logo
+  changes) into `app/icon.png`, `app/apple-icon.png` (opaque parchment
+  background — transparent apple-touch-icons render with a black fill on
+  iOS), and PWA manifest icons (`any` + `maskable` purposes). `app/manifest.ts`
+  added (Next.js App Router's auto-linked convention) with `theme_color`
+  (felt green) and `background_color` (parchment). The Next.js scaffold
+  leftovers the original audit flagged — `app/favicon.ico` and the five
+  unused `public/*.svg` files — are gone.
+- **Code task 3b — Polish:** a visible language switcher (retiring the
+  bilingual labels this same audit found in `RoomLobby.tsx`), copy/share
+  for the room code, and an accessibility pass against `ADR-0004`'s
+  contrast tests.
 
 **Done when:** all 6 existing views run on the new tokens/primitives in
 `BDR-0001`'s Paper & Felt direction with no raw hex literals outside
 `app/tokens.css`, the reveal moment actually animates with its penumbra
-look, contrast tests pass for every action/text token pair, and the
-hexagon appears as the app's icon.
+look, contrast tests pass for every action/text token pair, the hexagon
+appears as the app's icon (✅ 3a) — and a stranger can actually read the
+app in their own language via a visible switcher, share a room code
+without dictating it letter by letter, and the whole thing passes an
+accessibility pass (3b, still open).
 
 ## M4 — Battleship
 Third game — deliberately chosen to prove the platform isn't just for
