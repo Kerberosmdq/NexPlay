@@ -1,37 +1,73 @@
 /*
- * NexPlay Design System — Option C: Bold Kinetic Neon / Neo-Brutalist Pop
- * Article 10 (PROJECT_CONSTITUTION.md) & NEXPLAY_PLAN.md §5
+ * NexPlay Design Tokens — ADR-0004 (Design System Contract)
+ *
+ * Semantic, paired tokens: a component asks for a *use* ("surface",
+ * "action-primary"), never a raw color name. Every action pair (bg + its
+ * "on" foreground) is chosen together and covered by
+ * tests/unit/design-tokens.test.ts, which asserts each meets WCAG AA
+ * (>=4.5:1). This is the mechanism that makes a contrast regression like
+ * ADR-0004's audit findings (white text on an orange button at 2.33:1)
+ * structurally hard to reintroduce.
+ *
+ * This file intentionally keeps M3.5 code task 1's palette identical to
+ * what already shipped, with one exception: the two pairs the audit found
+ * failing AA (action-primary, action-secondary) are corrected using hues
+ * already present elsewhere in the brand (the existing hover shades),
+ * not new colors. BDR-0001's Paper & Felt palette and the penumbra reveal
+ * treatment are code task 2's job, not this file's, aside from reserving
+ * the two `--color-penumbra-*` tokens below so RevealCard has somewhere
+ * to read from once that task lands.
  */
 
 :root {
-  /* Option C Color Palette — Dark Velvet Purple foundation with electric vibrant pops */
-  --color-bg: #0b0518;
-  --color-surface: #170b30;
-  --color-surface-card: #221045;
-  --color-surface-card-hover: #2d165c;
-  
-  --color-primary: #8b5cf6;
-  --color-primary-hover: #7c3aed;
-  
-  --color-accent-mango: #ff8c00;
+  /* Surfaces — ground, from base to raised to sunken/well */
+  --color-surface: #0b0518;
+  --color-surface-raised: #13072b;
+  --color-surface-sunken: #0a0318;
+  --color-surface-well: #05020c;
+
+  /* Text */
+  --color-ink: #f8fafc;
+  --color-ink-muted: #a78bfa;
+
+  /* Structure */
+  --color-line: #3b177d;
+  --color-focus: #ff8c00;
+
+  /* Actions — bg / hover / on (foreground), chosen and tested as pairs */
+  --color-action-primary: #7c3aed;
+  --color-action-primary-hover: #6d28d9;
+  --color-on-primary: #ffffff;
+
+  --color-action-secondary: #ff8c00;
+  --color-action-secondary-hover: #ea580c;
+  --color-on-secondary: #13072b;
+
+  --color-action-danger: #be123c;
+  --color-action-danger-hover: #9f1239;
+  --color-on-danger: #ffffff;
+
+  /* Status accents (non-text-critical: dots, glows — not action pairs) */
   --color-accent-mint: #10b981;
   --color-accent-rose: #f43f5e;
 
-  --color-text-main: #f8fafc;
-  --color-text-muted: #a78bfa;
-  --color-border-accent: #3b1d75;
+  /* Penumbra — reserved for the reveal moment (BDR-0001). Not consumed by
+     any ported view in code task 1; RevealCard exists but doesn't apply
+     this look until code task 2. */
+  --color-penumbra-ground: #0a0f2c;
+  --color-penumbra-glow: #f0b429;
 
   /* Typography */
   --font-sans: var(--font-sans, "Outfit", ui-sans-serif, system-ui, sans-serif);
   --font-mono: var(--font-mono, "Geist_Mono", ui-monospace, monospace);
 
-  /* Radius — Playful rounded corners with 3D tactile feel */
+  /* Radius */
   --radius-sm: 0.5rem;
   --radius-md: 1rem;
   --radius-lg: 1.5rem;
   --radius-full: 9999px;
 
-  /* Motion */
+  /* Motion timing (gestures themselves are in app/motion.css) */
   --duration-fast: 100ms;
   --duration-base: 200ms;
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -39,7 +75,34 @@
 
 @theme inline {
   --color-surface: var(--color-surface);
-  --color-border: var(--color-border-accent);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-surface-sunken: var(--color-surface-sunken);
+  --color-surface-well: var(--color-surface-well);
+
+  --color-ink: var(--color-ink);
+  --color-ink-muted: var(--color-ink-muted);
+
+  --color-line: var(--color-line);
+  --color-focus: var(--color-focus);
+
+  --color-action-primary: var(--color-action-primary);
+  --color-action-primary-hover: var(--color-action-primary-hover);
+  --color-on-primary: var(--color-on-primary);
+
+  --color-action-secondary: var(--color-action-secondary);
+  --color-action-secondary-hover: var(--color-action-secondary-hover);
+  --color-on-secondary: var(--color-on-secondary);
+
+  --color-action-danger: var(--color-action-danger);
+  --color-action-danger-hover: var(--color-action-danger-hover);
+  --color-on-danger: var(--color-on-danger);
+
+  --color-accent-mint: var(--color-accent-mint);
+  --color-accent-rose: var(--color-accent-rose);
+
+  --color-penumbra-ground: var(--color-penumbra-ground);
+  --color-penumbra-glow: var(--color-penumbra-glow);
+
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 }

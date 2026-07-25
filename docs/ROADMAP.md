@@ -124,10 +124,16 @@ Known Issues in `docs/09_ai/CURRENT_STATE.md`).
   mandatory `components/ui/` primitives, a named motion vocabulary,
   contrast checked by unit test) accepted; `docs/04_design/FEEL.md`
   written.
-- **Code task 1 — System:** implement `ADR-0004`'s tokens and primitive
-  set; port the *existing* 6 views to them with no visual change yet, to
-  prove the system holds what already exists before it's asked to hold
-  something new.
+- **Code task 1 — System (TASK-0028, done):** `app/tokens.css` rewritten as
+  semantic paired tokens (the two real contrast failures fixed using hues
+  already in the brand, verified live: 5.70:1 and 8.24:1); `app/motion.css`
+  added with the four named gestures and a `prefers-reduced-motion`
+  override; the full `components/ui/` primitive set built; a contrast unit
+  test suite added (8 assertions, parses the real token file); all 6
+  existing views ported with no visual change beyond the two contrast
+  fixes. The Impostor reveal now actually animates
+  (`animationName: "nx-reveal"`, verified live) — the audit's top finding,
+  fixed for real.
 - **Code task 2 — Direction:** apply `BDR-0001`'s Paper & Felt direction
   (and the penumbra reveal) screen by screen.
 - **Code task 3 — Identity & polish:** the real Nex hexagon (favicon, PWA
@@ -137,9 +143,11 @@ Known Issues in `docs/09_ai/CURRENT_STATE.md`).
   pass against `ADR-0004`'s contrast tests.
 
 **Done when:** all 6 existing views run on the new tokens/primitives with
-no raw hex literals outside `components/ui/`, the reveal moment actually
-animates, contrast tests pass for every action/text token pair, and the
-hexagon appears as the app's icon.
+no raw hex literals outside `app/tokens.css` (one documented exception:
+`RoomLobby.tsx`'s decorative background art and wordmark, slated for full
+replacement — not migration — by code task 2/3), the reveal moment
+actually animates, contrast tests pass for every action/text token pair,
+and the hexagon appears as the app's icon.
 
 ## M4 — Battleship
 Third game — deliberately chosen to prove the platform isn't just for

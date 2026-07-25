@@ -1,13 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&display=swap');
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./motion.css";
 
 * {
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
 }
 
 body {
-  background-color: #0b0417; /* Solid dark background for the page */
-  color: #ffffff;
+  background-color: var(--color-surface);
+  color: var(--color-ink);
   min-height: 100vh;
 }

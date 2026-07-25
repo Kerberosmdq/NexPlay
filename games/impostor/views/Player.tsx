@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import type { ImpostorState, ImpostorAction } from "../reducer";
 import { maxImpostorsFor } from "../reducer";
 import { pickWordAndImpostors } from "../pickRound";
 import { PlayerRoster } from "./PlayerRoster";
+import { Button, Card, RevealCard, Scoreboard, WaitingState } from "@/components/ui";
 
 interface PlayerProps {
   state: ImpostorState;
@@ -23,7 +23,6 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
   const t = useTranslations("Impostor");
   const tConfig = useTranslations("games.impostor.config");
   const locale = useLocale();
-  const [showRole, setShowRole] = useState(false);
 
   const me = players.find((p) => p.id === rawPlayerId) ?? players.find((p) => p.isHost);
   const playerId = rawPlayerId ?? me?.id ?? "";
@@ -38,16 +37,16 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
       const notEnoughPlayers = players.length < Math.max(3, minPlayersNeeded);
 
       return (
-        <div className="flex flex-col items-center justify-center space-y-8 w-full max-w-2xl mx-auto bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-md">
+        <Card className="flex flex-col items-center justify-center space-y-8 w-full max-w-2xl mx-auto">
           <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 tracking-tight text-center">
             {t("config.title")}
           </h2>
 
           <div className="w-full space-y-6">
             <div className="flex flex-col space-y-2">
-              <label className="text-purple-200 font-bold">{tConfig("impostorCount")}</label>
+              <label className="text-ink-muted font-bold">{tConfig("impostorCount")}</label>
               <select
-                className="bg-[#13072b] border-2 border-[#3b177d] text-white p-4 rounded-xl font-semibold outline-none focus:border-pink-500 transition-colors"
+                className="bg-surface-sunken border-2 border-line text-ink p-4 rounded-xl font-semibold outline-none focus-visible:border-focus transition-colors"
                 value={state.impostorCount}
                 onChange={(e) =>
                   dispatch({
@@ -67,9 +66,9 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             </div>
 
             <div className="flex flex-col space-y-2">
-              <label className="text-purple-200 font-bold">{tConfig("hintDifficulty")}</label>
+              <label className="text-ink-muted font-bold">{tConfig("hintDifficulty")}</label>
               <select
-                className="bg-[#13072b] border-2 border-[#3b177d] text-white p-4 rounded-xl font-semibold outline-none focus:border-pink-500 transition-colors"
+                className="bg-surface-sunken border-2 border-line text-ink p-4 rounded-xl font-semibold outline-none focus-visible:border-focus transition-colors"
                 value={state.hintDifficulty}
                 onChange={(e) =>
                   dispatch({
@@ -91,7 +90,8 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
                 {t("config.notEnoughPlayersFor", { min: Math.max(3, minPlayersNeeded) })}
               </div>
             ) : (
-              <button
+              <Button
+                variant="primary"
                 onClick={() => {
                   const { word, shuffledPlayerIds } = pickWordAndImpostors(players, locale, state.usedWordIds);
                   dispatch({
@@ -101,79 +101,65 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
                     word,
                   });
                 }}
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-black text-2xl py-6 rounded-2xl shadow-[0_0_40px_rgba(236,72,153,0.4)] transform hover:scale-[1.02] active:scale-95 transition-all"
+                className="text-2xl py-6"
               >
                 {t("config.startButton")}
-              </button>
+              </Button>
             )}
           </div>
-        </div>
+        </Card>
       );
     }
 
-    return (
-      <div className="flex flex-col items-center justify-center space-y-4 text-center mt-20">
-        <div className="animate-spin text-4xl">⏳</div>
-        <p className="text-xl text-purple-200">{t("config.waitingForHost")}</p>
-      </div>
-    );
+    return <WaitingState label={t("config.waitingForHost")} />;
   }
 
   if (state.phase === "role_reveal") {
     return (
       <div className="flex flex-col items-center justify-center space-y-8 w-full max-w-sm mx-auto mt-4">
-        <h2 className="text-2xl font-bold text-white text-center">{t("roleReveal.title")}</h2>
+        <h2 className="text-2xl font-bold text-ink text-center">{t("roleReveal.title")}</h2>
 
-        <button
-          onPointerDown={() => setShowRole(true)}
-          onPointerUp={() => setShowRole(false)}
-          onPointerLeave={() => setShowRole(false)}
-          className="w-full bg-[#13072b] border-2 border-[#3b177d] active:border-pink-500 rounded-3xl p-10 flex flex-col items-center justify-center min-h-[300px] transition-all touch-none select-none"
-        >
-          {!showRole ? (
+        <RevealCard
+          hidden={
             <div className="text-center space-y-4">
               <div className="text-6xl">👁️</div>
-              <p className="text-purple-300 font-bold">{t("roleReveal.holdToReveal")}</p>
-              <p className="text-xs text-purple-400/50">{t("roleReveal.dontLetOthersLook")}</p>
+              <p className="text-ink-muted font-bold">{t("roleReveal.holdToReveal")}</p>
+              <p className="text-xs text-ink-muted/50">{t("roleReveal.dontLetOthersLook")}</p>
             </div>
-          ) : (
-            <div className="text-center space-y-6 animate-in fade-in zoom-in duration-200">
-              {isImpostor ? (
-                <>
-                  <div className="text-8xl">🕵️</div>
-                  <h3 className="text-3xl font-black text-red-500">{t("roleReveal.youAreImpostor")}</h3>
+          }
+          revealed={
+            isImpostor ? (
+              <div className="text-center space-y-6">
+                <div className="text-8xl">🕵️</div>
+                <h3 className="text-3xl font-black text-red-500">{t("roleReveal.youAreImpostor")}</h3>
 
-                  {state.hintDifficulty !== "none" && secretWord && (
-                    <div className="bg-red-900/30 border border-red-500/30 p-4 rounded-xl mt-4">
-                      <p className="text-sm text-red-300 uppercase tracking-widest font-bold mb-1">
-                        {t("roleReveal.yourClue")}
-                      </p>
-                      <p className="text-xl text-white font-bold">
-                        {state.hintDifficulty === "hard" ? secretWord.category : secretWord.easyHint}
-                      </p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="text-8xl">🤫</div>
-                  <h3 className="text-xl font-bold text-purple-200">{t("roleReveal.secretWordIs")}</h3>
-                  <p className="text-4xl font-black text-green-400 bg-green-900/30 px-6 py-3 rounded-2xl border border-green-500/30">
-                    {secretWord?.word}
-                  </p>
-                </>
-              )}
-            </div>
-          )}
-        </button>
+                {state.hintDifficulty !== "none" && secretWord && (
+                  <div className="bg-red-900/30 border border-red-500/30 p-4 rounded-xl mt-4">
+                    <p className="text-sm text-red-300 uppercase tracking-widest font-bold mb-1">
+                      {t("roleReveal.yourClue")}
+                    </p>
+                    <p className="text-xl text-ink font-bold">
+                      {state.hintDifficulty === "hard" ? secretWord.category : secretWord.easyHint}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center space-y-6">
+                <div className="text-8xl">🤫</div>
+                <h3 className="text-xl font-bold text-ink-muted">{t("roleReveal.secretWordIs")}</h3>
+                <p className="text-4xl font-black text-green-400 bg-green-900/30 px-6 py-3 rounded-2xl border border-green-500/30">
+                  {secretWord?.word}
+                </p>
+              </div>
+            )
+          }
+        />
 
         {isHost && (
-          <button
-            onClick={() => dispatch({ type: "PROCEED_TO_DISCUSSION" })}
-            className="mt-8 bg-white text-purple-900 font-black text-xl py-4 px-12 rounded-full hover:bg-purple-100 transform hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)] w-full"
-          >
+          <Button variant="ghost" onClick={() => dispatch({ type: "PROCEED_TO_DISCUSSION" })} className="mt-8">
             {t("roleReveal.continueButton")}
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -187,31 +173,28 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
 
     return (
       <div className="flex flex-col items-center justify-center space-y-6 text-center mt-10 px-4">
-        <h2 className="text-3xl font-bold text-purple-300">{t("discussion.title")}</h2>
+        <h2 className="text-3xl font-bold text-ink-muted">{t("discussion.title")}</h2>
 
         <PlayerRoster players={players} aliveIds={state.aliveIds} />
 
-        <div className="bg-black/30 p-6 rounded-2xl border border-white/10 max-w-sm w-full">
+        <div className="bg-surface-sunken p-6 rounded-2xl border border-line max-w-sm w-full">
           <div className="text-4xl mb-4">{isImpostor ? "🕵️" : "💬"}</div>
-          <p className="text-lg text-white font-semibold">
+          <p className="text-lg text-ink font-semibold">
             {isImpostor ? t("discussion.impostorTip") : t("discussion.innocentTip")}
           </p>
         </div>
 
         {everyoneSpoke ? (
-          <p className="text-purple-200 font-bold">{t("discussion.everyoneSpoke")}</p>
+          <p className="text-ink-muted font-bold">{t("discussion.everyoneSpoke")}</p>
         ) : isMyTurn ? (
           <div className="w-full max-w-sm space-y-4">
-            <p className="text-2xl font-black text-yellow-300 animate-pulse">{t("discussion.yourTurn")}</p>
-            <button
-              onClick={() => dispatch({ type: "NEXT_TURN" })}
-              className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xl py-5 rounded-2xl"
-            >
+            <p className="text-2xl font-black text-yellow-300 motion-pulse">{t("discussion.yourTurn")}</p>
+            <Button variant="primary" onClick={() => dispatch({ type: "NEXT_TURN" })} className="text-xl">
               {t("discussion.saidMyWord")}
-            </button>
+            </Button>
           </div>
         ) : (
-          <p className="text-purple-200">
+          <p className="text-ink-muted">
             {t("discussion.waitingForTurn", { name: currentSpeaker?.displayName ?? "" })}
           </p>
         )}
@@ -238,30 +221,31 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-4">
         <div className="text-4xl animate-bounce">🗳️</div>
-        <h2 className="text-2xl font-bold text-white text-center">{t("voting.title")}</h2>
+        <h2 className="text-2xl font-bold text-ink text-center">{t("voting.title")}</h2>
 
-        <p className="text-lg text-purple-200">
+        <p className="text-lg text-ink-muted">
           {t("voting.votesCount", { cast: totalVotes, total: alivePlayers.length })}
         </p>
 
         <PlayerRoster players={players} aliveIds={state.aliveIds} />
 
         {!isAlive ? (
-          <div className="bg-black/20 border border-white/10 p-8 rounded-2xl mt-4 w-full text-center">
-            <p className="text-purple-200/70">{t("voting.eliminatedSpectating")}</p>
+          <div className="bg-surface-sunken border border-line p-8 rounded-2xl mt-4 w-full text-center">
+            <p className="text-ink-muted/70">{t("voting.eliminatedSpectating")}</p>
           </div>
         ) : !hasVoted ? (
           <div className="w-full space-y-3 mt-4">
             {alivePlayers
               .filter((p) => p.id !== playerId)
               .map((target) => (
-                <button
+                <Button
                   key={target.id}
+                  variant="ghost"
                   onClick={() => dispatch({ type: "CAST_VOTE", voterId: playerId, votedId: target.id })}
-                  className="w-full bg-[#13072b] hover:bg-[#1a0a3a] border-2 border-[#3b177d] text-white font-bold text-xl py-4 rounded-xl transition-all"
+                  className="text-xl"
                 >
                   {target.displayName}
-                </button>
+                </Button>
               ))}
           </div>
         ) : (
@@ -273,12 +257,13 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         )}
 
         {isHost && allVoted && (
-          <button
+          <Button
+            variant="primary"
             onClick={() => dispatch({ type: "END_VOTING" })}
-            className="mt-8 bg-green-500 text-white font-black text-xl py-4 px-8 rounded-2xl shadow-[0_0_40px_rgba(34,197,94,0.4)] animate-pulse w-full"
+            className="mt-8 bg-green-500! hover:bg-green-400! text-white! motion-pulse"
           >
             {t("voting.revealResultsButton")}
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -295,7 +280,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         {!elimination?.eliminatedId ? (
           <>
             <div className="text-5xl">🤝</div>
-            <h2 className="text-2xl font-bold text-white text-center">{t("eliminationResult.tie")}</h2>
+            <h2 className="text-2xl font-bold text-ink text-center">{t("eliminationResult.tie")}</h2>
           </>
         ) : elimination.wasImpostor ? (
           <>
@@ -303,25 +288,22 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             <h2 className="text-2xl font-black text-red-400 text-center">
               {t("eliminationResult.wasImpostor", { name: eliminatedPlayer?.displayName ?? "" })}
             </h2>
-            <p className="text-purple-200 text-center">{t("eliminationResult.gameContinues")}</p>
+            <p className="text-ink-muted text-center">{t("eliminationResult.gameContinues")}</p>
           </>
         ) : (
           <>
             <div className="text-6xl">😬</div>
-            <h2 className="text-2xl font-black text-white text-center">
+            <h2 className="text-2xl font-black text-ink text-center">
               {t("eliminationResult.wasInnocent", { name: eliminatedPlayer?.displayName ?? "" })}
             </h2>
-            <p className="text-purple-200 text-center">{t("eliminationResult.gameContinues")}</p>
+            <p className="text-ink-muted text-center">{t("eliminationResult.gameContinues")}</p>
           </>
         )}
 
         {isHost && (
-          <button
-            onClick={() => dispatch({ type: "PROCEED_TO_DISCUSSION" })}
-            className="bg-white text-purple-900 font-black text-xl py-4 px-12 rounded-full hover:bg-purple-100 transform hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)] w-full"
-          >
+          <Button variant="ghost" onClick={() => dispatch({ type: "PROCEED_TO_DISCUSSION" })}>
             {t("eliminationResult.continueButton")}
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -335,14 +317,14 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         <div className="bg-red-900/30 p-8 rounded-3xl border border-red-500/30 text-center w-full">
           <div className="text-6xl mb-6">{isImpostor ? "😬" : "🎉"}</div>
 
-          <p className="text-xl text-white font-bold mb-4">
+          <p className="text-xl text-ink font-bold mb-4">
             {isImpostor ? t("guessWord.impostorPrompt") : t("guessWord.innocentsPrompt")}
           </p>
         </div>
 
         {isHost && (
-          <div className="w-full space-y-4 pt-4 border-t border-white/10">
-            <p className="text-sm text-purple-300 font-bold text-center uppercase tracking-widest">
+          <div className="w-full space-y-4 pt-4 border-t border-line">
+            <p className="text-sm text-ink-muted font-bold text-center uppercase tracking-widest">
               {t("guessWord.hostControls")}
             </p>
             <div className="flex space-x-4">
@@ -386,48 +368,42 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             </p>
           </div>
         ) : (
-          <h2 className="text-4xl font-black text-white text-center leading-tight">
+          <h2 className="text-4xl font-black text-ink text-center leading-tight motion-celebrate">
             {res?.impostorGuessedWord ? t("resolution.impostorStoleVictory") : t("resolution.innocentVictory")}
           </h2>
         )}
 
-        <div className="text-xl text-purple-200 text-center">
+        <div className="text-xl text-ink-muted text-center">
           {t("resolution.secretWordWas")}
           <br />
           <span className="text-3xl font-black text-pink-400 block mt-2">{state.secretWord?.word}</span>
         </div>
 
-        <div className="w-full bg-white/10 rounded-3xl p-6 backdrop-blur-md space-y-3 mt-4">
-          <h3 className="text-xl font-bold text-purple-300 mb-4 border-b border-white/10 pb-2">
-            {t("resolution.scoresTitle")}
-          </h3>
-          {players.map((p) => {
+        <Scoreboard
+          title={t("resolution.scoresTitle")}
+          entries={players.map((p) => {
             const wasImpostor = state.impostorIds.includes(p.id);
             const gained = res?.pointsAwarded[p.id] || 0;
-            return (
-              <div key={p.id} className="flex justify-between items-center bg-black/20 p-3 rounded-xl">
-                <div className="flex items-center space-x-3">
-                  <span className="text-xl">{wasImpostor ? "🕵️" : "🧑‍🤝‍🧑"}</span>
-                  <span className="text-lg font-bold text-white truncate max-w-[100px]">{p.displayName}</span>
-                </div>
+            return {
+              id: p.id,
+              icon: <span className="text-xl">{wasImpostor ? "🕵️" : "🧑‍🤝‍🧑"}</span>,
+              label: <span className="text-lg font-bold text-ink truncate max-w-[100px]">{p.displayName}</span>,
+              value: (
                 <div className="flex items-center space-x-3">
                   <span className="text-green-400 font-bold text-sm">+{gained}</span>
                   <span className="text-xl font-black text-yellow-400 w-16 text-right">
                     {state.scores[p.id] || 0} pts
                   </span>
                 </div>
-              </div>
-            );
+              ),
+            };
           })}
-        </div>
+        />
 
         {isHost && (
-          <button
-            onClick={() => dispatch({ type: "PLAY_AGAIN" })}
-            className="mt-6 bg-white text-purple-900 font-black text-xl py-4 px-12 rounded-full hover:bg-purple-100 shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all w-full"
-          >
+          <Button variant="ghost" onClick={() => dispatch({ type: "PLAY_AGAIN" })} className="mt-6">
             {t("resolution.nextRoundButton")}
-          </button>
+          </Button>
         )}
       </div>
     );

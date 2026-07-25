@@ -3,8 +3,9 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 7 - M3.5 Design System & Visual Identity (paperwork phase)
-- Status: BDR-0001/ADR-0004/FEEL.md accepted; three code tasks queued
+- Sprint: Sprint 7 - M3.5 Design System & Visual Identity (code task 1 of 3)
+- Status: Tokens, `components/ui/` primitives, and motion vocabulary
+  shipped; code tasks 2 (direction) and 3 (identity/polish) queued next
 
 ## Current Objective
 M1 and M2 are complete; M3 is implemented but still awaiting the founder's
@@ -13,9 +14,10 @@ the below). A full UX/UI audit of the shipped app found no enforced visual
 system (see `BDR-0001`/`ADR-0004` for specifics), which opened milestone
 **M3.5** in `docs/ROADMAP.md` as an explicit scope decision ahead of M4
 (Battleship), so a third game doesn't get built on the same unenforced
-styling the audit found. TASK-0027 (paperwork: `BDR-0001`, `ADR-0004`,
-`docs/04_design/FEEL.md`, the `ROADMAP.md` M3.5 entry) is done; the three
-code tasks it queues (system → direction → identity/polish) are next.
+styling the audit found. TASK-0027 (paperwork) and TASK-0028 (tokens +
+primitives + motion, code task 1) are both done; code tasks 2 (BDR-0001's
+Paper & Felt direction) and 3 (hexagon/PWA/language switcher/a11y pass)
+are next.
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -160,7 +162,37 @@ code tasks it queues (system → direction → identity/polish) are next.
       unit test), and `docs/04_design/FEEL.md`. Opened milestone **M3.5**
       in `docs/ROADMAP.md` as an explicit scope decision, queuing three
       follow-up code tasks (system → direction → identity/polish). No
-      component code changed in this task.
+      component code changed in this task. A follow-up correction: the
+      original audit's live-measurement script mis-parsed the browser's
+      `lab()` color notation as `rgb()`, reporting six contrast failures
+      when only two were real (both action buttons); corrected in
+      `BDR-0001`/`ADR-0004`/this file before the docs PR merged.
+- [x] **TASK-0028**: Design System — Tokens, Primitives & Motion (M3.5 code
+      task 1) — implemented `ADR-0004` for real. `app/tokens.css` rewritten
+      as semantic paired tokens (the two real contrast failures fixed using
+      hues already in the brand — `#7c3aed`/white for the primary action,
+      `#ff8c00`/`#13072b` ink for the secondary — both now ≥4.5:1, verified
+      live); `app/motion.css` added with the four named gestures
+      (`reveal`/`deal`/`celebrate`/`pulse`) and a single
+      `prefers-reduced-motion` override block; the mandatory
+      `components/ui/` set built (`Button`, `Card`, `Field`, `CodeInput`,
+      `PlayerChip`, `Screen`, `RevealCard`, `Scoreboard`, `WaitingState`);
+      `tests/unit/design-tokens.test.ts` added (8 contrast assertions,
+      parses the real `tokens.css`, no duplicated palette). All 6 existing
+      views ported with no palette/layout change (one documented exception:
+      `RoomLobby.tsx`'s decorative background art and wordmark colors are
+      the current identity being fully replaced, not migrated, by code
+      task 2/3 — tokenizing throwaway pixels wasn't worth it). Fixed the
+      audit's top finding for real: the Impostor reveal now animates
+      (`animationName: "nx-reveal"`, verified live) instead of silently
+      doing nothing. Caught and fixed one real bug during browser
+      verification: `CodeInput`'s tiles briefly rendered the wrong border
+      color after rapid input because `transition-all` interacted badly
+      with the `motion-pulse` infinite animation turning on/off on the
+      same element — fixed by dropping the unneeded transition. 73 unit
+      tests pass; full lobby → single-device Impostor → reveal →
+      discussion → voting → resolution flow manually verified in-browser
+      with zero console errors.
 
 ## Tasks In Progress
 - [ ] None.
@@ -187,4 +219,4 @@ code tasks it queues (system → direction → identity/polish) are next.
   updated `docs/ROADMAP.md` — not built on the pre-M3.5 styling.
 
 ## Last Updated
-- 2026-07-24
+- 2026-07-25

@@ -1,0 +1,95 @@
+/*
+ * NexPlay Motion Vocabulary — ADR-0004 §3
+ *
+ * Four named gestures, defined once, used by name everywhere. This
+ * replaces per-screen animation classes — most notably the Impostor
+ * reveal's `animate-in fade-in zoom-in`, which referenced
+ * `tailwindcss-animate`, a package that was never installed (verified
+ * live: `animationName: "none"`). `.motion-reveal` is its real fix.
+ *
+ * Every gesture has a `prefers-reduced-motion` fallback in the single
+ * media query at the bottom — never bolted on per screen.
+ */
+
+@keyframes nx-reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.92) rotate(-2deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.03) rotate(0.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes nx-deal {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes nx-celebrate {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.12);
+  }
+  70% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes nx-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.motion-reveal {
+  animation: nx-reveal 320ms var(--ease-bounce) both;
+}
+
+.motion-deal {
+  animation: nx-deal 220ms ease-out both;
+}
+
+.motion-celebrate {
+  animation: nx-celebrate 420ms ease-out both;
+}
+
+.motion-pulse {
+  animation: nx-pulse 1600ms ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-reveal,
+  .motion-deal,
+  .motion-celebrate {
+    animation: none;
+  }
+
+  /* A waiting state losing its motion shouldn't also lose the "this is
+     pending" signal, so it keeps a static, slightly dimmed look instead
+     of jumping to full opacity. */
+  .motion-pulse {
+    animation: none;
+    opacity: 0.75;
+  }
+}

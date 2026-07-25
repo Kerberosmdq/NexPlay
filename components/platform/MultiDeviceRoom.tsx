@@ -11,6 +11,7 @@ import {
   type PlatformAction,
 } from "@/lib/realtime/platformReducer";
 import { recordEvent, recordGameResult } from "@/lib/analytics";
+import { Button, WaitingState } from "@/components/ui";
 
 interface MultiDeviceRoomProps {
   roomCode: string;
@@ -102,25 +103,17 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
     return (
       <div className="flex flex-col items-center justify-center space-y-4 text-center max-w-sm px-4">
         <div className="text-4xl">⚠️</div>
-        <p className="text-xl font-bold text-red-300">{t("connectionError")}</p>
-        <p className="text-sm text-white/50">{connectionError}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3 rounded-xl"
-        >
+        <p className="text-xl font-bold text-action-danger">{t("connectionError")}</p>
+        <p className="text-sm text-ink-muted">{connectionError}</p>
+        <Button variant="ghost" fullWidth={false} onClick={() => window.location.reload()} className="px-6">
           {t("retryButton")}
-        </button>
+        </Button>
       </div>
     );
   }
 
   if (!isConnected) {
-    return (
-      <div className="flex flex-col items-center justify-center space-y-4">
-        <div className="animate-spin text-4xl">⏳</div>
-        <p className="text-xl">{t("connecting")}</p>
-      </div>
-    );
+    return <WaitingState label={t("connecting")} />;
   }
 
   if (gameState.status === "LOBBY") {
