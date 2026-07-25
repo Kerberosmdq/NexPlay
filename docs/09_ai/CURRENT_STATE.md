@@ -327,6 +327,32 @@ M3.5 and starting M4.
       reported "another server is already running." Killed the stale
       process and started clean; worth knowing if a future agent hits the
       same "lock says busy, port says nobody's home" symptom.
+- [x] **Hotfix (unnumbered)**: Who Am I — "too hard, change my word"
+      button. Founder request after discussing the earlier "rotate who
+      starts" fix: anyone should be able to bail on a word that's too hard
+      for a given player (their family plays with a 7- and a 9-year-old)
+      without ending their turn. Deliberately scoped to **Who Am I only**
+      (Impostor has one *shared* secret word — swapping it mid-round would
+      need to reset everyone's discussion, a bigger, messier change not
+      requested) and **anyone can trigger it** (no host/self-only
+      restriction, per the founder's call — casual family game, not worth
+      guarding). Added `REROLL_WORD` to `WhoAmIState`'s action union
+      (reducer swaps in a caller-picked replacement word for that one
+      player, marks it used, ignores the request if that player already
+      resolved guessed/lost or the phase isn't `playing`) and
+      `pickReplacementWord` in `pickRound.ts` (same never-used-this-match
+      rule as the initial deal, picked outside the reducer for the same
+      `Math.random()`-stays-out-of-pure-code reason as `pickAssignments`).
+      Wired a small text-link button (matching the existing
+      `endRoundButton` style) in both `Player.tsx` (multi-device) and
+      `SingleDevice.tsx`, right below the correct/wrong buttons. New i18n
+      key `WhoAmI.playing.rerollButton` in both `es.json`/`en.json`. 4 new
+      reducer tests. Verified live: pressing it swapped the word (Búho →
+      Zapato) without advancing the turn or resetting the per-turn timer;
+      guessing correctly afterward still advanced normally. Also answered
+      a founder question in passing: both games declare `maxPlayers: 12`
+      with no additional platform-level cap, so 8 players in one match is
+      fully supported.
 
 ## Tasks In Progress
 - [ ] None.

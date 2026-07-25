@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import type { WhoAmIState, WhoAmIAction } from "../reducer";
-import { pickAssignments } from "../pickRound";
+import { pickAssignments, pickReplacementWord } from "../pickRound";
 import { Button, Card, Scoreboard, WaitingState } from "@/components/ui";
 
 interface PlayerProps {
@@ -148,6 +148,16 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
                 {t("playing.wrongButton")}
               </Button>
             </div>
+
+            <button
+              onClick={() => {
+                const newWord = pickReplacementWord(locale, state.usedWordIds);
+                dispatch({ type: "REROLL_WORD", playerId, newWord });
+              }}
+              className="text-xs text-ink-muted underline"
+            >
+              {t("playing.rerollButton")}
+            </button>
           </>
         )}
 

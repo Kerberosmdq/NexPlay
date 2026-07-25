@@ -124,7 +124,8 @@
       "youGuessed": "¡Acertaste!",
       "youLost": "No acertaste. Ya no sumás puntos esta ronda.",
       "keepHelping": "Podés seguir ayudando a contestar preguntas de los demás.",
-      "endRoundButton": "Terminar ronda"
+      "endRoundButton": "Terminar ronda",
+      "rerollButton": "Es muy difícil, cambiar palabra"
     },
     "singleDevice": {
       "holdFor": "Mostrale esto a todos menos a {name}",

@@ -124,7 +124,8 @@
       "youGuessed": "You got it!",
       "youLost": "You didn't get it. No points this round.",
       "keepHelping": "You can keep helping answer everyone else's questions.",
-      "endRoundButton": "End round"
+      "endRoundButton": "End round",
+      "rerollButton": "Too hard, change my word"
     },
     "singleDevice": {
       "holdFor": "Show everyone but {name}",
