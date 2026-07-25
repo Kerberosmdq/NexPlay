@@ -306,6 +306,27 @@ M3.5 and starting M4.
       All three verified together in one live playthrough (lobby →
       single-device Impostor → reveal → discussion, rotated correctly on
       a tie → resolution), zero console errors; 85 unit tests pass.
+- [x] **Hotfix (unnumbered)**: The lobby header's hexagon never got
+      updated to the real logo. `TASK-0029` added a plain placeholder
+      hexagon `<polygon>` as an explicit preview accent (documented as
+      such — "the real favicon/PWA icon system... is code task 3's job");
+      `TASK-0030` then built the real hexagon+die mark and wired it as the
+      favicon/PWA icon, but nobody went back to swap the lobby's inline
+      placeholder for the real asset — so the app's own UI still showed a
+      plain green hexagon with no die inside, while the browser tab/PWA
+      icon correctly showed the real mark. Founder caught this by
+      screenshotting the lobby. Fixed by replacing the inline
+      `<svg><polygon>` in `RoomLobby.tsx` with `next/image` pointing at
+      `/icon.png` — the same file already serving as the favicon, so
+      there's now exactly one hexagon asset, not two. Also incidentally
+      fixed a real, unrelated infra issue found while verifying this: a
+      stale `next dev` process (PID still alive, holding Next's
+      single-instance dev-server lock) was refusing all new connections
+      on port 3000 without actually answering any — `curl` to port 3000
+      got connection-refused while a fresh `next dev` attempt still
+      reported "another server is already running." Killed the stale
+      process and started clean; worth knowing if a future agent hits the
+      same "lock says busy, port says nobody's home" symptom.
 
 ## Tasks In Progress
 - [ ] None.

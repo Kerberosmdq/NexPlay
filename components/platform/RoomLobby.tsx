@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { generateRoomCode, isValidRoomCode } from "@/lib/realtime";
 import { Button, CodeInput, Field } from "@/components/ui";
 
@@ -49,19 +50,11 @@ export function RoomLobby({
   return (
     <div className="relative w-full max-w-lg mx-auto">
       <div className="relative w-full overflow-hidden p-6 sm:p-8 bg-surface-raised text-ink rounded-3xl border-4 border-line shadow-[0_16px_40px_rgba(43,33,24,0.18)] space-y-6">
-        {/* Brand Header — the Nex hexagon (BDR-0001 §4). Only a small
-            preview accent here; the real favicon/PWA icon system and
-            per-game hexagon interiors are code task 3. */}
+        {/* Brand Header — the real Nex hexagon mark (BDR-0001 §4,
+            TASK-0030), the same file wired as the app's favicon/PWA icon. */}
         <div className="text-center space-y-2 pb-2">
           <div className="flex items-center justify-center gap-3">
-            <svg viewBox="0 0 100 116" className="w-9 h-10" aria-hidden="true">
-              <polygon
-                points="50,2 97,29 97,87 50,114 3,87 3,29"
-                fill="var(--color-action-primary)"
-                stroke="var(--color-line)"
-                strokeWidth="4"
-              />
-            </svg>
+            <Image src="/icon.png" alt="" width={40} height={40} priority aria-hidden="true" />
             <h1 className="font-display text-5xl sm:text-6xl tracking-tight">NexPlay</h1>
           </div>
           <p className="text-[10px] sm:text-xs font-black tracking-[0.2em] text-ink-muted uppercase pt-2">
