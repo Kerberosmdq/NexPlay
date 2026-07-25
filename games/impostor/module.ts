@@ -65,6 +65,7 @@ export const impostorGameModule: GameModule<ImpostorConfig, ImpostorState, Impos
     aliveIds: [],
     turnOrder: [],
     turnIndex: 0,
+    discussionsStarted: 0,
     votes: {},
     lastElimination: null,
     scores: {},

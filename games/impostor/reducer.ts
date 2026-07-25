@@ -30,6 +30,11 @@ export interface ImpostorState {
   turnOrder: string[];
   turnIndex: number; // index into turnOrder of whose turn it currently is
 
+  // How many discussion phases have started this session (across
+  // PLAY_AGAIN too — never reset). Used only to rotate who speaks first
+  // each time, so the same player isn't always asked to start.
+  discussionsStarted: number;
+
   // Voting — reset at the start of every voting round
   votes: Record<string, string>; // voterId -> votedId
 
@@ -136,11 +141,26 @@ export function impostorReducer(state: ImpostorState, action: ImpostorAction): I
       };
     }
 
-    case "PROCEED_TO_DISCUSSION":
+    case "PROCEED_TO_DISCUSSION": {
       if (state.phase !== "role_reveal" && state.phase !== "elimination_result") return state;
       // A fresh speaking order for this round — everyone still alive gets a
-      // turn to say one word/clue before the group can vote.
-      return { ...state, phase: "discussion", turnOrder: state.aliveIds, turnIndex: 0 };
+      // turn to say one word/clue before the group can vote. The starting
+      // speaker rotates by one player (based on the stable playerIds order,
+      // not the shrinking aliveIds) every time a discussion begins — across
+      // elimination rounds within one match, and across matches via
+      // PLAY_AGAIN — so the same person isn't always asked to go first.
+      const n = state.playerIds.length;
+      const offset = n > 0 ? state.discussionsStarted % n : 0;
+      const rotatedOrder = [...state.playerIds.slice(offset), ...state.playerIds.slice(0, offset)];
+      const turnOrder = rotatedOrder.filter((id) => state.aliveIds.includes(id));
+      return {
+        ...state,
+        phase: "discussion",
+        turnOrder,
+        turnIndex: 0,
+        discussionsStarted: state.discussionsStarted + 1,
+      };
+    }
 
     case "NEXT_TURN": {
       if (state.phase !== "discussion") return state;

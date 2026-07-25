@@ -3,121 +3,133 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: TASK-0030
-- **Title**: Hexagon Identity & PWA Icons (M3.5 code task 3a)
+- **Task ID**: Hotfix (unnumbered)
+- **Title**: Family playtest fixes — wake lock, Impostor turn rotation, +100 words per game
 
 ## Current Branch
-- `feat/hexagon-identity-and-pwa`, branched off `main` after `PR #26`
-  (`TASK-0029`, Paper & Felt direction) merged.
+- `fix/family-playtest-fixes`, branched off `main` after `PR #27`
+  (`TASK-0030`, hexagon identity) merged. Unrelated to M3.5 — this is a
+  cross-cutting bugfix/content task touching already-shipped M2
+  (Impostor) and M3 (Who Am I), plus a new small platform-level hook.
 
 ## What's in this task
-`BDR-0001` §4 said "the hexagon is real... used as the app icon, favicon,
-and PWA install icon." This task makes that literally true, rather than
-the placeholder inline SVG hexagon accent `TASK-0029` added to the lobby
-header as a preview.
+The founder played several real matches with their family the night of
+2026-07-24 and came back with three issues, asked to be fixed "lo antes
+posible" for that same night's next session. Bundled into one task
+because they were reported together and are individually small — matches
+the project's own "Hotfix (unnumbered)" precedent for exactly this
+situation.
 
-**The mark itself came from the founder, not from code.** In conversation,
-we looked at two existing hexagon marks from the founder's other Nex-
-family apps and worked out the shared grammar together: a point-up
-hexagon outline, two small circular "connector node" pins sitting on the
-left/right mid-height vertices (each linked inward by a short stub line —
-a circuit-board-pin motif), and an app-specific interior icon in a single
-brand color. I wrote an image-generation prompt applying that grammar to
-NexPlay specifically (felt green `#1F6B52`, a six-sided die face as the
-interior icon — the most universal "tabletop game" symbol, fitting
-`BDR-0001`'s physical Paper & Felt world). The founder ran that prompt
-through an external image tool and dropped the result at
-`public/NexPlay_Logo.png`.
+1. **Screen wake lock.** The family had to go into their phone's own
+   settings and disable the lock-screen timeout entirely just to keep a
+   mid-round match from going dark — not something anyone should have to
+   do per-app. `lib/hooks/useWakeLock.ts` wraps the Screen Wake Lock API:
+   feature-detected (silently no-ops on browsers without support — this
+   is a nicety, must never throw or block rendering), held for the
+   duration of `session !== null` in `app/[locale]/page.tsx` (from the
+   lobby-wait screen through an active game, not the entry screen), and
+   re-acquires on `visibilitychange` since the OS releases the lock
+   whenever the tab is hidden (backgrounded, screen manually turned off).
+   Verified live by monkey-patching `navigator.wakeLock.request`: zero
+   calls on the entry screen, one call the instant a session starts.
 
-**This task's actual work was turning that one source PNG into a real
-icon set:**
-1. Found the mark's tight bounding box within the (non-square, mostly
-   transparent) source image by scanning its alpha channel in-browser via
-   canvas.
-2. `sharp` — a transitive dependency Next.js already installs for image
-   optimization, but not resolvable via a plain top-level `require`
-   (verified: `Cannot find module 'sharp'`) — was reachable by requiring
-   its actual `node_modules/.pnpm/sharp@0.34.5/node_modules/sharp` path
-   directly. `scripts/generate-icons.mjs` uses that to crop, resize, and
-   composite onto appropriately-backgrounded square canvases: `app/icon.png`
-   (512px, transparent — Next.js App Router auto-serves this as the
-   favicon), `app/apple-icon.png` (180px, **opaque parchment background**
-   — transparent apple-touch-icons render with a black fill on iOS, so
-   this one deliberately isn't transparent like the others),
-   `public/icons/icon-192.png`/`icon-512.png` (PWA manifest, "any"
-   purpose, transparent), `public/icons/icon-maskable-512.png` (PWA
-   manifest, "maskable" purpose — opaque background *and* extra padding,
-   since Android's shape mask crops right to the icon's edges and a
-   maskable icon must survive that crop with its mark still intact).
-3. `app/manifest.ts` (Next.js's file-based, auto-linked convention — no
-   manual `<link rel="manifest">` needed) wires those icons plus
-   `theme_color` (felt green) and `background_color` (parchment).
-   `viewport.themeColor` in `layout.tsx` covers the other half (mobile
-   Chrome's address-bar tint, which reads from `<meta name="theme-color">`
-   independently of the manifest).
-4. Deleted the Next.js scaffold leftovers the original audit flagged:
-   `app/favicon.ico` (the default Next.js logo — superseded by
-   `app/icon.png`) and `public/{file,globe,next,vercel,window}.svg` (never
-   referenced anywhere, just scaffold cruft).
+2. **Impostor: rotate who starts discussion.** `PROCEED_TO_DISCUSSION`
+   used to always set `turnOrder: state.aliveIds`, and `aliveIds` derives
+   from the original `playerIds` order — meaning whoever was first in
+   that list (typically whoever's name was typed/joined first) was
+   *always* asked to speak first, every round, every match, all night.
+   Fixed by adding `discussionsStarted: number` to `ImpostorState`
+   (initialized to 0 in `module.ts`'s `setup()`, **never reset** by
+   `START_GAME` or `PLAY_AGAIN` — it has to persist across the whole
+   session for the rotation to actually go somewhere over a night of
+   matches) and rotating the *stable* `playerIds` order by
+   `discussionsStarted % playerIds.length` before filtering down to
+   `aliveIds`, in `reducer.ts`'s `PROCEED_TO_DISCUSSION` handler. Rotating
+   the stable full roster (not the shrinking `aliveIds` array directly)
+   avoids ambiguity about what "rotate by one" means once someone's been
+   eliminated mid-match. Deliberately scoped to *discussion order only* —
+   `playerIds`/`aliveIds` themselves are untouched, so single-device's
+   reveal order and the `roundPlayers`/`names` positional zip in
+   `SingleDevice.tsx` (which assumes `state.playerIds[i]` lines up with
+   the locally-held `names[i]`) are both completely unaffected. Rotating
+   *that* array instead would have silently mismatched names to ids in
+   single-device — deliberately avoided, not just untested.
+   3 new unit tests in `tests/unit/impostor-game.test.ts` (rotates across
+   discussion rounds within a match; survives `PLAY_AGAIN` into a new
+   match without resetting; correctly skips an eliminated player while
+   preserving everyone else's relative rotated order). Verified live: a
+   3-way tie sent the group back to discussion, and the second round
+   started with a different player than the first.
 
-**A scope note, written down rather than left implicit:** the original
-`docs/ROADMAP.md` "Code task 3 — Identity & polish" entry bundled the
-hexagon/PWA work with a language switcher, room-code share, and an
-accessibility pass. This task split that into 3a (done here) and 3b (not
-started) so the PR stayed reviewable — see `docs/ROADMAP.md`'s M3.5
-section for the explicit split.
+3. **+100 words per game.** The founder was worried about repeats across
+   several matches in one night — Impostor had exactly 100 words, Who Am
+   I had 85. Added a new, non-overlapping 100-word batch to
+   `games/impostor/content/{es,en}.ts` and
+   `games/who-am-i/content/{es,en}.ts` (kept in ES/EN parity, per
+   `ADR-0003`'s localized-content-pack requirement), spanning 9 new
+   categories neither pack had yet: more animals (insects, small
+   mammals), more food, more household items, clothing, sports, musical
+   instruments, more nature/weather, school supplies, and body parts.
+   Impostor is now 200 words, Who Am I is 185. Both games' word pools
+   already reuse the *same underlying concepts* where practical (matching
+   how their original ~85-100 word packs were already near-identical
+   apart from Impostor's extra Professions category) — Impostor gets
+   `category`/`easyHint`, Who Am I gets an `emoji`, per each type's own
+   shape. **Caught and fixed one real bug during verification**: the new
+   "Pescado" (a food item) and the existing "Pez" (an animal) both
+   translate to "Fish" in English — Spanish distinguishes them,
+   English doesn't by default. Confirmed via a grep-based duplicate-word
+   check across all four content files (not just duplicate `id`s, which
+   were already fine) before this was caught; renamed the food entry to
+   "Seafood" in both `en.ts` files to keep every displayed word unique
+   within its own pack. This check is worth repeating for any future word
+   additions — duplicate IDs alone don't catch duplicate display text.
 
 ## Files Modified / Added
-- `app/icon.png`, `app/apple-icon.png` (new, binary)
-- `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png`
-  (new, binary)
-- `public/NexPlay_Logo.png` (source asset, provided by the founder)
-- `app/manifest.ts` (new)
-- `scripts/generate-icons.mjs` (new — kept, not throwaway, for
-  regenerating the set if the source logo ever changes)
-- `app/[locale]/layout.tsx` (`viewport.themeColor` added)
-- Deleted: `app/favicon.ico`, `public/file.svg`, `public/globe.svg`,
-  `public/next.svg`, `public/vercel.svg`, `public/window.svg`
-- `docs/09_ai/tasks/TASK-0030-hexagon-identity-and-pwa.md` (new),
-  `docs/ROADMAP.md` (3a/3b split), `docs/09_ai/CURRENT_STATE.md`, this
-  file
+- `lib/hooks/useWakeLock.ts` (new)
+- `app/[locale]/page.tsx` (`useWakeLock` wired to `session !== null`)
+- `games/impostor/reducer.ts` (`discussionsStarted` field + rotation
+  logic), `games/impostor/module.ts` (`setup()` seeds it at 0)
+- `games/impostor/content/es.ts`, `en.ts` (+100 words each, 200 total)
+- `games/who-am-i/content/es.ts`, `en.ts` (+100 words each, 185 total)
+- `tests/unit/impostor-game.test.ts` (`discussionsStarted: 0` added to
+  the test helper's base state; 3 new rotation tests)
+- `docs/09_ai/CURRENT_STATE.md`, this file
 
 ## External state (not in git, important for the next agent to know)
 - Same as prior handoffs: Supabase live, Vercel auto-deploying `main`,
   strict branch protection. Unchanged by this task.
-- `scripts/generate-icons.mjs` hardcodes the source mark's bounding box
-  (`{ left: 192, top: 42, width: 285, height: 291 }`, found by scanning
-  `public/NexPlay_Logo.png`'s alpha channel). If the founder ever
-  regenerates or replaces that source PNG with a different composition,
-  this bounding box needs re-deriving — don't assume it still applies to
-  a new file with the same name.
-- `sharp`'s only reachable path in this repo is
-  `node_modules/.pnpm/sharp@0.34.5/node_modules/sharp` — a plain
-  `require("sharp")`/`import "sharp"` will fail (it's a transitive
-  dependency of Next.js's own image optimization, not a direct one this
-  project declares). If a future task needs image processing again,
-  either reuse that path or add `sharp` as a real `devDependency` instead
-  of relying on the nested copy staying at this exact version.
+- The Screen Wake Lock API requires a secure context (HTTPS or
+  localhost) and is not supported on all browsers (notably older iOS
+  Safari versions) — the hook degrades silently on those, so nothing
+  breaks, but don't expect it to work everywhere. Worth knowing if the
+  founder reports it "still locking" on a specific older device — check
+  browser support before assuming the hook itself is broken.
+- The founder played on real phones the night of 2026-07-24 with these
+  bugs live in production — this fix wasn't triggered by an automated
+  audit, it's real user-facing feedback from actual family play. Treat
+  reports like this with priority; they're the most valuable signal this
+  project gets.
 
 ## Pending Tasks
-- **M3.5 code task 3b (Polish):** a visible language switcher (retires
-  `RoomLobby.tsx`'s remaining bilingual labels — untouched by this task,
-  since it's a copy/i18n concern, not an icon/manifest one), room-code
-  copy/share affordance, and a final accessibility pass against
-  `ADR-0004`'s contrast tests. This is the last M3.5 code task before M4.
-- **Backlog, not scoped anywhere yet:** per-game hexagon-interior marks
-  (`BDR-0001` §4: a mask silhouette for Impostor, a question mark for Who
-  Am I, a grid for Battleship later) — decorative in-app accents for each
-  game's own screens, distinct from the one app-level icon this task
-  built. Worth a `docs/BACKLOG.md` entry if it isn't there already.
+- **M3.5 code task 3b (Polish):** still queued, unaffected by this task —
+  a visible language switcher, room-code copy/share affordance, and a
+  final accessibility pass. See the M3.5 milestone in `docs/ROADMAP.md`.
 - Founder playtest of multi-device Who Am I on real phones (M3's last open
-  item — independent of all of the above).
+  item). Worth checking with the founder whether last night's session
+  covered this, since they played several real matches — if so, mark M3
+  ✅ in `docs/ROADMAP.md`; if not, it's still open.
 - M1's dedicated two-real-phones reconnection test (independent, still
   open from earlier handoffs).
+- Consider whether Who Am I could use the same "who starts" rotation
+  fairness Impostor just got — Who Am I doesn't have an equivalent
+  turn-order concept today (per `TASK-0029`'s handoff, guessing is
+  anytime/self-reported, not turn-locked), so this may not apply the same
+  way; not raised by the founder, not scoped here.
 
 ## Next Suggested Task
-- M3.5 code task 3b: language switcher + room-code share + accessibility
-  pass — the last thing standing between M3.5 and starting M4
-  (Battleship).
-- Founder's multi-device Who Am I playtest remains independent and can
-  happen whenever.
+- Confirm with the founder that tonight's session went well with these
+  three fixes before moving on to anything else — this was explicitly
+  time-sensitive.
+- After that: M3.5 code task 3b, or whatever the founder prioritizes next
+  based on tonight's play.

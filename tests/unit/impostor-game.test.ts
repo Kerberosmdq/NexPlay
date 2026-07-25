@@ -21,6 +21,7 @@ function initialState(overrides: Partial<ImpostorState> = {}): ImpostorState {
     aliveIds: [],
     turnOrder: [],
     turnIndex: 0,
+    discussionsStarted: 0,
     usedWordIds: [],
     votes: {},
     lastElimination: null,
@@ -80,6 +81,48 @@ describe("impostorReducer — single round (3 players, 1 impostor)", () => {
     state = impostorReducer(state, { type: "PROCEED_TO_DISCUSSION" });
     expect(state.turnOrder).toEqual(["p1", "p2", "p3"]);
     expect(state.turnIndex).toBe(0);
+  });
+
+  it("PROCEED_TO_DISCUSSION rotates who starts each time it's dispatched", () => {
+    let state = startGame(initialState({ impostorCount: 1 }), ["p1", "p2", "p3"]);
+    state = impostorReducer(state, { type: "PROCEED_TO_DISCUSSION" });
+    expect(state.turnOrder).toEqual(["p1", "p2", "p3"]); // 1st ever: no rotation yet
+    expect(state.discussionsStarted).toBe(1);
+
+    // Simulate a tie (nobody eliminated) sending the group back to discussion.
+    state = { ...state, phase: "elimination_result" };
+    state = impostorReducer(state, { type: "PROCEED_TO_DISCUSSION" });
+    expect(state.turnOrder).toEqual(["p2", "p3", "p1"]); // rotated by one
+    expect(state.discussionsStarted).toBe(2);
+
+    state = { ...state, phase: "elimination_result" };
+    state = impostorReducer(state, { type: "PROCEED_TO_DISCUSSION" });
+    expect(state.turnOrder).toEqual(["p3", "p1", "p2"]); // rotated again
+    expect(state.discussionsStarted).toBe(3);
+  });
+
+  it("the rotation survives PLAY_AGAIN into a brand new match", () => {
+    let state = startGame(initialState({ impostorCount: 1 }), ["p1", "p2", "p3"]);
+    state = impostorReducer(state, { type: "PROCEED_TO_DISCUSSION" }); // discussionsStarted -> 1
+    // Fast-forward straight to resolution without re-testing the whole
+    // voting flow (already covered by the multi-round elimination tests).
+    state = { ...state, phase: "resolution" };
+    state = impostorReducer(state, { type: "PLAY_AGAIN" });
+    expect(state.discussionsStarted).toBe(1); // PLAY_AGAIN does not reset it
+
+    state = startGame(state, ["p1", "p2", "p3"]);
+    state = impostorReducer(state, { type: "PROCEED_TO_DISCUSSION" });
+    expect(state.turnOrder).toEqual(["p2", "p3", "p1"]); // continues rotating, not back to p1
+    expect(state.discussionsStarted).toBe(2);
+  });
+
+  it("rotation skips an eliminated player while preserving relative order", () => {
+    let state = startGame(initialState({ impostorCount: 1, discussionsStarted: 1 }), ["p1", "p2", "p3"]);
+    // p2 was already eliminated in a prior round of this match.
+    state = { ...state, phase: "elimination_result", aliveIds: ["p1", "p3"] };
+    state = impostorReducer(state, { type: "PROCEED_TO_DISCUSSION" });
+    // Full rotated order would be [p2, p3, p1]; p2 is filtered out.
+    expect(state.turnOrder).toEqual(["p3", "p1"]);
   });
 
   it("NEXT_TURN advances through the speaking order and stops at the end", () => {

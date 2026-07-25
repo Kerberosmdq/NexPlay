@@ -266,6 +266,46 @@ M3.5 and starting M4.
       icon">`, and `<link rel="manifest">` all present and correctly
       linked; every icon URL and `/manifest.webmanifest` fetch returns
       200 with correct content; zero console errors.
+- [x] **Hotfix (unnumbered)**: Fixes from the founder's family playtest the
+      night of 2026-07-24 — three unrelated small fixes, bundled because
+      they were all found in one sitting and the founder wanted them for
+      that same night's next session:
+      (1) **Screen wake lock** — the family had to disable their phone's
+      own lock-screen timeout from OS settings to keep a mid-round match
+      from going dark. `lib/hooks/useWakeLock.ts` wraps the Screen Wake
+      Lock API (feature-detected, silently no-ops on unsupported
+      browsers, re-acquires on `visibilitychange` since the OS releases
+      the lock whenever the tab is hidden) and is held for the whole time
+      a session is open (lobby wait through an active game), not on the
+      entry screen. Verified live: `navigator.wakeLock.request` fires the
+      moment a session starts, not before.
+      (2) **Impostor: rotate who starts discussion** — `turnOrder` used
+      to always start from the same player (index 0 of `playerIds`,
+      never reshuffled), so the same person was asked to speak first
+      every round of every match. Added `discussionsStarted` to
+      `ImpostorState` (persists across `PLAY_AGAIN`, never reset) and
+      `PROCEED_TO_DISCUSSION` now rotates the stable `playerIds` order by
+      that count before filtering to `aliveIds` — so the starting speaker
+      shifts by one player every time discussion begins, both within a
+      match (after a tie/elimination) and across a whole night of
+      `PLAY_AGAIN` matches. 3 new unit tests (rotation across rounds,
+      survives `PLAY_AGAIN`, correctly skips an eliminated player while
+      preserving relative order); verified live (a 3-way tie sent the
+      group back to discussion starting with a different player).
+      (3) **+100 words per game** — the founder was worried about running
+      out of unique words across several matches in one night. Added a
+      new, non-overlapping 100-word batch to both `games/impostor/content/`
+      and `games/who-am-i/content/` (ES+EN, both kept in parity), covering
+      9 new categories (more animals/food/house items, clothing, sports,
+      musical instruments, nature, school supplies, body parts) —
+      Impostor now has 200 words, Who Am I has 185. Caught and fixed one
+      real duplicate during verification: "Pescado" (food) and "Pez"
+      (animal) both translate to "Fish" in English — renamed the food
+      entry to "Seafood" in both `en.ts` files to keep every word's
+      display text unique within its own pack.
+      All three verified together in one live playthrough (lobby →
+      single-device Impostor → reveal → discussion, rotated correctly on
+      a tie → resolution), zero console errors; 85 unit tests pass.
 
 ## Tasks In Progress
 - [ ] None.
