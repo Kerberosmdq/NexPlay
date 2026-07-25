@@ -3,104 +3,108 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: TASK-0026
-- **Title**: Who Am I Game (M3)
+- **Task ID**: TASK-0027
+- **Title**: Visual Identity Direction & Design System Contract (paperwork phase)
 
 ## Current Branch
-- `feat/who-am-i-game` — about to be pushed and opened as a PR against `main`.
-- Everything before this (M1, M2, the connection/RLS hotfixes, the
-  "remember the room" feature) is already merged to `main` and live.
+- `docs/design-system-direction`, branched fresh off `main` (not on top of
+  any feature branch) — this task is docs-only and deliberately unrelated
+  to any in-flight game work.
+- **Heads-up for the next agent:** `PR #22` (`feat/who-am-i-lose-on-wrong-
+  guess`) merged into `main` (squashed as `158b5bc`) while this task was in
+  progress. `docs/09_ai/CURRENT_STATE.md` already reflected that merge by
+  the time this task edited it — no conflict, just noting the timing in
+  case anyone is confused about why this branch's diff doesn't include
+  that game-logic change (it's already on `main` independently).
 
 ## What's in this task
-Full design was worked out with the founder in conversation *before*
-writing any code (see `docs/09_ai/tasks/TASK-0026-who-am-i-game.md` for the
-agreed spec). Summary of the game:
-- Everyone gets a secret word; every device shows everyone *else's* word.
-- Questions rotate one player at a time (fixed turn order), but *guessing*
-  is not turn-locked — anyone can declare "I think I know" at any moment,
-  say it out loud, and self-report correct/wrong (same honor-system
-  pattern as Impostor's voting).
-- Correct guess → that word is revealed to them, fixed points awarded,
-  they drop out of the question-turn rotation but keep watching/helping.
-- Timer expires → anyone who never guessed gets their word revealed with
-  0 points.
-- Single-device: sequential per-player turns, Heads-Up style — phone shown
-  to everyone but the current guesser, per-turn timer, "¡Adivinó!"/"Pasar".
-- Content: a **separate** word bank from Impostor's (founder's explicit
-  call, not shared), same categories minus Professions, each word tagged
-  with an emoji as a lightweight "picture" (no real art, no AI-generated
-  content at runtime — consistent with `NEXPLAY_PLAN.md`'s non-goals).
+A founder request for an exhaustive UX/UI audit ("busca mejoras visuales,
+profesionalismo y animaciones divertidas... quiero lo mejor de lo mejor")
+led to measuring the shipped app live in a browser (375×812, computed
+styles, `document.fonts`, contrast ratios from actual rendered colors —
+not just reading source). That audit found the app has no enforced visual
+system, and the founder chose to open the resulting redesign as a real
+milestone rather than freelance it into unrelated branches. This task is
+the paperwork half of that decision — see `docs/ROADMAP.md`'s new **M3.5**
+entry for the full plan and the three code tasks it queues.
 
-## Why this task matters beyond "one more game"
-M3 exists specifically to prove ADR-0002's `GameModule` contract is real —
-that a second game is "just a new module," not new platform plumbing. It
-held: the only platform-adjacent touches were one additive line in
-`AVAILABLE_GAMES` and one entry in the `TERMINAL_PHASE_BY_GAME` lookup
-table in `MultiDeviceRoom.tsx`/`page.tsx` — a table that already documents
-itself as the intended per-game extension point (added during Impostor's
-build). `lib/types/room.ts`, `platformReducer.ts`'s actual logic, and
-`useRoomConnection.ts` were untouched. If M4 (Battleship) needs more than
-this, that's a real signal to revisit ADR-0002, not a reason to improvise.
+Founder's two explicit choices that shaped this task:
+1. **Visual direction:** "A + penumbra de B" — Paper & Felt as the base
+   language, with the neon/dark treatment from the rejected "Carnival
+   Neon" direction narrowed to one use: the secret-reveal moment only.
+   Recorded in `BDR-0001`.
+2. **Sequencing:** "Papeles primero" — write the BDR, the ADR, the FEEL
+   doc, and the ROADMAP entry *before* any component code, per
+   `NEXPLAY_PLAN.md` §7.2 rule 3 (shared contracts get an ADR before
+   parallel work builds against them) and Article 10 (explore ≥3
+   directions before committing). This task is exactly that; no
+   `components/ui/`, `app/tokens.css`, or game-view code was touched.
+
+## Why this task matters beyond "one more doc"
+`ADR-0001` §1 already *said* "no component hardcodes a raw value" — it was
+never enforced, and the audit's numbers show what that costs in practice
+(zero token consumers, 43 hardcoded hex values, six contrast failures, a
+signature animation that silently does nothing because its package was
+never installed). `ADR-0004` is what makes that clause a checked contract
+instead of a sentence nobody follows. Skipping this paperwork and jumping
+straight to repainting components would very likely reproduce the same
+failure mode with new colors — which is exactly what the audit found wrong
+with the *current* direction relative to what shipped before it.
 
 ## Files Modified / Added
-- `games/who-am-i/`: `reducer.ts` (pure — turn rotation skips guessed
-  players, anytime-guess scoring, timer-driven or manual `END_ROUND`),
-  `module.ts`, `pickRound.ts` (word/turn-order picker, mirrors Impostor's),
-  `content/{types,es,en,index}.ts` (85-word bank with emoji, Impostor's
-  animals/food/household/toys-vehicles-nature categories minus
-  Professions), `views/Player.tsx` (multi-device), `views/SingleDevice.tsx`
-  (Heads-Up-style sequential turns).
-- `lib/realtime/platformReducer.ts` — additive `AVAILABLE_GAMES` registration.
-- `components/platform/MultiDeviceRoom.tsx`, `app/[locale]/page.tsx` —
-  one `TERMINAL_PHASE_BY_GAME` entry each (`"who-am-i": "resolution"`).
-- `i18n/en.json`, `i18n/es.json` — `WhoAmI.*` and `games.whoAmI.*`
-  namespaces, kept in parity.
-- `tests/unit/who-am-i-game.test.ts` — 15 tests.
-- `docs/ROADMAP.md`, `docs/09_ai/CURRENT_STATE.md`, this file.
-
-## Bug found and fixed during this task's own verification
-Single-device's config screen initially offered timer options (1/2/3 min)
-that didn't include the module's actual default (`300` seconds, 5 min,
-shared with multi-device's config schema) — the `<select>` silently had no
-matching option while the countdown still ran off the real 300s value.
-Fixed by unifying both device modes' timer option lists (3/5/7/10 min +
-unlimited). Also caught (via `read_console_messages` during manual
-testing) a `dispatch()` call happening directly in a component's render
-body instead of inside a `useEffect` — a real React anti-pattern
-(`Cannot update a component while rendering a different component`) in
-`SingleDevice.tsx`'s "round exhausted" safety net. Fixed by moving the
-`roundExhausted` check + `dispatch` into a proper effect, hooks declared
-unconditionally before any early return. Both fixed and re-verified live
-before committing — see the reducer/view diffs.
+- `docs/00_decisions/brand/BDR-0001-VISUAL-IDENTITY-DIRECTION.md` (new)
+- `docs/00_decisions/architecture/ADR-0004-DESIGN-SYSTEM-CONTRACT.md` (new)
+- `docs/04_design/FEEL.md` (new)
+- `docs/04_design/README.md` — links to `FEEL.md`
+- `docs/ROADMAP.md` — new M3.5 entry between M3 and M4; M5's polish-pass
+  description updated to build on M3.5 instead of starting from zero
+- `docs/09_ai/tasks/TASK-0027-design-system-direction.md` (new)
+- `docs/09_ai/CURRENT_STATE.md`, this file
 
 ## External state (not in git, important for the next agent to know)
-- **Supabase project** is live (`jamrubutlvsfvmqwhbpr`), Anonymous Sign-ins enabled.
-- **Vercel** is connected to GitHub repo and auto-deploys `main`.
-- **GitHub branch protection on `main`** is strict: required status checks must pass before merge.
-- The Realtime connection bug (trailing newline env var) and the
-  `game_results`/`events` RLS gap are both resolved and confirmed live —
-  see prior handoffs in git history if the details are needed again.
-- Who Am I was playtested locally end to end in **single-device** mode only
-  (this dev environment has no live Supabase connection to test
-  multi-device Realtime). **Multi-device Who Am I has not been played by
-  the founder on real devices yet** — do this before marking M3 done.
-- M1's two-real-phones *dedicated* reconnection test (multiple devices,
-  one drops while others stay connected, host migration) still hasn't
-  happened — the "remember the room" feature (merged earlier) proved a
-  *single* device can drop and silently rejoin, which is related but not
-  the same scenario.
+- Same as prior handoffs: Supabase project live, Vercel auto-deploying
+  `main`, branch protection strict on `main`. Nothing about this task
+  changes any of that.
+- **Not part of this task, but observed in passing:** a small,
+  unrelated dev-convenience change (`"autoPort": true` in
+  `.claude/launch.json`, so the local preview tool can find a free port
+  when 3000 is occupied by another project on this machine) is sitting in
+  a `git stash` on `feat/who-am-i-lose-on-wrong-guess` from this same
+  session, deliberately kept out of this docs branch to avoid bundling
+  unrelated changes in one commit. Pop it there if useful
+  (`git stash list` to find it), or drop it — it's a convenience tweak,
+  not a fix tied to any task.
+- The audit that produced this task's decisions is not itself checked into
+  the repo (it was a conversational deliverable) — `BDR-0001`, `ADR-0004`,
+  and `FEEL.md` carry forward every finding that matters; nothing was left
+  only in chat history.
 
 ## Pending Tasks
-- None specced yet.
+- **M3.5 code task 1 (System):** implement `ADR-0004` — rewrite
+  `app/tokens.css` as semantic paired tokens, build the `components/ui/`
+  primitive set (`Button`, `Card`, `Field`, `CodeInput`, `PlayerChip`,
+  `Screen`, `RevealCard`, `Scoreboard`, `WaitingState`), add contrast unit
+  tests per token pair, port the 6 existing views onto the new primitives
+  with **no visual change yet** — this task proves the system before the
+  next one changes how anything looks.
+- **M3.5 code task 2 (Direction):** apply `BDR-0001`'s Paper & Felt
+  palette/typography and the penumbra reveal treatment, screen by screen.
+- **M3.5 code task 3 (Identity & polish):** real hexagon mark (favicon,
+  PWA manifest + icons), a visible language switcher (this retires the
+  bilingual labels the audit found in `RoomLobby.tsx` for good), room-code
+  copy/share affordance, and a final accessibility pass against
+  `ADR-0004`'s contrast tests.
+- Founder playtest of multi-device Who Am I on real phones (M3's last open
+  item — independent of all of the above).
+- M1's dedicated two-real-phones reconnection test (independent, still
+  open from earlier handoffs).
 
 ## Next Suggested Task
-- Push and merge `feat/who-am-i-game`.
-- Founder playtests a real multi-device Who Am I match; mark M3 ✅ in
-  `docs/ROADMAP.md` once confirmed.
-- Do M1's dedicated two-real-phones reconnection test if it hasn't
-  happened by then.
-- Start M4 — Battleship (`docs/ROADMAP.md`) — deliberately a structurally
-  different game (board state, 1v1 only, no hidden-role mechanic) to prove
-  the platform stretches beyond word/party games. If ADR-0002 needs to
-  grow to support it, that's expected and fine — just do it as a real ADR
-  amendment, not a quiet workaround.
+- Start M3.5 code task 1 (tokens + primitives + motion vocabulary, ported
+  onto the existing 6 views with no visual change) — this is the one that
+  unblocks task 2 and 3, and is independent of the founder's own playtest
+  work on Who Am I.
+- If the founder plays multi-device Who Am I first instead, that's fine —
+  the two threads don't block each other; whichever happens first, update
+  this file and `CURRENT_STATE.md` accordingly rather than letting them
+  drift out of sync with the branch/PR that lands.

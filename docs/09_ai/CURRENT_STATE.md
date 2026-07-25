@@ -3,11 +3,19 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 6 - M3 Who Am I
-- Status: Implemented, pending founder playtest
+- Sprint: Sprint 7 - M3.5 Design System & Visual Identity (paperwork phase)
+- Status: BDR-0001/ADR-0004/FEEL.md accepted; three code tasks queued
 
 ## Current Objective
-M1 and M2 are both complete (see `docs/ROADMAP.md`). M3 — Who Am I (see `docs/NEXPLAY_PLAN.md` §6): second game, deliberately chosen to stress-test that the platform is truly reusable — should be "just a new GameModule."
+M1 and M2 are complete; M3 is implemented but still awaiting the founder's
+multi-device playtest (see Known Issues — unrelated to and not blocked by
+the below). A full UX/UI audit of the shipped app found no enforced visual
+system (see `BDR-0001`/`ADR-0004` for specifics), which opened milestone
+**M3.5** in `docs/ROADMAP.md` as an explicit scope decision ahead of M4
+(Battleship), so a third game doesn't get built on the same unenforced
+styling the audit found. TASK-0027 (paperwork: `BDR-0001`, `ADR-0004`,
+`docs/04_design/FEEL.md`, the `ROADMAP.md` M3.5 entry) is done; the three
+code tasks it queues (system → direction → identity/polish) are next.
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -136,6 +144,23 @@ M1 and M2 are both complete (see `docs/ROADMAP.md`). M3 — Who Am I (see `docs/
       "No acertó" and now dispatches `GUESS_WRONG` too, for the same rule
       in both modes. 65 tests. Playtested locally end to end
       (single-device, 3 players, mixed correct/wrong outcomes).
+- [x] **TASK-0027**: Visual Identity Direction & Design System Contract
+      (paperwork phase) — a full UX/UI audit of M0–M3 as shipped, run
+      against the app live in a browser, found no enforced visual system:
+      `app/tokens.css` has zero consumers, 43 raw hex values are hand-
+      written across 7 files, the same primary button is implemented six
+      different ways, the entry screen fails WCAG AA contrast in six
+      measured places, and the Impostor reveal references an animation
+      class from an uninstalled package (verified `animationName: "none"`
+      live). Produced `BDR-0001` (direction: Paper & Felt, with a penumbra
+      treatment reserved for secret reveals — three directions explored
+      per Article 10), `ADR-0004` (semantic paired tokens, a mandatory
+      `components/ui/` primitive set, a named motion vocabulary with
+      mandatory `prefers-reduced-motion` fallbacks, contrast checked by
+      unit test), and `docs/04_design/FEEL.md`. Opened milestone **M3.5**
+      in `docs/ROADMAP.md` as an explicit scope decision, queuing three
+      follow-up code tasks (system → direction → identity/polish). No
+      component code changed in this task.
 
 ## Tasks In Progress
 - [ ] None.
@@ -151,9 +176,15 @@ M1 and M2 are both complete (see `docs/ROADMAP.md`). M3 — Who Am I (see `docs/
   (only single-device was, locally). Do this before calling M3 done.
 
 ## Next Task
-- Push/merge the Who Am I branch, then have the founder playtest a real
-  multi-device Who Am I match. Mark M3 ✅ in `docs/ROADMAP.md` once
-  confirmed, then start M4 (Battleship) per `docs/ROADMAP.md`.
+- Two independent threads, neither blocking the other:
+  1. Founder playtests a real multi-device Who Am I match; mark M3 ✅ in
+     `docs/ROADMAP.md` once confirmed.
+  2. M3.5's first code task: implement `ADR-0004`'s tokens and
+     `components/ui/` primitives, porting the 6 existing views onto them
+     with no visual change yet (proves the system holds what already
+     exists before M3.5's second task changes how it looks).
+- M4 (Battleship) starts after M3.5's three code tasks are done, per the
+  updated `docs/ROADMAP.md` — not built on the pre-M3.5 styling.
 
 ## Last Updated
 - 2026-07-24
