@@ -62,7 +62,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
 
     return (
       <Card className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto">
-        <h2 className="text-3xl font-black text-ink text-center">{t("config.title")}</h2>
+        <h2 className="font-display text-3xl text-ink text-center">{t("config.title")}</h2>
 
         <div className="w-full space-y-3">
           {names.map((name, i) => (
@@ -106,7 +106,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
         </div>
 
         {notEnoughPlayers ? (
-          <div className="bg-red-500/20 text-red-300 p-4 rounded-xl text-center font-bold border border-red-500/30 w-full">
+          <div className="bg-danger-surface text-on-danger-surface p-4 rounded-xl text-center font-bold border border-action-danger/30 w-full">
             {t("config.notEnoughPlayersFor", { min: Math.max(3, minPlayersNeeded) })}
           </div>
         ) : (
@@ -150,23 +150,23 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
         <p className="text-ink-muted font-bold uppercase tracking-widest text-sm">
           {current?.displayName}
         </p>
-        <h2 className="text-2xl font-bold text-ink text-center">{t("roleReveal.title")}</h2>
+        <h2 className="font-display text-2xl text-ink text-center">{t("roleReveal.title")}</h2>
 
         <RevealCard
           hidden={
             <div className="text-center space-y-4">
               <div className="text-6xl">👁️</div>
               <p className="text-ink-muted font-bold">{t("roleReveal.holdToReveal")}</p>
-              <p className="text-xs text-ink-muted/50">{t("roleReveal.dontLetOthersLook")}</p>
+              <p className="text-xs text-ink-muted">{t("roleReveal.dontLetOthersLook")}</p>
             </div>
           }
           revealed={
             isImpostor ? (
               <div className="text-center space-y-4">
                 <div className="text-8xl">🕵️</div>
-                <h3 className="text-2xl font-black text-red-500">{t("roleReveal.youAreImpostor")}</h3>
+                <h3 className="font-display text-2xl text-penumbra-danger">{t("roleReveal.youAreImpostor")}</h3>
                 {state.hintDifficulty !== "none" && state.secretWord && (
-                  <p className="text-lg text-ink font-bold">
+                  <p className="text-lg text-on-penumbra font-bold">
                     {state.hintDifficulty === "hard" ? state.secretWord.category : state.secretWord.easyHint}
                   </p>
                 )}
@@ -174,7 +174,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
             ) : (
               <div className="text-center space-y-4">
                 <div className="text-8xl">🤫</div>
-                <p className="text-3xl font-black text-green-400">{state.secretWord?.word}</p>
+                <p className="font-display text-3xl text-penumbra-success">{state.secretWord?.word}</p>
               </div>
             )
           }
@@ -204,7 +204,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
 
     return (
       <div className="flex flex-col items-center justify-center space-y-6 text-center mt-10 px-4">
-        <h2 className="text-3xl font-bold text-ink-muted">{t("discussion.title")}</h2>
+        <h2 className="font-display text-3xl text-ink">{t("discussion.title")}</h2>
 
         <PlayerRoster players={roundPlayers} aliveIds={state.aliveIds} />
 
@@ -224,15 +224,12 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
           </>
         )}
 
-        <button
-          onClick={() => {
-            setVoterIndex(0);
-            dispatch({ type: "SKIP_TO_VOTING" });
-          }}
-          className="bg-red-500/20 hover:bg-red-500/40 text-red-300 border-2 border-red-500/50 font-bold text-xl py-4 px-10 rounded-2xl w-full max-w-sm"
-        >
+        <Button variant="danger" onClick={() => {
+          setVoterIndex(0);
+          dispatch({ type: "SKIP_TO_VOTING" });
+        }} className="max-w-sm">
           {t("discussion.goToVoteButton")}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -245,8 +242,8 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
     if (done) {
       return (
         <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-4">
-          <p className="text-green-300 font-bold">{t("voting.voteRegistered")}</p>
-          <Button variant="primary" onClick={() => dispatch({ type: "END_VOTING" })} className="bg-green-500! text-xl">
+          <p className="text-on-success-surface font-bold">{t("voting.voteRegistered")}</p>
+          <Button variant="primary" onClick={() => dispatch({ type: "END_VOTING" })} className="text-xl">
             {t("voting.revealResultsButton")}
           </Button>
         </div>
@@ -256,7 +253,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-4">
         <p className="text-ink-muted font-bold uppercase tracking-widest text-sm">{voter?.displayName}</p>
-        <h2 className="text-2xl font-bold text-ink text-center">{t("voting.title")}</h2>
+        <h2 className="font-display text-2xl text-ink text-center">{t("voting.title")}</h2>
         <PlayerRoster players={roundPlayers} aliveIds={state.aliveIds} />
         <div className="w-full space-y-3">
           {aliveRoundPlayers
@@ -292,12 +289,12 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
         {!elimination?.eliminatedId ? (
           <>
             <div className="text-5xl">🤝</div>
-            <h2 className="text-2xl font-bold text-ink text-center">{t("eliminationResult.tie")}</h2>
+            <h2 className="font-display text-2xl text-ink text-center">{t("eliminationResult.tie")}</h2>
           </>
         ) : elimination.wasImpostor ? (
           <>
             <div className="text-6xl">🕵️</div>
-            <h2 className="text-2xl font-black text-red-400 text-center">
+            <h2 className="font-display text-2xl text-action-danger text-center">
               {t("eliminationResult.wasImpostor", { name: eliminatedPlayer?.displayName ?? "" })}
             </h2>
             <p className="text-ink-muted text-center">{t("eliminationResult.gameContinues")}</p>
@@ -305,7 +302,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
         ) : (
           <>
             <div className="text-6xl">😬</div>
-            <h2 className="text-2xl font-black text-ink text-center">
+            <h2 className="font-display text-2xl text-ink text-center">
               {t("eliminationResult.wasInnocent", { name: eliminatedPlayer?.displayName ?? "" })}
             </h2>
             <p className="text-ink-muted text-center">{t("eliminationResult.gameContinues")}</p>
@@ -328,21 +325,15 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
   if (state.phase === "guess_word") {
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-4">
-        <h2 className="text-3xl font-black text-red-400 text-center">{t("guessWord.title")}</h2>
-        <p className="text-ink/80 text-center">{t("guessWord.innocentsPrompt")}</p>
+        <h2 className="font-display text-3xl text-action-danger text-center">{t("guessWord.title")}</h2>
+        <p className="text-ink text-center">{t("guessWord.innocentsPrompt")}</p>
         <div className="flex space-x-4 w-full">
-          <button
-            onClick={() => dispatch({ type: "IMPOSTOR_GUESS", correct: true })}
-            className="flex-1 bg-green-500/20 border-2 border-green-500 text-green-300 font-bold py-4 rounded-xl"
-          >
+          <Button variant="primary" onClick={() => dispatch({ type: "IMPOSTOR_GUESS", correct: true })}>
             {t("guessWord.guessedCorrectly")}
-          </button>
-          <button
-            onClick={() => dispatch({ type: "IMPOSTOR_GUESS", correct: false })}
-            className="flex-1 bg-red-500/20 border-2 border-red-500 text-red-300 font-bold py-4 rounded-xl"
-          >
+          </Button>
+          <Button variant="danger" onClick={() => dispatch({ type: "IMPOSTOR_GUESS", correct: false })}>
             {t("guessWord.guessedWrong")}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -359,26 +350,28 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4">
         {impostorSurvived ? (
-          <div className="w-full text-center space-y-2 bg-gradient-to-b from-yellow-500/20 to-transparent border-2 border-yellow-500/40 rounded-3xl py-6 px-4">
+          <div className="w-full text-center space-y-2 bg-surface-sunken border-2 border-action-secondary/40 rounded-3xl py-6 px-4">
             <div className="text-5xl">👑</div>
-            <h2 className="text-2xl font-black text-yellow-400">{t("resolution.impostorSurvived")}</h2>
-            <p className="text-base text-yellow-100/90 font-semibold">
+            <h2 className="font-display text-2xl text-action-secondary">{t("resolution.impostorSurvived")}</h2>
+            <p className="text-base text-ink-muted font-semibold">
               {t("resolution.survivedCelebration", { names: impostorNames })}
             </p>
           </div>
         ) : (
-          <h2 className="text-3xl font-black text-ink text-center motion-celebrate">
+          <h2 className="font-display text-3xl text-ink text-center motion-celebrate">
             {res?.impostorGuessedWord ? t("resolution.impostorStoleVictory") : t("resolution.innocentVictory")}
           </h2>
         )}
-        <p className="text-xl text-pink-400 font-black">{state.secretWord?.word}</p>
-        <Scoreboard
-          entries={roundPlayers.map((p) => ({
-            id: p.id,
-            label: <span className="text-ink font-bold">{p.displayName}</span>,
-            value: <span className="text-yellow-400 font-black">{state.scores[p.id] || 0} pts</span>,
-          }))}
-        />
+        <p className="font-display text-xl text-action-secondary">{state.secretWord?.word}</p>
+        <Card className="w-full">
+          <Scoreboard
+            entries={roundPlayers.map((p) => ({
+              id: p.id,
+              label: <span className="text-ink font-bold">{p.displayName}</span>,
+              value: <span className="font-mono text-gold font-bold">{state.scores[p.id] || 0} pts</span>,
+            }))}
+          />
+        </Card>
         <Button
           variant="ghost"
           onClick={() => {

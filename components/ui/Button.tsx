@@ -43,7 +43,7 @@ export function Button({
 
   return (
     <button
-      className={`min-h-14 rounded-2xl px-6 py-3 font-black tracking-wide transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:opacity-40 disabled:pointer-events-none ${activeClasses} ${
+      className={`min-h-14 rounded-2xl px-6 py-3 font-black tracking-wide focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:opacity-40 disabled:pointer-events-none ${activeClasses} ${
         fullWidth ? "w-full" : ""
       } ${className}`}
       {...rest}

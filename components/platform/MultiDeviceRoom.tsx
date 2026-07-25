@@ -136,7 +136,7 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
   const activeGame = gameState.activeGameId ? AVAILABLE_GAMES[gameState.activeGameId] : null;
 
   if (!activeGame) {
-    return <div className="text-red-500 font-bold">Error: Juego no encontrado.</div>;
+    return <div className="text-action-danger font-bold">Error: Juego no encontrado.</div>;
   }
 
   const gameDispatch = (action: unknown) => {

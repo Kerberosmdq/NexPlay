@@ -38,15 +38,13 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
 
       return (
         <Card className="flex flex-col items-center justify-center space-y-8 w-full max-w-2xl mx-auto">
-          <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 tracking-tight text-center">
-            {t("config.title")}
-          </h2>
+          <h2 className="font-display text-4xl text-ink text-center">{t("config.title")}</h2>
 
           <div className="w-full space-y-6">
             <div className="flex flex-col space-y-2">
               <label className="text-ink-muted font-bold">{tConfig("impostorCount")}</label>
               <select
-                className="bg-surface-sunken border-2 border-line text-ink p-4 rounded-xl font-semibold outline-none focus-visible:border-focus transition-colors"
+                className="bg-surface-sunken border-2 border-line text-ink p-4 rounded-xl font-semibold outline-none focus-visible:border-focus"
                 value={state.impostorCount}
                 onChange={(e) =>
                   dispatch({
@@ -68,7 +66,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             <div className="flex flex-col space-y-2">
               <label className="text-ink-muted font-bold">{tConfig("hintDifficulty")}</label>
               <select
-                className="bg-surface-sunken border-2 border-line text-ink p-4 rounded-xl font-semibold outline-none focus-visible:border-focus transition-colors"
+                className="bg-surface-sunken border-2 border-line text-ink p-4 rounded-xl font-semibold outline-none focus-visible:border-focus"
                 value={state.hintDifficulty}
                 onChange={(e) =>
                   dispatch({
@@ -86,7 +84,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             </div>
 
             {notEnoughPlayers ? (
-              <div className="bg-red-500/20 text-red-300 p-4 rounded-xl text-center font-bold border border-red-500/30">
+              <div className="bg-danger-surface text-on-danger-surface p-4 rounded-xl text-center font-bold border border-action-danger/30">
                 {t("config.notEnoughPlayersFor", { min: Math.max(3, minPlayersNeeded) })}
               </div>
             ) : (
@@ -117,28 +115,28 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
   if (state.phase === "role_reveal") {
     return (
       <div className="flex flex-col items-center justify-center space-y-8 w-full max-w-sm mx-auto mt-4">
-        <h2 className="text-2xl font-bold text-ink text-center">{t("roleReveal.title")}</h2>
+        <h2 className="font-display text-2xl text-ink text-center">{t("roleReveal.title")}</h2>
 
         <RevealCard
           hidden={
             <div className="text-center space-y-4">
               <div className="text-6xl">👁️</div>
               <p className="text-ink-muted font-bold">{t("roleReveal.holdToReveal")}</p>
-              <p className="text-xs text-ink-muted/50">{t("roleReveal.dontLetOthersLook")}</p>
+              <p className="text-xs text-ink-muted">{t("roleReveal.dontLetOthersLook")}</p>
             </div>
           }
           revealed={
             isImpostor ? (
               <div className="text-center space-y-6">
                 <div className="text-8xl">🕵️</div>
-                <h3 className="text-3xl font-black text-red-500">{t("roleReveal.youAreImpostor")}</h3>
+                <h3 className="font-display text-3xl text-penumbra-danger">{t("roleReveal.youAreImpostor")}</h3>
 
                 {state.hintDifficulty !== "none" && secretWord && (
-                  <div className="bg-red-900/30 border border-red-500/30 p-4 rounded-xl mt-4">
-                    <p className="text-sm text-red-300 uppercase tracking-widest font-bold mb-1">
+                  <div className="border border-penumbra-danger/40 p-4 rounded-xl mt-4">
+                    <p className="text-sm text-penumbra-danger uppercase tracking-widest font-bold mb-1">
                       {t("roleReveal.yourClue")}
                     </p>
-                    <p className="text-xl text-ink font-bold">
+                    <p className="text-xl text-on-penumbra font-bold">
                       {state.hintDifficulty === "hard" ? secretWord.category : secretWord.easyHint}
                     </p>
                   </div>
@@ -147,8 +145,8 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             ) : (
               <div className="text-center space-y-6">
                 <div className="text-8xl">🤫</div>
-                <h3 className="text-xl font-bold text-ink-muted">{t("roleReveal.secretWordIs")}</h3>
-                <p className="text-4xl font-black text-green-400 bg-green-900/30 px-6 py-3 rounded-2xl border border-green-500/30">
+                <h3 className="text-xl font-bold text-on-penumbra-muted">{t("roleReveal.secretWordIs")}</h3>
+                <p className="font-display text-4xl text-penumbra-success px-6 py-3 rounded-2xl border border-penumbra-success/40">
                   {secretWord?.word}
                 </p>
               </div>
@@ -173,22 +171,22 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
 
     return (
       <div className="flex flex-col items-center justify-center space-y-6 text-center mt-10 px-4">
-        <h2 className="text-3xl font-bold text-ink-muted">{t("discussion.title")}</h2>
+        <h2 className="font-display text-3xl text-ink">{t("discussion.title")}</h2>
 
         <PlayerRoster players={players} aliveIds={state.aliveIds} />
 
-        <div className="bg-surface-sunken p-6 rounded-2xl border border-line max-w-sm w-full">
+        <Card className="max-w-sm w-full">
           <div className="text-4xl mb-4">{isImpostor ? "🕵️" : "💬"}</div>
           <p className="text-lg text-ink font-semibold">
             {isImpostor ? t("discussion.impostorTip") : t("discussion.innocentTip")}
           </p>
-        </div>
+        </Card>
 
         {everyoneSpoke ? (
           <p className="text-ink-muted font-bold">{t("discussion.everyoneSpoke")}</p>
         ) : isMyTurn ? (
           <div className="w-full max-w-sm space-y-4">
-            <p className="text-2xl font-black text-yellow-300 motion-pulse">{t("discussion.yourTurn")}</p>
+            <p className="text-2xl font-black text-action-secondary motion-pulse">{t("discussion.yourTurn")}</p>
             <Button variant="primary" onClick={() => dispatch({ type: "NEXT_TURN" })} className="text-xl">
               {t("discussion.saidMyWord")}
             </Button>
@@ -200,12 +198,9 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         )}
 
         {isHost && (
-          <button
-            onClick={() => dispatch({ type: "SKIP_TO_VOTING" })}
-            className="mt-4 bg-red-500/20 hover:bg-red-500/40 text-red-300 border-2 border-red-500/50 font-bold text-xl py-4 px-10 rounded-2xl transition-all w-full max-w-sm"
-          >
+          <Button variant="danger" onClick={() => dispatch({ type: "SKIP_TO_VOTING" })} className="mt-4 max-w-sm">
             {t("discussion.goToVoteButton")}
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -220,8 +215,8 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
 
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-4">
-        <div className="text-4xl animate-bounce">🗳️</div>
-        <h2 className="text-2xl font-bold text-ink text-center">{t("voting.title")}</h2>
+        <div className="text-4xl">🗳️</div>
+        <h2 className="font-display text-2xl text-ink text-center">{t("voting.title")}</h2>
 
         <p className="text-lg text-ink-muted">
           {t("voting.votesCount", { cast: totalVotes, total: alivePlayers.length })}
@@ -230,9 +225,9 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         <PlayerRoster players={players} aliveIds={state.aliveIds} />
 
         {!isAlive ? (
-          <div className="bg-surface-sunken border border-line p-8 rounded-2xl mt-4 w-full text-center">
-            <p className="text-ink-muted/70">{t("voting.eliminatedSpectating")}</p>
-          </div>
+          <Card className="mt-4 w-full text-center">
+            <p className="text-ink-muted">{t("voting.eliminatedSpectating")}</p>
+          </Card>
         ) : !hasVoted ? (
           <div className="w-full space-y-3 mt-4">
             {alivePlayers
@@ -249,19 +244,15 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
               ))}
           </div>
         ) : (
-          <div className="bg-green-900/30 border border-green-500/30 p-8 rounded-2xl mt-4 w-full text-center">
+          <div className="bg-success-surface border border-action-primary/30 p-8 rounded-2xl mt-4 w-full text-center">
             <div className="text-4xl mb-4">✅</div>
-            <h3 className="text-xl font-bold text-green-400">{t("voting.voteRegistered")}</h3>
-            <p className="text-green-200/50 mt-2">{t("voting.waitingForOthers")}</p>
+            <h3 className="text-xl font-bold text-on-success-surface">{t("voting.voteRegistered")}</h3>
+            <p className="text-ink-muted mt-2">{t("voting.waitingForOthers")}</p>
           </div>
         )}
 
         {isHost && allVoted && (
-          <Button
-            variant="primary"
-            onClick={() => dispatch({ type: "END_VOTING" })}
-            className="mt-8 bg-green-500! hover:bg-green-400! text-white! motion-pulse"
-          >
+          <Button variant="primary" onClick={() => dispatch({ type: "END_VOTING" })} className="mt-8 motion-pulse">
             {t("voting.revealResultsButton")}
           </Button>
         )}
@@ -280,12 +271,12 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         {!elimination?.eliminatedId ? (
           <>
             <div className="text-5xl">🤝</div>
-            <h2 className="text-2xl font-bold text-ink text-center">{t("eliminationResult.tie")}</h2>
+            <h2 className="font-display text-2xl text-ink text-center">{t("eliminationResult.tie")}</h2>
           </>
         ) : elimination.wasImpostor ? (
           <>
             <div className="text-6xl">🕵️</div>
-            <h2 className="text-2xl font-black text-red-400 text-center">
+            <h2 className="font-display text-2xl text-action-danger text-center">
               {t("eliminationResult.wasImpostor", { name: eliminatedPlayer?.displayName ?? "" })}
             </h2>
             <p className="text-ink-muted text-center">{t("eliminationResult.gameContinues")}</p>
@@ -293,7 +284,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         ) : (
           <>
             <div className="text-6xl">😬</div>
-            <h2 className="text-2xl font-black text-ink text-center">
+            <h2 className="font-display text-2xl text-ink text-center">
               {t("eliminationResult.wasInnocent", { name: eliminatedPlayer?.displayName ?? "" })}
             </h2>
             <p className="text-ink-muted text-center">{t("eliminationResult.gameContinues")}</p>
@@ -312,15 +303,15 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
   if (state.phase === "guess_word") {
     return (
       <div className="flex flex-col items-center justify-center space-y-8 w-full max-w-sm mx-auto mt-4 px-4">
-        <h2 className="text-4xl font-black text-red-400 text-center">{t("guessWord.title")}</h2>
+        <h2 className="font-display text-4xl text-action-danger text-center">{t("guessWord.title")}</h2>
 
-        <div className="bg-red-900/30 p-8 rounded-3xl border border-red-500/30 text-center w-full">
+        <Card className="text-center w-full">
           <div className="text-6xl mb-6">{isImpostor ? "😬" : "🎉"}</div>
 
           <p className="text-xl text-ink font-bold mb-4">
             {isImpostor ? t("guessWord.impostorPrompt") : t("guessWord.innocentsPrompt")}
           </p>
-        </div>
+        </Card>
 
         {isHost && (
           <div className="w-full space-y-4 pt-4 border-t border-line">
@@ -328,18 +319,12 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
               {t("guessWord.hostControls")}
             </p>
             <div className="flex space-x-4">
-              <button
-                onClick={() => dispatch({ type: "IMPOSTOR_GUESS", correct: true })}
-                className="flex-1 bg-green-500/20 hover:bg-green-500/40 border-2 border-green-500 text-green-300 font-bold text-lg py-4 rounded-xl"
-              >
+              <Button variant="primary" onClick={() => dispatch({ type: "IMPOSTOR_GUESS", correct: true })}>
                 {t("guessWord.guessedCorrectly")}
-              </button>
-              <button
-                onClick={() => dispatch({ type: "IMPOSTOR_GUESS", correct: false })}
-                className="flex-1 bg-red-500/20 hover:bg-red-500/40 border-2 border-red-500 text-red-300 font-bold text-lg py-4 rounded-xl"
-              >
+              </Button>
+              <Button variant="danger" onClick={() => dispatch({ type: "IMPOSTOR_GUESS", correct: false })}>
                 {t("guessWord.guessedWrong")}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -358,17 +343,17 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
         {impostorSurvived ? (
-          <div className="w-full text-center space-y-3 bg-gradient-to-b from-yellow-500/20 to-transparent border-2 border-yellow-500/40 rounded-3xl py-8 px-4 shadow-[0_0_50px_rgba(234,179,8,0.25)]">
+          <div className="w-full text-center space-y-3 bg-surface-sunken border-2 border-action-secondary/40 rounded-3xl py-8 px-4">
             <div className="text-6xl">👑</div>
-            <h2 className="text-3xl font-black text-yellow-400 leading-tight">
+            <h2 className="font-display text-3xl text-action-secondary leading-tight">
               {t("resolution.impostorSurvived")}
             </h2>
-            <p className="text-lg text-yellow-100/90 font-semibold">
+            <p className="text-lg text-ink-muted font-semibold">
               {t("resolution.survivedCelebration", { names: impostorNames })}
             </p>
           </div>
         ) : (
-          <h2 className="text-4xl font-black text-ink text-center leading-tight motion-celebrate">
+          <h2 className="font-display text-4xl text-ink text-center leading-tight motion-celebrate">
             {res?.impostorGuessedWord ? t("resolution.impostorStoleVictory") : t("resolution.innocentVictory")}
           </h2>
         )}
@@ -376,29 +361,31 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         <div className="text-xl text-ink-muted text-center">
           {t("resolution.secretWordWas")}
           <br />
-          <span className="text-3xl font-black text-pink-400 block mt-2">{state.secretWord?.word}</span>
+          <span className="font-display text-3xl text-action-secondary block mt-2">{state.secretWord?.word}</span>
         </div>
 
-        <Scoreboard
-          title={t("resolution.scoresTitle")}
-          entries={players.map((p) => {
-            const wasImpostor = state.impostorIds.includes(p.id);
-            const gained = res?.pointsAwarded[p.id] || 0;
-            return {
-              id: p.id,
-              icon: <span className="text-xl">{wasImpostor ? "🕵️" : "🧑‍🤝‍🧑"}</span>,
-              label: <span className="text-lg font-bold text-ink truncate max-w-[100px]">{p.displayName}</span>,
-              value: (
-                <div className="flex items-center space-x-3">
-                  <span className="text-green-400 font-bold text-sm">+{gained}</span>
-                  <span className="text-xl font-black text-yellow-400 w-16 text-right">
-                    {state.scores[p.id] || 0} pts
-                  </span>
-                </div>
-              ),
-            };
-          })}
-        />
+        <Card className="w-full">
+          <Scoreboard
+            title={t("resolution.scoresTitle")}
+            entries={players.map((p) => {
+              const wasImpostor = state.impostorIds.includes(p.id);
+              const gained = res?.pointsAwarded[p.id] || 0;
+              return {
+                id: p.id,
+                icon: <span className="text-xl">{wasImpostor ? "🕵️" : "🧑‍🤝‍🧑"}</span>,
+                label: <span className="text-lg font-bold text-ink truncate max-w-[100px]">{p.displayName}</span>,
+                value: (
+                  <div className="flex items-center space-x-3 font-mono">
+                    <span className="text-on-success-surface font-bold text-sm">+{gained}</span>
+                    <span className="text-xl font-bold text-gold w-16 text-right">
+                      {state.scores[p.id] || 0} pts
+                    </span>
+                  </div>
+                ),
+              };
+            })}
+          />
+        </Card>
 
         {isHost && (
           <Button variant="ghost" onClick={() => dispatch({ type: "PLAY_AGAIN" })} className="mt-6">

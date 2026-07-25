@@ -134,20 +134,29 @@ Known Issues in `docs/09_ai/CURRENT_STATE.md`).
   fixes. The Impostor reveal now actually animates
   (`animationName: "nx-reveal"`, verified live) — the audit's top finding,
   fixed for real.
-- **Code task 2 — Direction:** apply `BDR-0001`'s Paper & Felt direction
-  (and the penumbra reveal) screen by screen.
+- **Code task 2 — Direction (TASK-0029, done):** `app/tokens.css`'s
+  palette replaced with `BDR-0001`'s Paper & Felt anchors (parchment
+  ground, felt-green primary, terracotta secondary, wine-red danger, plus
+  new success/danger status-banner pairs and a gold points highlight);
+  three self-hosted typefaces wired per §3 (Bevan display, Nunito body,
+  Space Mono for codes/timers/scores) — retiring the audit's font-loading
+  finding along the way. `RevealCard` now implements the real penumbra
+  treatment (a full-screen scrim to `--color-penumbra-ground`, a warm
+  `--color-penumbra-glow` around the card), verified live. Zero raw hex
+  literals remain anywhere outside `app/tokens.css` — the decorative art
+  `TASK-0028` had left as a documented exception got actually replaced,
+  not just tokenized. 17 contrast assertions pass.
 - **Code task 3 — Identity & polish:** the real Nex hexagon (favicon, PWA
   manifest + icons so the app installs to a home screen), a visible
   language switcher (retiring the bilingual labels this same audit found
   in `RoomLobby.tsx`), copy/share for the room code, and an accessibility
   pass against `ADR-0004`'s contrast tests.
 
-**Done when:** all 6 existing views run on the new tokens/primitives with
-no raw hex literals outside `app/tokens.css` (one documented exception:
-`RoomLobby.tsx`'s decorative background art and wordmark, slated for full
-replacement — not migration — by code task 2/3), the reveal moment
-actually animates, contrast tests pass for every action/text token pair,
-and the hexagon appears as the app's icon.
+**Done when:** all 6 existing views run on the new tokens/primitives in
+`BDR-0001`'s Paper & Felt direction with no raw hex literals outside
+`app/tokens.css`, the reveal moment actually animates with its penumbra
+look, contrast tests pass for every action/text token pair, and the
+hexagon appears as the app's icon.
 
 ## M4 — Battleship
 Third game — deliberately chosen to prove the platform isn't just for

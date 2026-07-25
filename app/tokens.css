@@ -1,65 +1,80 @@
 /*
  * NexPlay Design Tokens — ADR-0004 (Design System Contract)
+ * Palette & typography: BDR-0001 (Paper & Felt, penumbra reveals)
  *
  * Semantic, paired tokens: a component asks for a *use* ("surface",
- * "action-primary"), never a raw color name. Every action pair (bg + its
- * "on" foreground) is chosen together and covered by
+ * "action-primary"), never a raw color name. Every action/status pair
+ * (bg + its "on" foreground) is chosen together and covered by
  * tests/unit/design-tokens.test.ts, which asserts each meets WCAG AA
- * (>=4.5:1). This is the mechanism that makes a contrast regression like
- * ADR-0004's audit findings (white text on an orange button at 2.33:1)
- * structurally hard to reintroduce.
+ * (>=4.5:1).
  *
- * This file intentionally keeps M3.5 code task 1's palette identical to
- * what already shipped, with one exception: the two pairs the audit found
- * failing AA (action-primary, action-secondary) are corrected using hues
- * already present elsewhere in the brand (the existing hover shades),
- * not new colors. BDR-0001's Paper & Felt palette and the penumbra reveal
- * treatment are code task 2's job, not this file's, aside from reserving
- * the two `--color-penumbra-*` tokens below so RevealCard has somewhere
- * to read from once that task lands.
+ * This file implements BDR-0001's anchors: a warm, light parchment
+ * ground by default (never dark — dark is invoked only for the reveal
+ * moment, via --color-penumbra-*), a felt-green primary action, a
+ * terracotta secondary action, and three typefaces matched to BDR-0001
+ * §3's roles (condensed display, humanist body/UI, monospace for
+ * codes/timers/scores).
  */
 
 :root {
-  /* Surfaces — ground, from base to raised to sunken/well */
-  --color-surface: #0b0518;
-  --color-surface-raised: #13072b;
-  --color-surface-sunken: #0a0318;
-  --color-surface-well: #05020c;
+  /* Surfaces — parchment ground, from base to raised to sunken/well */
+  --color-surface: #efe6d6;
+  --color-surface-raised: #fbf6ec;
+  --color-surface-sunken: #e7d9c0;
+  --color-surface-well: #ded0b4;
 
   /* Text */
-  --color-ink: #f8fafc;
-  --color-ink-muted: #a78bfa;
+  --color-ink: #2b2118;
+  --color-ink-muted: #635441;
 
   /* Structure */
-  --color-line: #3b177d;
-  --color-focus: #ff8c00;
+  --color-line: #c79a62;
+  --color-focus: #c0562a;
 
   /* Actions — bg / hover / on (foreground), chosen and tested as pairs */
-  --color-action-primary: #7c3aed;
-  --color-action-primary-hover: #6d28d9;
+  --color-action-primary: #1f6b52;
+  --color-action-primary-hover: #17513e;
   --color-on-primary: #ffffff;
 
-  --color-action-secondary: #ff8c00;
-  --color-action-secondary-hover: #ea580c;
-  --color-on-secondary: #13072b;
+  --color-action-secondary: #a8481f;
+  --color-action-secondary-hover: #8f3c1a;
+  --color-on-secondary: #ffffff;
 
-  --color-action-danger: #be123c;
-  --color-action-danger-hover: #9f1239;
+  --color-action-danger: #8a1030;
+  --color-action-danger-hover: #6e0d26;
   --color-on-danger: #ffffff;
 
-  /* Status accents (non-text-critical: dots, glows — not action pairs) */
-  --color-accent-mint: #10b981;
-  --color-accent-rose: #f43f5e;
+  /* Status surfaces — pale tint + darker "on" text, for banners (correct
+     guess, wrong guess) as opposed to the solid action-* buttons above. */
+  --color-success-surface: #e3efe7;
+  --color-on-success-surface: #14503d;
 
-  /* Penumbra — reserved for the reveal moment (BDR-0001). Not consumed by
-     any ported view in code task 1; RevealCard exists but doesn't apply
-     this look until code task 2. */
+  --color-danger-surface: #f5e4e1;
+  --color-on-danger-surface: #7a0e29;
+
+  /* Points/score highlight — a readable gold, distinct from ink-muted. */
+  --color-gold: #6b4e0f;
+
+  /* Penumbra — the reveal moment (BDR-0001): the screen dims, a warm
+     glow gathers around the card. The only place NexPlay goes dark, so
+     text tokens live here too rather than reusing the light-theme ones —
+     "innocent word" and "you're the impostor" need their own readable
+     colors against this specific dark ground, not the parchment pairs. */
   --color-penumbra-ground: #0a0f2c;
   --color-penumbra-glow: #f0b429;
+  --color-on-penumbra: #f5efe3;
+  --color-on-penumbra-muted: #c9bba0;
+  --color-penumbra-danger: #ff7a90;
+  --color-penumbra-success: #6fe3b4;
 
-  /* Typography */
-  --font-sans: var(--font-sans, "Outfit", ui-sans-serif, system-ui, sans-serif);
-  --font-mono: var(--font-mono, "Geist_Mono", ui-monospace, monospace);
+  /* Typography — BDR-0001 §3: condensed display, humanist body/UI,
+     monospace for codes/timers/scores. The actual font stacks (with their
+     own generated fallbacks) come from next/font's `variable` classes on
+     <html> in layout.tsx — not redeclared here, since a :root rule for
+     the same custom property next/font already sets on <html> would be a
+     circular self-reference (var(--font-display, ...) referencing
+     --font-display itself), which is an invalid value per spec, not a
+     graceful fallback. */
 
   /* Radius */
   --radius-sm: 0.5rem;
@@ -97,12 +112,22 @@
   --color-action-danger-hover: var(--color-action-danger-hover);
   --color-on-danger: var(--color-on-danger);
 
-  --color-accent-mint: var(--color-accent-mint);
-  --color-accent-rose: var(--color-accent-rose);
+  --color-success-surface: var(--color-success-surface);
+  --color-on-success-surface: var(--color-on-success-surface);
+
+  --color-danger-surface: var(--color-danger-surface);
+  --color-on-danger-surface: var(--color-on-danger-surface);
+
+  --color-gold: var(--color-gold);
 
   --color-penumbra-ground: var(--color-penumbra-ground);
   --color-penumbra-glow: var(--color-penumbra-glow);
+  --color-on-penumbra: var(--color-on-penumbra);
+  --color-on-penumbra-muted: var(--color-on-penumbra-muted);
+  --color-penumbra-danger: var(--color-penumbra-danger);
+  --color-penumbra-success: var(--color-penumbra-success);
 
+  --font-display: var(--font-display);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 }

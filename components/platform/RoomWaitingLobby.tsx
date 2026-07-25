@@ -23,7 +23,7 @@ export function RoomWaitingLobby({ roomCode, players, isHost, onStartGame }: Roo
       {/* ROOM CODE HEADER */}
       <div className="text-center space-y-2">
         <h2 className="text-xl text-ink-muted font-bold tracking-widest uppercase">{t("roomCodeLabel")}</h2>
-        <div className="text-7xl font-black text-ink tracking-widest bg-surface-raised px-12 py-4 rounded-3xl border-2 border-line">
+        <div className="font-mono text-7xl font-bold text-ink tracking-widest bg-surface-raised px-12 py-4 rounded-3xl border-2 border-line">
           {roomCode}
         </div>
         <p className="text-sm text-ink-muted pt-2">{t("shareHint")}</p>
@@ -32,9 +32,9 @@ export function RoomWaitingLobby({ roomCode, players, isHost, onStartGame }: Roo
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
         {/* PLAYERS LIST */}
         <Card className="space-y-4">
-          <h3 className="text-2xl font-bold text-ink flex items-center justify-between">
+          <h3 className="font-display text-2xl text-ink flex items-center justify-between">
             {t("playersLabel")}
-            <span className="text-on-danger bg-action-danger px-3 py-1 rounded-full text-sm">
+            <span className="font-sans text-on-primary bg-action-primary px-3 py-1 rounded-full text-sm">
               {players.length}
             </span>
           </h3>
@@ -47,7 +47,7 @@ export function RoomWaitingLobby({ roomCode, players, isHost, onStartGame }: Roo
 
         {/* GAME SELECTION */}
         <Card className="flex flex-col">
-          <h3 className="text-2xl font-bold text-ink mb-4">{t("gamesLabel")}</h3>
+          <h3 className="font-display text-2xl text-ink mb-4">{t("gamesLabel")}</h3>
 
           <div className="flex-1 space-y-4 overflow-y-auto pr-2">
             {Object.values(AVAILABLE_GAMES).map((game) => (
@@ -56,7 +56,7 @@ export function RoomWaitingLobby({ roomCode, players, isHost, onStartGame }: Roo
                 className="bg-surface-sunken border border-line p-4 rounded-2xl flex flex-col"
               >
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="text-xl font-black text-ink">{tGame(game.meta.name)}</h4>
+                  <h4 className="font-display text-xl text-ink">{tGame(game.meta.name)}</h4>
                 </div>
                 <p className="text-sm text-ink-muted mb-4 flex-1">
                   {tGame(`games.${game.id}.description`)}
