@@ -78,6 +78,7 @@
       "voteRegistered": "Voto registrado",
       "waitingForOthers": "Esperando a los demás...",
       "revealResultsButton": "Revelar resultados",
+      "revealAnywayHint": "No todos votaron todavía, pero podés revelar de todas formas.",
       "eliminatedSpectating": "Fuiste eliminado. Podés seguir mirando, pero ya no votás."
     },
     "roster": {
