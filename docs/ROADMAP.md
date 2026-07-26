@@ -178,11 +178,49 @@ accessibility pass (3b, still open).
 ## M4 — Battleship
 Third game — deliberately chosen to prove the platform isn't just for
 word-guessing games. Built on top of M3.5's system, not the pre-M3.5 UI.
-- 1 vs 1 board game, both players on their own device (single-device mode may
-  not make sense here — confirm during design, don't force it).
 
-**Done when:** a structurally different game (board state, 1v1 only, no
-"impostor-style" hidden role) fits the same `GameModule` contract.
+Scope was designed with the founder on 2026-07-26 (research into the official
+Hasbro *Advanced Mission* and *Salvo* variants, plus four explicit product
+decisions). It is the largest milestone so far, so it ships in **four
+independently playable phases** rather than one PR.
+
+**Design decisions taken (not to be re-litigated mid-implementation):**
+- **Sides, not modes.** The game has two *sides*; each side has one or more
+  players. "1 vs 1" is simply one player per side — there is no separate
+  1v1 codepath to maintain alongside a teams codepath.
+- **Single-device is not supported.** Confirmed during design rather than
+  forced: a pass-and-play Battleship on one phone has no way to hide a board
+  between turns. Battleship declares `supportedModes: ["multi-device"]`,
+  which makes it the first game to not support both — the platform's
+  single-device picker currently lists every registered game unconditionally
+  and must learn to filter.
+- **Special weapons: charges + ship-bound.** Founder's explicit combination of
+  two official variants — you accrue charges each turn (the economy), but each
+  weapon lives on a specific ship and is lost if that ship is sunk (the
+  tension). Because both official variants tie firepower to surviving ships
+  and therefore snowball, sinking a ship also grants compensation charges;
+  the exact numbers are playtest-tuned, the anti-snowball intent is not.
+- **Hidden information is fixed properly, not deferred** — see ADR-0005.
+
+- **M4a — Core 1 vs 1 (`TASK-0031`).** Two sides of one player, private ship
+  placement, plain single-cell shots, hit/miss/sink/win, both board sizes,
+  and ADR-0005's private-state mechanism. Playable end to end on its own.
+- **M4b — Special weapons.** Charges, the ship-bound weapon table, the four
+  shot shapes (double horizontal, double vertical, triple, cross), and the
+  aim → preview → confirm interaction the shapes require.
+- **M4c — Teams.** Two or more players per side sharing a board, via a
+  per-side Realtime channel (ADR-0005 §6 documents why this is meaningfully
+  less airtight than 1 vs 1, and why that is accepted).
+- **M4d — Tournament.** A bracket of sequential 1-vs-1 matches. Deliberately
+  built as a **platform** capability above `GameModule`, not inside
+  Battleship, because it applies to every future two-side game (Connect 4,
+  Ludo, ¿Quién es Quién? — all in `BACKLOG.md`).
+
+**Done when:** a structurally different game (board state, two sides, no
+"impostor-style" hidden role, genuinely hidden per-player information) fits
+the same `GameModule` contract — with ADR-0005's private-state extension
+being the one contract change it needed, made deliberately through an ADR
+rather than worked around.
 
 ## M5 — Presentable
 Ready to show people outside the family. Its "visual polish pass" was

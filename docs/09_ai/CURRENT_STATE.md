@@ -3,9 +3,13 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 9 - M3.5 Design System & Visual Identity (code task 3b)
-- Status: Hexagon identity + PWA icons shipped; language switcher/room-code
-  share/a11y pass (code task 3b) queued next — last step before M4
+- Sprint: Sprint 10 - M4 Battleship (design complete, M4a queued)
+- Status: A live 8-player family playtest on 2026-07-25/26 surfaced four
+  production bugs, all fixed and merged (PRs #33–#36, see below). M4's scope
+  was then designed with the founder and written up (`ADR-0005`, `ROADMAP.md`
+  M4, `TASK-0031`). M3.5's code task 3b remains open and, per `ROADMAP.md`'s
+  own ordering rule, is the last thing before M4a implementation starts —
+  flagged for the founder rather than silently skipped.
 
 ## Current Objective
 M1 and M2 are complete; M3 is implemented but still awaiting the founder's
@@ -354,6 +358,56 @@ M3.5 and starting M4.
       with no additional platform-level cap, so 8 players in one match is
       fully supported.
 
+- [x] **Live-playtest hotfixes, 2026-07-25/26 night (PRs #33–#36)**: four
+      production bugs reported by the founder *during* a real 8-player family
+      match, fixed and merged as they were found. Documented here after the
+      fact — the DoD's state-doc update was skipped under time pressure while
+      the family waited mid-game, which is the honest reason and not a
+      precedent.
+      (1) **Discussion phase could strand on a blank speaker (#33)** — with 8
+      devices, `players.find()` for the current speaker could come back
+      undefined (a presence-sync gap), rendering "es el turno de ..." with no
+      name and no way forward. Added an explicit fallback message plus a
+      host-only "skip this turn" control.
+      (2) **Voting could not be closed if a voter never voted (#34)** — the
+      host's "reveal results" button was gated on `allVoted`, so a player who
+      dropped mid-vote (or rejoined and couldn't vote) froze the match
+      permanently. Removed the gate; the button is always available to the
+      host, with a hint when the ballot is incomplete.
+      (3) **Majority lock never fired when the elimination caught an impostor
+      (#35)** — the "impostors can no longer be out-voted" check was gated on
+      `!wasImpostor`, so with 3+ impostors, catching one could land the match
+      at an already-decided state (e.g. 1 impostor vs 1 innocent) without ever
+      evaluating it, leaving two players voting each other forever with no
+      winner. This is the bug the founder hit live. Fixed to evaluate the
+      resulting alive counts regardless of who was eliminated; regression test
+      added.
+      (4) **Rejoining minted a new identity, orphaning the player (#36)** —
+      exiting and rejoining always generated a fresh random `userId`, which
+      appeared in the presence roster but was absent from the match's
+      `playerIds`/`aliveIds`, so the player was visibly "back" yet unable to
+      vote or take a turn. Now the `userId` used for a given room code is
+      remembered in storage that survives `clearRoomSession`, so rejoining the
+      same room reuses the same identity. The presence grace period was also
+      raised from 60s to 5 minutes in the same PR: locking a phone with the
+      power button suspends the realtime connection independently of the Wake
+      Lock API, and a minute was too short for a family that puts phones down
+      mid-discussion.
+- [x] **M4 (Battleship) design & specification**: researched the official
+      Hasbro *Advanced Mission* and *Salvo* variants to ground the founder's
+      "different shot shapes" idea (it turns out to be almost exactly Advanced
+      Mission's Exocet/Apache weapons). Four product decisions taken with the
+      founder, written into `docs/ROADMAP.md` M4 so they are not re-litigated
+      mid-implementation: sides-not-modes, no single-device support, a
+      charges + ship-bound weapon hybrid with an anti-snowball correction to
+      the official rules, and fixing hidden information properly rather than
+      deferring it. That last one produced **`ADR-0005`** (private per-player
+      state), which supersedes ADR-0002 §3's third bullet — a promise that the
+      platform filters private data before it reaches other devices, which was
+      never actually implemented and is fatal for Battleship specifically.
+      M4 is split into four independently playable phases (M4a–M4d);
+      `TASK-0031` specs the first.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -368,14 +422,18 @@ M3.5 and starting M4.
   (only single-device was, locally). Do this before calling M3 done.
 
 ## Next Task
-- Two independent threads, neither blocking the other:
+- **`TASK-0031` — Battleship core 1 vs 1 + `ADR-0005` private state (M4a)**
+  is specced and ready to start. It is the load-bearing phase of M4: M4b
+  (special weapons), M4c (teams) and M4d (tournament) all build on it.
+- **Ordering caveat, for the founder to decide:** `ROADMAP.md`'s own rule is
+  that milestones ship in order, and M3.5's code task 3b (visible language
+  switcher, room-code copy/share, accessibility pass) is still open. Starting
+  M4a first is a deliberate reordering, not an oversight — raise it rather
+  than assume either way.
+- Still open, neither blocking the other nor blocked by the above:
   1. Founder playtests a real multi-device Who Am I match; mark M3 ✅ in
      `docs/ROADMAP.md` once confirmed.
-  2. M3.5's code task 3b: a visible language switcher (retires
-     `RoomLobby.tsx`'s bilingual labels for good), a room-code copy/share
-     affordance, and a final accessibility pass.
-- M4 (Battleship) starts after code task 3b is done, per the updated
-  `docs/ROADMAP.md` — not built on the pre-M3.5 styling.
+  2. M3.5's code task 3b.
 
 ## Last Updated
-- 2026-07-25
+- 2026-07-26
