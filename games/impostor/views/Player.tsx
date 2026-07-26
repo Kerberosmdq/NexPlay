@@ -191,10 +191,24 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
               {t("discussion.saidMyWord")}
             </Button>
           </div>
-        ) : (
+        ) : currentSpeaker ? (
           <p className="text-ink-muted">
-            {t("discussion.waitingForTurn", { name: currentSpeaker?.displayName ?? "" })}
+            {t("discussion.waitingForTurn", { name: currentSpeaker.displayName })}
           </p>
+        ) : (
+          // currentSpeakerId points at a real entry in turnOrder, but it
+          // isn't resolvable in the live `players` list right now (e.g. a
+          // presence-sync gap with many devices joining at once). Don't
+          // show a broken "turn of ..." with a blank name and leave the
+          // round stuck on a turn nobody can take — let the host recover.
+          <div className="space-y-3">
+            <p className="text-ink-muted">{t("discussion.turnUnavailable")}</p>
+            {isHost && (
+              <Button variant="ghost" onClick={() => dispatch({ type: "NEXT_TURN" })}>
+                {t("discussion.skipTurnButton")}
+              </Button>
+            )}
+          </div>
         )}
 
         {isHost && (

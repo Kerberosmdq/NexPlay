@@ -68,7 +68,9 @@
       "saidMyWord": "Ya dije mi palabra",
       "waitingForTurn": "Es el turno de {name}...",
       "everyoneSpoke": "Todos hablaron. Cuando quieran, pasen a votar.",
-      "goToVoteButton": "Ir a votación"
+      "goToVoteButton": "Ir a votación",
+      "turnUnavailable": "No podemos mostrar de quién es el turno ahora mismo.",
+      "skipTurnButton": "Saltar este turno"
     },
     "voting": {
       "title": "¿Quién es el impostor?",
