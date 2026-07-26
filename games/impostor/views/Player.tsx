@@ -265,10 +265,24 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
           </div>
         )}
 
-        {isHost && allVoted && (
-          <Button variant="primary" onClick={() => dispatch({ type: "END_VOTING" })} className="mt-8 motion-pulse">
-            {t("voting.revealResultsButton")}
-          </Button>
+        {isHost && (
+          <div className="mt-8 space-y-2 w-full">
+            <Button
+              variant="primary"
+              onClick={() => dispatch({ type: "END_VOTING" })}
+              className={allVoted ? "motion-pulse" : ""}
+            >
+              {t("voting.revealResultsButton")}
+            </Button>
+            {/* Not everyone has to actually vote for the round to be able to
+                continue — a disconnected/reconnected player (or one whose
+                vote never registers for any other reason) shouldn't leave
+                the host stuck waiting on a vote that may never arrive
+                (ADR-0001 §4: the round shouldn't hard-fail on one dropped
+                phone). Same host-only escape-hatch pattern as discussion's
+                "skip to voting" / "skip this turn". */}
+            {!allVoted && <p className="text-xs text-ink-muted">{t("voting.revealAnywayHint")}</p>}
+          </div>
         )}
       </div>
     );
