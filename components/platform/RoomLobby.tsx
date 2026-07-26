@@ -54,7 +54,15 @@ export function RoomLobby({
             TASK-0030), the same file wired as the app's favicon/PWA icon. */}
         <div className="text-center space-y-2 pb-2">
           <div className="flex items-center justify-center gap-3">
-            <Image src="/icon.png" alt="" width={40} height={40} priority aria-hidden="true" />
+            <Image
+              src="/icon.png"
+              alt=""
+              width={80}
+              height={80}
+              priority
+              aria-hidden="true"
+              className="w-16 h-16 sm:w-20 sm:h-20"
+            />
             <h1 className="font-display text-5xl sm:text-6xl tracking-tight">NexPlay</h1>
           </div>
           <p className="text-[10px] sm:text-xs font-black tracking-[0.2em] text-ink-muted uppercase pt-2">
