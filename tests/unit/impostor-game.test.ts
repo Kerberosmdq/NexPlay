@@ -303,6 +303,32 @@ describe("impostorReducer — multi-round elimination (the actual bug report)", 
     expect(state.scores.p1).toBe(30);
   });
 
+  it("majority lock also fires when the elimination itself catches an impostor", () => {
+    // Mid-match state: 2 impostors (p1, p2) + 1 innocent (p3) still alive,
+    // sitting in elimination_result after an earlier round. This is reachable
+    // in a real match with 3+ starting impostors. Catching p2 here (one of
+    // the two remaining impostors, not the last) still leaves the impostor
+    // team unbeatable (1 impostor vs 1 innocent) — the match must resolve
+    // immediately instead of continuing to another vote, even though the
+    // player eliminated this round was an impostor, not an innocent.
+    let state: ImpostorState = {
+      ...initialState({ impostorCount: 2 }),
+      phase: "elimination_result",
+      impostorIds: ["p1", "p2"],
+      playerIds: ["p1", "p2", "p3"],
+      aliveIds: ["p1", "p2", "p3"],
+    };
+
+    state = voteRound(state, [
+      ["p1", "p2"],
+      ["p3", "p2"],
+    ]);
+
+    expect(state.aliveIds).toEqual(["p1", "p3"]);
+    expect(state.phase).toBe("resolution");
+    expect(state.lastRoundResult?.impostorsCaught).toBe(false);
+  });
+
   it("supports 2 impostors requiring all impostors caught before resolving", () => {
     // 5 players, 2 impostors (p1, p2). Catch p1 first — game must continue
     // because p2 is still alive and uncaught.

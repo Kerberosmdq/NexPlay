@@ -235,13 +235,17 @@ export function impostorReducer(state: ImpostorState, action: ImpostorAction): I
 
       // Impostors can no longer be out-voted by the remaining innocents —
       // the match ends immediately, same payout as surviving undetected.
-      if (!wasImpostor && aliveImpostorCount >= aliveInnocentCount) {
+      // This can happen either because an innocent was just voted out, or
+      // because catching an impostor (when more than one was in play) still
+      // leaves the rest of the impostor team unbeatable — either way, check
+      // the resulting alive counts, not just who was eliminated this round.
+      if (aliveImpostorCount > 0 && aliveImpostorCount >= aliveInnocentCount) {
         const pointsAwarded = teamVictoryPoints(state.impostorIds, state.playerIds, "impostors_survived");
         return {
           ...state,
           phase: "resolution",
           aliveIds: newAliveIds,
-          lastElimination: { eliminatedId, wasImpostor: false },
+          lastElimination: { eliminatedId, wasImpostor },
           scores: applyPoints(state.scores, pointsAwarded),
           lastRoundResult: { impostorsCaught: false, impostorGuessedWord: false, pointsAwarded },
         };
