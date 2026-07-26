@@ -7,3 +7,5 @@ export { Screen, type ScreenProps } from "./Screen";
 export { RevealCard, type RevealCardProps } from "./RevealCard";
 export { Scoreboard, type ScoreboardProps, type ScoreboardEntry } from "./Scoreboard";
 export { WaitingState, type WaitingStateProps } from "./WaitingState";
+export { LanguageSwitcher } from "./LanguageSwitcher";
+export { ShareCode, type ShareCodeProps } from "./ShareCode";

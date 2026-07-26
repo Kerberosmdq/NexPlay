@@ -30,6 +30,7 @@ const TERMINAL_PHASE_BY_GAME: Record<string, string> = {
 };
 
 export default function HomePage() {
+  const t = useTranslations("Lobby");
   const [session, setSession] = useState<RoomSession | null>(null);
 
   // A family passes one phone around for a whole match — the screen
@@ -168,7 +169,7 @@ export default function HomePage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-transparent text-ink space-y-4">
-      <Screen displayName={session.displayName} onExit={handleExit}>
+      <Screen displayName={session.displayName} onExit={handleExit} exitLabel={t("exitLabel")}>
         {session.mode === "single-device" && (
           <SingleDeviceGamePicker
             platformState={platformState}

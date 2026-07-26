@@ -3,28 +3,21 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 10 - M4 Battleship (design complete, M4a queued)
-- Status: A live 8-player family playtest on 2026-07-25/26 surfaced four
-  production bugs, all fixed and merged (PRs #33–#36, see below). M4's scope
-  was then designed with the founder and written up (`ADR-0005`, `ROADMAP.md`
-  M4, `TASK-0031`). M3.5's code task 3b remains open and, per `ROADMAP.md`'s
-  own ordering rule, is the last thing before M4a implementation starts —
-  flagged for the founder rather than silently skipped.
+- Sprint: Sprint 11 - M3.5 complete, M4a (Battleship core) ready to start
+- Status: M3.5's last item, code task 3b, is done (`TASK-0032`) — **M3.5 is
+  now fully complete**. `TASK-0031` (Battleship core 1 vs 1 + `ADR-0005`
+  private state) is specced and unblocked.
 
 ## Current Objective
 M1 and M2 are complete; M3 is implemented but still awaiting the founder's
 multi-device playtest (see Known Issues — unrelated to and not blocked by
-the below). A full UX/UI audit of the shipped app found no enforced visual
-system (see `BDR-0001`/`ADR-0004` for specifics), which opened milestone
-**M3.5** in `docs/ROADMAP.md` as an explicit scope decision ahead of M4
-(Battleship), so a third game doesn't get built on the same unenforced
-styling the audit found. TASK-0027 (paperwork), TASK-0028 (tokens +
-primitives + motion), TASK-0029 (Paper & Felt direction + penumbra
-reveal), and TASK-0030 (hexagon identity + PWA icons, code task 3a — a
-deliberate split of the original code task 3, written in
-`docs/ROADMAP.md`) are all done. Code task 3b (language switcher,
-room-code share, accessibility pass) is the last thing standing between
-M3.5 and starting M4.
+the below). **M3.5 is complete**: the full UX/UI audit that opened it found
+no enforced visual system (see `BDR-0001`/`ADR-0004`), and all four code
+tasks closed the gap — tokens/primitives/motion (`TASK-0028`), the Paper &
+Felt direction (`TASK-0029`), the hexagon identity/PWA icons (`TASK-0030`),
+and now the language switcher/room-code share/accessibility pass
+(`TASK-0032`). Next up is `TASK-0031` (M4a — Battleship's core 1 vs 1 and
+`ADR-0005`'s private-state mechanism), the load-bearing first phase of M4.
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -407,6 +400,40 @@ M3.5 and starting M4.
       never actually implemented and is fatal for Battleship specifically.
       M4 is split into four independently playable phases (M4a–M4d);
       `TASK-0031` specs the first.
+- [x] **TASK-0032**: Language Switcher, Room-Code Share & Accessibility Pass
+      (M3.5 code task 3b) — **closes M3.5.** `components/ui/LanguageSwitcher.tsx`
+      (new): a real ES/EN toggle via `next-intl`'s locale-aware `useRouter`/
+      `usePathname`, replacing every bilingual slash-separated label the
+      original TASK-0027 audit found in `RoomLobby.tsx` (`"¡ÚNETE AL JUEGO! /
+      JOIN THE GAME!"` and four siblings) with real per-locale i18n keys.
+      Along the way, several hardcoded Spanish defaults that had never gone
+      through the catalog at all (`"Anfitrión"`, `"Jugador"`, the invalid-code
+      error text) were moved into `i18n/es.json`/`en.json` too — the
+      bilingual labels were a symptom of the same underlying gap, not a
+      separate one. `components/ui/ShareCode.tsx` (new), wired into
+      `RoomWaitingLobby`: copies the room code to the clipboard, and calls
+      the Web Share API when available (feature-detected the same way
+      `useWakeLock` detects the Wake Lock API), with `aria-live` feedback.
+      Accessibility pass: `Button`'s existing `active` prop (already driving
+      the mode switcher and now the language toggle) now also sets
+      `aria-pressed` automatically — closing a real gap found while
+      verifying live: those controls read as plain buttons to a screen
+      reader despite behaving as toggles. The room-code display and the
+      error banner got `aria-live` regions.
+      A live-browser investigation is worth recording: the copy button
+      appeared not to update to "¡Copiado!" across several manual checks.
+      Instrumenting the actual handler (temporary `console.log`s, since
+      removed) proved `setCopied(true)` fired correctly every time; sampling
+      the DOM every 50ms after a click showed the feedback text was in fact
+      present the whole 2-second window — the earlier "it's not updating"
+      checks were each landing after that window closed, because each
+      separate tool round-trip took longer than 2 seconds on its own. Not a
+      product bug; recorded so a future agent doesn't re-chase it.
+      Zero raw hex literals or bilingual labels added; all 95 unit tests +
+      3 e2e tests pass, including a new e2e test covering the switcher
+      round-trip (es → en → es) with visible text re-rendering confirmed at
+      each step. Manually verified at mobile width (375px, no horizontal
+      overflow).
 
 ## Tasks In Progress
 - [ ] None.
@@ -422,18 +449,13 @@ M3.5 and starting M4.
   (only single-device was, locally). Do this before calling M3 done.
 
 ## Next Task
-- **`TASK-0031` — Battleship core 1 vs 1 + `ADR-0005` private state (M4a)**
-  is specced and ready to start. It is the load-bearing phase of M4: M4b
-  (special weapons), M4c (teams) and M4d (tournament) all build on it.
-- **Ordering caveat, for the founder to decide:** `ROADMAP.md`'s own rule is
-  that milestones ship in order, and M3.5's code task 3b (visible language
-  switcher, room-code copy/share, accessibility pass) is still open. Starting
-  M4a first is a deliberate reordering, not an oversight — raise it rather
-  than assume either way.
-- Still open, neither blocking the other nor blocked by the above:
-  1. Founder playtests a real multi-device Who Am I match; mark M3 ✅ in
-     `docs/ROADMAP.md` once confirmed.
-  2. M3.5's code task 3b.
+- **`TASK-0031` — Battleship core 1 vs 1 + `ADR-0005` private state (M4a)**.
+  M3.5 is now fully complete, so this is unambiguously next per `ROADMAP.md`'s
+  ship-in-order rule — no ordering caveat remains. It is the load-bearing
+  phase of M4: M4b (special weapons), M4c (teams), and M4d (tournament) all
+  build on it.
+- Still open, independent of the above: founder playtests a real
+  multi-device Who Am I match; mark M3 ✅ in `docs/ROADMAP.md` once confirmed.
 
 ## Last Updated
 - 2026-07-26
