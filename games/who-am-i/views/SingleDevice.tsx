@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import type { WhoAmIState, WhoAmIAction } from "../reducer";
-import { pickAssignments } from "../pickRound";
+import { pickAssignments, pickReplacementWord } from "../pickRound";
 import { Button, Card, Scoreboard } from "@/components/ui";
 
 export interface WhoAmISingleDeviceProps {
@@ -193,6 +193,17 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
             {t("singleDevice.failedButton")}
           </Button>
         </div>
+
+        <button
+          onClick={() => {
+            if (!current) return;
+            const newWord = pickReplacementWord(locale, state.usedWordIds);
+            dispatch({ type: "REROLL_WORD", playerId: current.id, newWord });
+          }}
+          className="text-xs text-ink-muted underline"
+        >
+          {t("playing.rerollButton")}
+        </button>
       </div>
     );
   }

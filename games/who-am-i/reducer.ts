@@ -40,6 +40,12 @@ export type WhoAmIAction =
   // judge the guess itself.
   | { type: "GUESS_CORRECT"; playerId: string }
   | { type: "GUESS_WRONG"; playerId: string }
+  // Anyone can decide a word is too hard for that player and ask for a
+  // different one, any time before they've resolved (guessed or lost).
+  // `newWord` is picked by the caller (same reason as START_GAME's
+  // `assignments`) — the reducer just swaps it in and marks it used so it
+  // can't come back around this match.
+  | { type: "REROLL_WORD"; playerId: string; newWord: WhoAmIWord }
   | { type: "END_ROUND" } // timer expired, or the host ended it early
   | { type: "PLAY_AGAIN" };
 
@@ -95,6 +101,17 @@ export function whoAmIReducer(state: WhoAmIState, action: WhoAmIAction): WhoAmIS
       const next = { ...state, lostIds };
 
       return allResolved(next) ? { ...next, phase: "resolution" as const } : next;
+    }
+
+    case "REROLL_WORD": {
+      if (state.phase !== "playing") return state;
+      if (isDone(state, action.playerId)) return state; // already resolved, nothing to reroll
+
+      return {
+        ...state,
+        wordAssignments: { ...state.wordAssignments, [action.playerId]: action.newWord },
+        usedWordIds: [...state.usedWordIds, action.newWord.id],
+      };
     }
 
     case "END_ROUND":

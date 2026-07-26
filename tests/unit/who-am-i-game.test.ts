@@ -135,6 +135,39 @@ describe("whoAmIReducer — losing", () => {
   });
 });
 
+describe("whoAmIReducer — rerolling a too-hard word", () => {
+  const REPLACEMENT: WhoAmIWord = { id: "b1", word: "Bee", emoji: "🐝" };
+
+  it("swaps in the new word and marks it as used", () => {
+    let state = startGame(initialState(), ["p1", "p2", "p3"]);
+    state = whoAmIReducer(state, { type: "REROLL_WORD", playerId: "p1", newWord: REPLACEMENT });
+    expect(state.wordAssignments.p1).toEqual(REPLACEMENT);
+    // Everyone else's word is untouched.
+    expect(state.wordAssignments.p2).toEqual(W2);
+    expect(state.usedWordIds).toContain(REPLACEMENT.id);
+  });
+
+  it("is ignored outside the playing phase", () => {
+    const state = initialState({ phase: "config" });
+    const next = whoAmIReducer(state, { type: "REROLL_WORD", playerId: "p1", newWord: REPLACEMENT });
+    expect(next).toBe(state);
+  });
+
+  it("is ignored for a player who already guessed correctly", () => {
+    let state = startGame(initialState(), ["p1", "p2", "p3", "p4"]);
+    state = whoAmIReducer(state, { type: "GUESS_CORRECT", playerId: "p1" });
+    const next = whoAmIReducer(state, { type: "REROLL_WORD", playerId: "p1", newWord: REPLACEMENT });
+    expect(next).toBe(state);
+  });
+
+  it("is ignored for a player who already lost", () => {
+    let state = startGame(initialState(), ["p1", "p2", "p3", "p4"]);
+    state = whoAmIReducer(state, { type: "GUESS_WRONG", playerId: "p1" });
+    const next = whoAmIReducer(state, { type: "REROLL_WORD", playerId: "p1", newWord: REPLACEMENT });
+    expect(next).toBe(state);
+  });
+});
+
 describe("whoAmIReducer — ending a round", () => {
   it("END_ROUND moves to resolution without touching scores", () => {
     let state = startGame(initialState(), ["p1", "p2", "p3"]);
