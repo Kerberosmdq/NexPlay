@@ -52,3 +52,39 @@ export function clearRoomSession(): void {
     // Nothing to do if storage is unavailable.
   }
 }
+
+const LAST_IDENTITY_KEY = "nexplay:last-identity:v1";
+
+interface LastIdentity {
+  roomCode: string;
+  userId: string;
+}
+
+/** Remembers which userId this device used for a given room code — kept
+ * separate from (and NOT cleared by) clearRoomSession/RoomSession, so that
+ * exiting a room (by mistake, or after a dropped connection) and rejoining
+ * with the same room code reuses the same identity instead of minting a
+ * new one. Without this, a player who leaves and rejoins mid-match shows up
+ * as a brand-new presence — visible in the room, but absent from the active
+ * game's playerIds/aliveIds, so they can't vote or take their turn. */
+export function rememberIdentity(roomCode: string, userId: string): void {
+  try {
+    localStorage.setItem(LAST_IDENTITY_KEY, JSON.stringify({ roomCode, userId } satisfies LastIdentity));
+  } catch {
+    // Losing this convenience isn't worth crashing the app over.
+  }
+}
+
+export function getRememberedUserId(roomCode: string): string | null {
+  try {
+    const raw = localStorage.getItem(LAST_IDENTITY_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.roomCode === roomCode && typeof parsed.userId === "string") {
+      return parsed.userId;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}

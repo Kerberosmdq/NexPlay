@@ -4,7 +4,15 @@ import { getSupabaseBrowserClient } from "@/lib/auth/client";
 import { createRoomChannelTopic, calculateHostMigration } from "../room";
 import type { Player, PresencePayload } from "@/lib/types/room";
 
-const GRACE_PERIOD_MS = 60 * 1000;
+// Locking the phone (screen off via the hardware button) suspends the
+// realtime connection on most mobile browsers, independent of the Wake
+// Lock API (which only prevents auto-sleep from inactivity, not a manual
+// lock). A family mid-discussion easily leaves a phone locked for a couple
+// of minutes — 60s was too short and dropped players from the roster over
+// a routine screen lock. This does not affect the actual match state
+// (playerIds/aliveIds never depend on presence), only how long a player
+// keeps showing up in the live roster while reconnecting.
+const GRACE_PERIOD_MS = 5 * 60 * 1000;
 const SUBSCRIBE_TIMEOUT_MS = 12 * 1000;
 
 export function useRoomConnection<TState, TAction>({

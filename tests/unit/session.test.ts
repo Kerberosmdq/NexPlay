@@ -1,5 +1,12 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { saveRoomSession, loadRoomSession, clearRoomSession, type RoomSession } from "@/lib/realtime/session";
+import {
+  saveRoomSession,
+  loadRoomSession,
+  clearRoomSession,
+  rememberIdentity,
+  getRememberedUserId,
+  type RoomSession,
+} from "@/lib/realtime/session";
 
 function createMemoryStorage(): Storage {
   const store = new Map<string, string>();
@@ -57,5 +64,37 @@ describe("room session persistence", () => {
   it("ignores a saved value missing required fields", () => {
     localStorage.setItem("nexplay:room-session:v1", JSON.stringify({ mode: "multi-device" }));
     expect(loadRoomSession()).toBeNull();
+  });
+});
+
+describe("remembered per-room identity", () => {
+  beforeEach(() => {
+    globalThis.localStorage = createMemoryStorage();
+  });
+
+  it("returns null when nothing was ever remembered", () => {
+    expect(getRememberedUserId("ABCD")).toBeNull();
+  });
+
+  it("round-trips a remembered identity for the same room code", () => {
+    rememberIdentity("ABCD", "player-xyz123");
+    expect(getRememberedUserId("ABCD")).toBe("player-xyz123");
+  });
+
+  it("does not return a remembered identity for a different room code", () => {
+    rememberIdentity("ABCD", "player-xyz123");
+    expect(getRememberedUserId("WXYZ")).toBeNull();
+  });
+
+  it("survives clearRoomSession — exiting a room must not orphan the identity", () => {
+    rememberIdentity("ABCD", "player-xyz123");
+    saveRoomSession(MULTI_DEVICE_SESSION);
+    clearRoomSession();
+    expect(getRememberedUserId("ABCD")).toBe("player-xyz123");
+  });
+
+  it("ignores corrupted storage instead of throwing", () => {
+    localStorage.setItem("nexplay:last-identity:v1", "{not valid json");
+    expect(getRememberedUserId("ABCD")).toBeNull();
   });
 });

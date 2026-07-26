@@ -11,7 +11,14 @@ import {
   type PlatformAction,
 } from "@/lib/realtime/platformReducer";
 import { recordEvent, recordGameResult } from "@/lib/analytics";
-import { saveRoomSession, loadRoomSession, clearRoomSession, type RoomSession } from "@/lib/realtime/session";
+import {
+  saveRoomSession,
+  loadRoomSession,
+  clearRoomSession,
+  rememberIdentity,
+  getRememberedUserId,
+  type RoomSession,
+} from "@/lib/realtime/session";
 import { useWakeLock } from "@/lib/hooks/useWakeLock";
 import { Button, Screen } from "@/components/ui";
 
@@ -59,7 +66,11 @@ export default function HomePage() {
   };
 
   const handleCreateRoom = (displayName: string, code: string) => {
-    const userId = `host-${Math.random().toString(36).substr(2, 9)}`; // Temporary anonymous ID logic
+    // Temporary anonymous ID logic — reuse this device's last identity for
+    // this exact room code (if any) so an accidental exit-and-rejoin doesn't
+    // orphan the player from the match's playerIds/aliveIds.
+    const userId = getRememberedUserId(code) ?? `host-${Math.random().toString(36).substr(2, 9)}`;
+    rememberIdentity(code, userId);
     const newSession: RoomSession = {
       mode: "multi-device",
       role: "host",
@@ -73,11 +84,13 @@ export default function HomePage() {
   };
 
   const handleJoinRoom = (displayName: string, code: string) => {
+    const userId = getRememberedUserId(code) ?? `player-${Math.random().toString(36).substr(2, 9)}`; // Temporary anonymous ID logic
+    rememberIdentity(code, userId);
     const newSession: RoomSession = {
       mode: "multi-device",
       role: "player",
       roomCode: code,
-      userId: `player-${Math.random().toString(36).substr(2, 9)}`, // Temporary anonymous ID logic
+      userId,
       displayName,
     };
     setSession(newSession);
