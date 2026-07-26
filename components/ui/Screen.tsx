@@ -12,7 +12,7 @@ export interface ScreenProps {
  * in-session screen renders above its content. Replaces a raw 12px "✕"
  * with no accessible label and no real tap target — using `Button` here
  * gives it both for free. */
-export function Screen({ displayName, onExit, exitLabel = "Salir", children }: ScreenProps) {
+export function Screen({ displayName, onExit, exitLabel = "Exit", children }: ScreenProps) {
   return (
     <div className="w-full flex flex-col items-center gap-4">
       {(displayName || onExit) && (

@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { generateRoomCode, isValidRoomCode } from "@/lib/realtime";
-import { Button, CodeInput, Field } from "@/components/ui";
+import { Button, CodeInput, Field, LanguageSwitcher } from "@/components/ui";
 
 export interface RoomLobbyProps {
   onStartSingleDevice: (displayName: string) => void;
@@ -16,24 +17,25 @@ export function RoomLobby({
   onCreateRoom,
   onJoinRoom,
 }: RoomLobbyProps) {
+  const t = useTranslations("Lobby");
   const [mode, setMode] = useState<"multi-device" | "single-device">("multi-device");
   const [displayName, setDisplayName] = useState("");
   const [joinCodeInput, setJoinCodeInput] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const handleCreate = () => {
-    const name = displayName.trim() || "Anfitrión";
+    const name = displayName.trim() || t("defaultHostName");
     const code = generateRoomCode();
     setError(null);
     onCreateRoom(name, code);
   };
 
   const handleJoin = () => {
-    const name = displayName.trim() || "Jugador";
+    const name = displayName.trim() || t("defaultPlayerName");
     const code = joinCodeInput.trim().toUpperCase();
 
     if (!isValidRoomCode(code)) {
-      setError("INGRESA UN CÓDIGO DE 4 LETRAS (EJ. ABCD)");
+      setError(t("invalidCodeError"));
       return;
     }
 
@@ -42,7 +44,7 @@ export function RoomLobby({
   };
 
   const handleSingleDevice = () => {
-    const name = displayName.trim() || "Jugador 1";
+    const name = displayName.trim() || t("defaultSingleDeviceName");
     setError(null);
     onStartSingleDevice(name);
   };
@@ -50,6 +52,10 @@ export function RoomLobby({
   return (
     <div className="relative w-full max-w-lg mx-auto">
       <div className="relative w-full overflow-hidden p-6 sm:p-8 bg-surface-raised text-ink rounded-3xl border-4 border-line shadow-[0_16px_40px_rgba(43,33,24,0.18)] space-y-6">
+        <div className="flex justify-end">
+          <LanguageSwitcher />
+        </div>
+
         {/* Brand Header — the real Nex hexagon mark (BDR-0001 §4,
             TASK-0030), the same file wired as the app's favicon/PWA icon. */}
         <div className="text-center space-y-2 pb-2">
@@ -66,7 +72,7 @@ export function RoomLobby({
             <h1 className="font-display text-5xl sm:text-6xl tracking-tight">NexPlay</h1>
           </div>
           <p className="text-[10px] sm:text-xs font-black tracking-[0.2em] text-ink-muted uppercase pt-2">
-            ¡ÚNETE AL JUEGO! / JOIN THE GAME!
+            {t("tagline")}
           </p>
         </div>
 
@@ -81,7 +87,7 @@ export function RoomLobby({
             }}
             className="text-xs sm:text-sm tracking-wider uppercase"
           >
-            MULTIDISPOSITIVO
+            {t("multiDeviceButton")}
           </Button>
           <Button
             variant="secondary"
@@ -92,53 +98,53 @@ export function RoomLobby({
             }}
             className="text-xs sm:text-sm tracking-wider uppercase"
           >
-            1 TELÉFONO
+            {t("singleDeviceButton")}
           </Button>
         </div>
 
         <Field
-          label="TU NOMBRE / NICKNAME"
+          label={t("nameLabel")}
           maxLength={15}
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          placeholder="EJ. MATEO, SOFÍA, PAPÁ"
+          placeholder={t("namePlaceholder")}
           className="uppercase tracking-wider"
         />
 
         {error && (
-          <div className="p-4 bg-danger-surface border-3 border-action-danger rounded-2xl text-xs font-black text-on-danger-surface text-center tracking-wider">
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="p-4 bg-danger-surface border-3 border-action-danger rounded-2xl text-xs font-black text-on-danger-surface text-center tracking-wider"
+          >
             ⚠️ {error}
           </div>
         )}
 
         {mode === "multi-device" ? (
           <div className="space-y-6 pt-2">
-            <CodeInput
-              label="CÓDIGO DE SALA / ENTER ROOM CODE"
-              value={joinCodeInput}
-              onChange={setJoinCodeInput}
-            />
+            <CodeInput label={t("roomCodeLabel")} value={joinCodeInput} onChange={setJoinCodeInput} />
 
             <Button variant="primary" onClick={handleJoin} className="text-xl sm:text-2xl uppercase tracking-wider">
-              UNIRSE A SALA / JOIN PARTY
+              {t("joinButton")}
             </Button>
 
             <div className="relative flex py-1 items-center">
               <div className="flex-grow border-t-2 border-line"></div>
               <span className="flex-shrink mx-4 text-xs font-black uppercase text-ink-muted tracking-widest">
-                O CREA UNA NUEVA
+                {t("orCreateNew")}
               </span>
               <div className="flex-grow border-t-2 border-line"></div>
             </div>
 
             <Button variant="secondary" onClick={handleCreate} className="text-xl sm:text-2xl uppercase tracking-wider">
-              CREAR NUEVA SALA / CREATE ROOM
+              {t("createButton")}
             </Button>
           </div>
         ) : (
           <div className="pt-4">
             <Button variant="secondary" onClick={handleSingleDevice} className="text-xl sm:text-2xl uppercase tracking-wider">
-              INICIAR MODO 1 TELÉFONO
+              {t("startSingleDeviceButton")}
             </Button>
           </div>
         )}

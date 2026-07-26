@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import { AVAILABLE_GAMES } from "@/lib/realtime/platformReducer";
-import { Button, Card, PlayerChip } from "@/components/ui";
+import { Button, Card, PlayerChip, ShareCode } from "@/components/ui";
 
 interface RoomWaitingLobbyProps {
   roomCode: string;
@@ -23,10 +23,16 @@ export function RoomWaitingLobby({ roomCode, players, isHost, onStartGame }: Roo
       {/* ROOM CODE HEADER */}
       <div className="text-center space-y-2">
         <h2 className="text-xl text-ink-muted font-bold tracking-widest uppercase">{t("roomCodeLabel")}</h2>
-        <div className="font-mono text-7xl font-bold text-ink tracking-widest bg-surface-raised px-12 py-4 rounded-3xl border-2 border-line">
+        <div
+          className="font-mono text-7xl font-bold text-ink tracking-widest bg-surface-raised px-12 py-4 rounded-3xl border-2 border-line"
+          aria-live="polite"
+        >
           {roomCode}
         </div>
         <p className="text-sm text-ink-muted pt-2">{t("shareHint")}</p>
+        <div className="pt-2">
+          <ShareCode roomCode={roomCode} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">

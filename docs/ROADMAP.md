@@ -101,7 +101,7 @@ locally end to end in single-device, multi-device only smoke-tested to the
 lobby (no live Supabase in the dev sandbox). **Not yet playtested by the
 founder on real devices** — do that before marking this milestone ✅.
 
-## M3.5 — Design System & Visual Identity — 🚧 Started (2026-07-24)
+## M3.5 — Design System & Visual Identity — ✅ Complete (2026-07-26)
 **Explicit scope decision, written here per the rule below** (not silent
 scope creep): a full UX/UI audit of M0–M3 as shipped found the app has no
 enforced visual system — `app/tokens.css` has zero consumers, 43 raw hex
@@ -161,19 +161,36 @@ Known Issues in `docs/09_ai/CURRENT_STATE.md`).
   (felt green) and `background_color` (parchment). The Next.js scaffold
   leftovers the original audit flagged — `app/favicon.ico` and the five
   unused `public/*.svg` files — are gone.
-- **Code task 3b — Polish:** a visible language switcher (retiring the
-  bilingual labels this same audit found in `RoomLobby.tsx`), copy/share
-  for the room code, and an accessibility pass against `ADR-0004`'s
-  contrast tests.
+- **Code task 3b — Polish (`TASK-0032`, done):** `components/ui/LanguageSwitcher.tsx`
+  added (a real ES/EN toggle using `next-intl`'s locale-aware navigation) and
+  every bilingual slash-separated label the original audit found in
+  `RoomLobby.tsx` (`"¡ÚNETE AL JUEGO! / JOIN THE GAME!"` and four others) is
+  gone, replaced with real per-locale i18n keys — along with several
+  hardcoded Spanish defaults (`"Anfitrión"`, error copy) that had never gone
+  through the catalog at all. `components/ui/ShareCode.tsx` added to
+  `RoomWaitingLobby`: copies the room code to the clipboard, and uses the Web
+  Share API when available (feature-detected, same pattern as
+  `useWakeLock`), with `aria-live` feedback. Accessibility pass: `Button`'s
+  existing `active` prop (already used for the mode switcher and language
+  toggle) now also sets `aria-pressed` automatically, closing a real gap —
+  those controls read as plain buttons to a screen reader before this,
+  despite behaving as toggles; the room code and error banner got
+  `aria-live` regions. A live-browser investigation into "the copy button
+  didn't update" turned out to be a testing-tool timing artifact (the
+  2-second "¡Copiado!" feedback had already reverted by the time each
+  separate verification round-trip completed), not a real bug — confirmed
+  by instrumenting the actual handler and sampling state every 50ms.
+  E2E test added covering the switcher round-trip (es → en → es), all
+  visible text re-rendering correctly.
 
 **Done when:** all 6 existing views run on the new tokens/primitives in
 `BDR-0001`'s Paper & Felt direction with no raw hex literals outside
 `app/tokens.css`, the reveal moment actually animates with its penumbra
 look, contrast tests pass for every action/text token pair, the hexagon
-appears as the app's icon (✅ 3a) — and a stranger can actually read the
-app in their own language via a visible switcher, share a room code
-without dictating it letter by letter, and the whole thing passes an
-accessibility pass (3b, still open).
+appears as the app's icon (✅ 3a), a stranger can actually read the app in
+their own language via a visible switcher, share a room code without
+dictating it letter by letter, and the whole thing passes an accessibility
+pass (✅ 3b) — **M3.5 is complete.**
 
 ## M4 — Battleship
 Third game — deliberately chosen to prove the platform isn't just for
