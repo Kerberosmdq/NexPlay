@@ -2,7 +2,7 @@
 id: ADR-0005
 title: Private Per-Player Game State
 status: Accepted
-version: 1.2.0
+version: 1.3.0
 category: Architecture Decision Record
 
 authors:
@@ -225,6 +225,27 @@ same room or the same family, which is what it is for.
 - `docs/09_ai/tasks/TASK-0031-battleship-core.md`
 
 ## Changelog
+### Version 1.3.0
+- Implements §6's already-approved team-play mitigation for real
+  (`TASK-0035`, M4c — Battleship teams): a per-side Realtime **broadcast**
+  channel (`lib/realtime/teamState.ts`'s `useTeamFleetChannel`), subscribed
+  to only by that side's own players, exactly as §6 already specified
+  ("a separate Realtime channel per side, which the opposing side is not
+  subscribed to... obscurity, not authorization"). One player per side —
+  the **captain**, `sides[side][0]`, whoever was assigned to that side
+  first — is the sole source of truth for that side's fleet and the only
+  device `answerPendingShot` ever trusts to resolve a defending shot
+  (narrowed from "any player on the defending side" to "that side's
+  captain specifically"); every other teammate only ever receives a live
+  *mirror* of the captain's fleet over the side channel, purely for
+  rendering their own view of the shared board — they never place ships
+  themselves and their device's copy is never authoritative. Deliberately
+  built entirely inside Battleship's own view code (not routed through the
+  generic `usePrivateState`/`MultiDeviceRoom` mechanism), so the 1-vs-1
+  path — where a side's one player is trivially its own "captain" — has
+  zero new code paths to regress; every existing M4a/M4b reducer test
+  passed unmodified after this change.
+
 ### Version 1.2.0
 - A narrow, deliberate exception to §3's "the layout that produced it never
   does": once every one of a ship's cells is independently confirmed a hit

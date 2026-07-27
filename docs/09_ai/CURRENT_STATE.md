@@ -3,23 +3,28 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 14 - M4b (special weapons) done; M4c (teams) next
+- Sprint: Sprint 15 - M4c (teams) done; M4d (tournament) next
 - Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
-  playtest follow-up fixes (PRs #41–#44), and `TASK-0034` (M4b special
-  weapons) all shipped. Battleship is now feature-complete for 1-vs-1 play.
+  playtest follow-up fixes (PRs #41–#44), `TASK-0034` (M4b special weapons),
+  and `TASK-0035` (M4c teams) all shipped. Battleship's full design
+  (1-vs-1 and fixed 2-vs-2) is now feature-complete.
 
 ## Current Objective
 M1 and M2 are complete; M3.5 is complete (see below); M3 is implemented but
 still awaiting the founder's multi-device playtest (Known Issues, unrelated
-to and not blocked by the below). **M4a, its polish pass, and M4b are all
-done**: Battleship plays a full 1-vs-1 match — place fleets with a real
-continuous-drag preview, fire plain shots for free or spend charges on one
-of four special weapons (each bound to a specific ship type, lost if that
-ship sinks), see an explicit hit/sink modal with a sunk-ship silhouette left
-on the board, win, reveal the loser's board — with genuine ship-position
-privacy throughout (a device's fleet never leaves it, proven both by
-reducer-level tests and by inspecting real two-device matches live). Next up
-is **M4c** (teams: two or more players per side sharing a board).
+to and not blocked by the below). **M4a through M4c are all done**:
+Battleship plays a full match, 1-vs-1 or fixed 2-vs-2 — place fleets with a
+real continuous-drag preview (in a team, one captain places while their
+teammate watches live), fire plain shots for free or spend charges on one of
+four special weapons (each bound to a specific ship type, lost if that ship
+sinks; either teammate can fire on their side's turn), see an explicit
+hit/sink modal with a sunk-ship silhouette left on the board, win, reveal
+the loser's board — with genuine ship-position privacy throughout (a side's
+fleet only ever reaches its own captain and, over a side-scoped Realtime
+channel, that side's own teammate — never the opposing side — proven both
+by reducer-level tests and by inspecting real two- and four-device matches
+live). Next up is **M4d** (tournament: a bracket of sequential 1-vs-1
+matches, built as a platform capability above `GameModule`).
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -606,6 +611,42 @@ is **M4c** (teams: two or more players per side sharing a board).
       to sink a 2-cell ship in a single multi-cell shot and confirmed the
       sunk modal, sunk-ship ghost, and compensation charges (landing on the
       defender) all fired correctly. Zero console/server errors throughout.
+- [x] **TASK-0035**: Battleship — Teams (M4c) — fixed 2-vs-2 team play on
+      top of M4a/M4b. Design (team size, assignment method, placement
+      collaboration model, firing-turn ownership) confirmed with the
+      founder before implementation: fixed 2 vs 2; the host assigns each
+      player to a side; one "captain" per side (`sides[side][0]`) places
+      the fleet while their teammate watches read-only; either teammate can
+      fire on their side's turn. A new Battleship-only `"teamSetup"` phase
+      (`ASSIGN_SIDE`/`START_TEAMS` actions) only exists for a 4-player
+      match — a 2-player match skips it entirely and behaves byte-for-byte
+      as before M4c (every existing M4a/M4b reducer test passed
+      unmodified). `answerPendingShot` narrowed from "any player on the
+      defending side" to "that side's captain specifically," since a
+      non-captain teammate's own private slice is never the real fleet —
+      only a received mirror of it. `lib/realtime/teamState.ts` (new)
+      implements `ADR-0005` §6's already-pre-approved per-side Realtime
+      broadcast channel for real (`useTeamFleetChannel`): the captain
+      broadcasts its fleet on every change, the teammate mirrors it into
+      local state purely for rendering. Deliberately built entirely inside
+      Battleship's own view code rather than extending the generic
+      `usePrivateState`/`MultiDeviceRoom` mechanism, keeping the platform
+      `GameModule` contract untouched. Recorded as `ADR-0005` v1.3.0.
+      New unit tests cover team-assignment capping/transition and the
+      captain-only defense guard. Verified live across **four** real,
+      separately-connected browser tabs over actual Supabase Realtime:
+      host assigned all 4 players to sides; the captain's fleet appeared
+      live on the teammate's screen the instant it was placed (read-only,
+      no edit controls); both teammates independently confirmed able to
+      fire on their side's turn; the shot correctly resolved via the
+      defending side's captain and synced to all 4 devices; the opposing
+      side's screens showed zero ship data throughout. One real UX gap
+      found and fixed during this same verification: the original
+      team-assignment screen only showed side-picker buttons for
+      *unassigned* players, so a host mis-click had no way to reassign
+      someone already placed — reworked to always show every player with
+      their current side highlighted, reassignable anytime before
+      "¡Empezar!".
 
 ## Tasks In Progress
 - [ ] None.
@@ -621,17 +662,16 @@ is **M4c** (teams: two or more players per side sharing a board).
   (only single-device was, locally). Do this before calling M3 done.
 
 ## Next Task
-- **M4c — Teams** (two or more players per side sharing a board, via a
-  per-side Realtime channel — `ADR-0005` §6 already documents why this is
-  meaningfully less airtight than 1 vs 1, and why that's accepted). No task
-  spec written yet.
+- **M4d — Tournament** (a bracket of sequential 1-vs-1 matches, built as a
+  platform capability above `GameModule`, not inside Battleship, since it
+  applies to any future two-side game). No task spec written yet.
 - Still open, independent of the above: founder playtests a real
   multi-device Who Am I match; mark M3 ✅ in `docs/ROADMAP.md` once confirmed.
 - Also independent: the founder should actually playtest Battleship
-  (M4a + M4b, full weapons and all) on real phones before M4c builds team
-  play on top of it — verification so far across every Battleship task has
-  used two browser contexts on one machine, not two real devices over a
-  real network.
+  (M4a through M4c — full weapons and 2-vs-2 teams) on real phones before
+  M4d builds a tournament bracket on top of it — verification so far across
+  every Battleship task has used up to four browser contexts on one
+  machine, not real separate devices over a real network.
 
 ## Last Updated
 - 2026-07-27

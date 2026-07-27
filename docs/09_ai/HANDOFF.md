@@ -3,163 +3,166 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: TASK-0034
-- **Title**: Battleship — Special Weapons (M4b)
+- **Task ID**: TASK-0035
+- **Title**: Battleship — Teams (M4c)
 
 ## Current Branch
-- `feat/battleship-special-weapons`, branched off `main` after PR #44
-  (the last of the M4a-polish playtest follow-up fixes) merged.
+- `feat/battleship-teams`, branched off `main` after PR #45 (M4b special
+  weapons) merged.
 
 ## What's in this task
 
-M4b on top of M4a (`TASK-0031`) + its polish pass (`TASK-0033`) + four
-playtest follow-up fixes (PRs #41–#44, documented in `CURRENT_STATE.md`
-since they'd never gotten a state-doc update at the time they shipped).
+M4c on top of M4a (`TASK-0031`) + its polish/fixes + M4b (`TASK-0034`).
+Fixed 2-vs-2 team play — the biggest architectural addition to Battleship
+since `ADR-0005` itself, because it's the first time more than one device
+needs to share the same private data.
 
 ### Design conversation before any code
-Per `docs/ROADMAP.md`'s M4b bullet, the shot shapes were already fixed
-(double horizontal, double vertical, triple, cross) but the weapon-to-ship
-mapping and the charge economy's exact numbers weren't. Rather than
-improvise these, they were worked out with the founder in conversation
-first — same discipline M4's overall design used. Landed on:
-- **Weapon table**: carrier→Cross, battleship→Triple (10×10 only, since
-  8×8's fleet has no "battleship" ship type), destroyer→Double Vertical,
-  submarine→Double Horizontal, patrol→no weapon.
-- **Charges**: +1 automatically at the start of a side's own turn. A plain
-  single-cell shot is always free (0 cost) — this was the resolving answer
-  to a real structural question raised mid-conversation: if a plain shot
-  also cost a charge, income and cost would net to zero every turn, and a
-  "pass turn without firing" mechanic would be needed just to ever save up
-  for a weapon. Making the plain shot free sidesteps that entirely; no pass
-  mechanic exists or is needed.
-- **Costs**: Double=2, Triple=3, Cross=4 (founder's own numbers, not the
-  scaled proposal offered).
-- **Anti-snowball compensation**: +2 charges to whichever side just lost a
-  ship (the loser, not the attacker) — this is what makes it "anti-snowball"
-  rather than a double reward for the side already ahead.
-- All of the above numbers are explicitly playtest-tunable per
-  `docs/ROADMAP.md`'s own framing; not treated as sacred.
+`docs/ROADMAP.md`'s M4c bullet only said "two or more players per side" and
+pointed at `ADR-0005` §6 for the sharing mechanism — team size, assignment
+method, how teammates collaborate on placement, and who fires on a team's
+turn were all still open. Confirmed with the founder first:
+- **Team size**: fixed 2 vs 2 (4 players total), not configurable.
+- **Assignment**: host-assigned, not automatic/self-service.
+- **Placement**: one "captain" per side places the fleet; the other
+  teammate watches it appear live, read-only — avoids two people fighting
+  over the same ship in real time.
+- **Firing**: any teammate on the active side can fire, first tap wins, no
+  forced rotation — matches the same "family self-regulates verbally"
+  philosophy already used elsewhere (Impostor's discussion turns).
 
-### `games/battleship/weapons.ts` (new)
-Pure functions, mirrors `placement.ts`'s pattern exactly (no reducer/React
-involvement, fully unit-testable in isolation):
-- `weaponCells(weapon, row, col, orientation, boardSize)` — the cells a
-  shape hits, anchored on the tapped cell. `doubleHorizontal`/
-  `doubleVertical` are each a *fixed*, non-rotating 2-cell shape (that's why
-  they're two separate table entries rather than one "double" with a chosen
-  orientation); only `triple` takes an orientation. `cross` is a fixed
-  5-cell plus shape. Off-board cells are silently clipped rather than
-  rejecting the whole shot — you're bombarding an area, not placing a
-  physical object, so firing near an edge just wastes part of the shot.
-- `SHIP_WEAPON`/`weaponForShipType` — the ship→weapon table above.
-- `WEAPON_COST` — the cost table above.
+### The captain concept and why defense had to diverge from offense
+Firing turned out to need **zero reducer changes** — `FIRE`'s existing
+guard only ever checked `state.turn === action.side`, never a specific
+player id, so "any teammate can fire" was already true by construction.
+Defense is different: resolving a shot needs the actual private fleet, and
+only one device per side ever really has it. So `sides[side][0]` — the
+**captain**, whoever the host assigned to that side first — became the
+one and only device `answerPendingShot` trusts; a non-captain teammate's
+own `privateState` is never real, only a *mirror* of the captain's (see
+below), and `answerPendingShot`'s "am I on the defending side" check
+narrowed to "am I that side's captain." For a 1-vs-1 match this is a
+no-op: the one player on a side is trivially `sides[side][0]`.
 
 ### `games/battleship/reducer.ts`
-- `BattleshipState.charges: Record<Side, number>`, initialized to 0, reset
-  to 0 on `PLAY_AGAIN`.
-- `pendingShot` changed from `{ shooterSide, cell }` to
-  `{ shooterSide, cells: string[] }`. `FIRE` changed from `{ side, cell }`
-  to `{ side, cells, weapon: WeaponType | null }` — `cells` is pre-computed
-  by the firing device via `weaponCells` (geometry needs no private
-  information, so trusting it here is the same trust model ship placement
-  already uses for a private fleet's own `cells`). `FIRE` rejects: an
-  unaffordable weapon, an empty/entirely-off-board shape, or a shot whose
-  every cell is already fired-at (a *partially*-wasted shape is still
-  allowed, same "some risk is on you" rule the plain shot already had).
-- `RESOLVE_SHOT` changed from a single `cell`/`result`/`sunkShipType`/
-  `sunkShipCells` to `results: {cell, result}[]` and
-  `sunk: {type, cells}[]` — a multi-cell weapon (especially Cross) can
-  complete more than one ship in a single shot, so this is now a list, not
-  a nullable singular. Deducts nothing itself (cost is deducted at `FIRE`
-  time, committed regardless of the eventual hit/miss outcome); grants the
-  defender's turn-start income and any sink compensation in the same
-  transition that flips `turn` to them.
-- `answerPendingShot` rewritten to loop over `pendingShot.cells`, building
-  up the results array and then checking every one of the defender's own
-  ships (not already reported sunk in an earlier shot — a guard against
-  reporting the same ship sunk twice, since its cells stay "hit" forever
-  once fully hit) against the accumulated hit set.
+- New `"teamSetup"` phase, reachable only when `createInitialState`
+  receives exactly 4 player ids (2 still goes straight to `"placing"`,
+  byte-for-byte unchanged). New `rosterPlayerIds: string[]` field (the full
+  roster, needed to know who's still unassigned — a 2-player match never
+  reads it).
+- New actions: `ASSIGN_SIDE` (removes the player from wherever they
+  currently are, then adds them to the target side, capped at 2 — so
+  re-assigning/fixing a mistake is just another dispatch, not a separate
+  "unassign" step) and `START_TEAMS` (host-triggered once both sides have
+  exactly 2, moves to `"placing"`).
+- `answerPendingShot`'s defending-side check narrowed to the captain, as
+  above.
+
+### `lib/realtime/teamState.ts` (new)
+`useTeamFleetChannel` — implements `ADR-0005` §6's already-pre-approved
+mitigation for real: a Realtime **broadcast** channel scoped to one side
+(`room:{code}:battleship:side:{side}`). The captain's device broadcasts its
+own fleet on every change; every other teammate on that side only ever
+receives, mirroring the broadcast into local state purely for rendering —
+they never send anything back, so there's no risk of two devices
+disagreeing about which fleet is authoritative. Deliberately built entirely
+inside Battleship's own view code (called directly by `Player.tsx`, not
+routed through `MultiDeviceRoom`/`usePrivateState`) so the platform
+`GameModule` contract and the generic private-state mechanism stay exactly
+as they were — the 1-vs-1 path has zero new code paths to regress.
 
 ### `games/battleship/views/Player.tsx`
-- A weapon selector row during the firing phase (only shown on your own
-  turn, no pending shot): "Disparo simple" always available, plus one
-  button per weapon whose ship is still afloat on your own side (disabled,
-  not hidden, if you can't currently afford it — so you can see what you're
-  saving toward).
-- Selecting a weapon arms an aim-then-confirm flow: tapping the target
-  board sets an aim anchor (doesn't fire yet), a translucent tinted
-  reticle (green if the shot is worth taking, red if every cell in it is
-  already fired-at) previews the shape — a new `aim` prop on `BoardGrid`,
-  deliberately *not* reusing the ship-art `ghost` overlay, since there's no
-  ship to show for a bombardment shape. Triple gets an orientation toggle
-  identical to placement's. A "¡Disparar!" button then commits it.
-- A visible charge counter ("CARGAS: N").
-
-### i18n
-New keys under `Battleship.firing`: `chargesLabel`, `plainShotButton`,
-`weapon.{doubleHorizontal,doubleVertical,triple,cross}`, `aimHint`,
-`confirmShotButton` — `es.json`/`en.json` both updated.
+- A `"teamSetup"` phase screen: shows both sides' current rosters, and
+  (host-only) a per-player pair of "Bando A"/"Bando B" buttons — always
+  shown for *every* roster player (not just unassigned ones), so the host
+  can fix a mis-click any time before "¡Empezar!" (a real gap found and
+  fixed during this task's own live verification — see below).
+- `isCaptain = mySide ? state.sides[mySide][0] === playerId : false`, and
+  `effectiveFleet = isCaptain ? fleet : mirroredFleet` — used everywhere a
+  view needs to *display* a side's ships (own board during firing, the
+  `REVEAL_FLEET` dispatch); the captain's own `privateState.fleet` is only
+  ever used for the actual *editing* operations, which a non-captain's UI
+  never exposes (placement renders an early, read-only return for them).
 
 ### Tests
-8 new/expanded unit tests: `weapons.ts` geometry (fixed vs. rotatable
-shapes, edge-clipping, the ship-weapon table, cost table), the charge
-economy (FIRE rejecting an unaffordable weapon or an entirely-wasted shot,
-turn-start income, sink compensation, a single shot sinking two ships at
-once without double-counting compensation). 128 unit tests total.
+6 new unit tests: team-assignment capping/reassignment, `ASSIGN_SIDE`/
+`START_TEAMS` phase gating, and — the one that actually matters —
+`answerPendingShot` returning `null` for a side's non-captain teammate even
+though they're on the defending side, while the captain answers normally.
+Every existing M4a/M4b reducer test passed **unmodified** (not just
+re-verified — literally zero lines touched), proving the 2-player path
+truly wasn't disturbed. 134 unit tests total.
 
 ### Live verification
-Two real, separately-connected browser tabs over actual Supabase Realtime
-(not single-tab simulation) — the same "clear one tab's `localStorage`
-before its first navigation, so it gets a distinct player identity instead
-of inheriting the other tab's remembered session" technique used for the
-#41–#44 fixes. Confirmed: charges accrue correctly turn over turn; the
-weapon selector correctly disables unaffordable weapons and hides a
-weapon the instant its own ship sinks (sank a carrier via four ordinary
-hits, watched "Cruz" disappear from *that side's own* selector); firing a
-Double weapon at a 2-cell ship resolves both cells as hits in one shot,
-sinks it, shows the sunk modal with correct phrasing, leaves the sunk-ship
-ghost on the target board, and lands compensation charges on the side that
-lost the ship, not the one that fired. Zero console/server errors.
+Four real, separately-connected browser tabs over actual Supabase Realtime
+(the established "clear a new tab's `localStorage` before its first
+navigation" technique, now needing 3 fresh tabs alongside the original
+host tab — see the testing-methodology note below, which got a real
+workout this time). Confirmed: host assigns all 4 players to sides; the
+captain's fleet appears on the teammate's screen the instant it's placed,
+read-only, no edit controls; either teammate independently fires on their
+side's turn; the shot resolves via the defending side's captain and syncs
+correctly to all 4 devices; the opposing side's screens show zero ship
+data throughout (same privacy proof standard as every earlier Battleship
+task). Zero console/server errors (one batch of console errors turned out
+to be stale entries from before an i18n key rename hot-reloaded, confirmed
+by checking a tab that never rendered the old code path — see below).
+
+### A real UX gap found and fixed during this task's own verification
+The first version of the team-assignment screen only rendered side-picker
+buttons for players still in the *unassigned* list — once someone was
+placed, there was no control left to move them, so a host mis-click (which
+happened during this task's own live testing) had no fix short of
+restarting. Reworked to always list every roster player with their current
+side highlighted (`active` on whichever button matches), reassignable any
+time before "¡Empezar!" — the reducer's `ASSIGN_SIDE` already supported
+reassignment correctly; only the UI was missing the affordance.
 
 ## Files Modified / Added
-- `games/battleship/weapons.ts` (new)
-- `games/battleship/reducer.ts` (charges, multi-cell `pendingShot`/
-  `RESOLVE_SHOT`, `answerPendingShot` rewrite)
-- `games/battleship/views/Player.tsx` (weapon selector, aim-then-confirm
-  flow, charge counter)
-- `i18n/es.json`, `i18n/en.json` (weapon/charge labels)
-- `tests/unit/battleship-game.test.ts`, `tests/unit/private-state.test.ts`
-  (updated for the new action shapes; new geometry/economy tests)
-- `docs/09_ai/tasks/TASK-0034-battleship-special-weapons.md` (new)
-- `docs/ROADMAP.md`, `docs/09_ai/CURRENT_STATE.md`, this file (also
-  reconciles the doc debt left by PRs #41–#44)
+- `games/battleship/reducer.ts` (`"teamSetup"` phase, `ASSIGN_SIDE`/
+  `START_TEAMS`, `rosterPlayerIds`, captain-only `answerPendingShot`)
+- `games/battleship/module.ts` (`meta.maxPlayers` 2 → 4)
+- `lib/realtime/teamState.ts` (new)
+- `games/battleship/views/Player.tsx` (team-assignment screen, read-only
+  teammate placement view, `effectiveFleet`/mirror wiring)
+- `i18n/es.json`, `i18n/en.json` (`teamSetup.*`, `placing.watchingCaptainHint`)
+- `tests/unit/battleship-game.test.ts` (team-assignment + captain-guard tests)
+- `docs/09_ai/tasks/TASK-0035-battleship-teams.md` (new)
+- `docs/00_decisions/architecture/ADR-0005-PRIVATE-GAME-STATE.md` (v1.3.0)
+- `docs/ROADMAP.md`, `docs/09_ai/CURRENT_STATE.md`, this file
 
 ## External state (not in git, important for the next agent to know)
 - Same as prior handoffs: Supabase live, Vercel auto-deploying `main`, strict
   branch protection, GitHub Actions secrets `NEXT_PUBLIC_SUPABASE_URL`/
   `NEXT_PUBLIC_SUPABASE_ANON_KEY` configured (added for PR #39's e2e job).
 
-## A testing-methodology note worth remembering
-Verifying anything Battleship-specific requires two distinct player
-identities, but two tabs of the same browser profile share one
-`localStorage` (and therefore one remembered room session). Navigating a
-second tab to the app *before* clearing its storage makes it silently
-inherit the first tab's session — the fix is: create the tab, navigate it
-once, then `localStorage.clear(); location.reload()` in the same script
-call *before* interacting with it further, and always re-check the first
-tab is still intact afterward. This is a real quirk of same-profile
-multi-tab testing, not a product bug — two actual family phones never share
-storage, so it can't happen in real play.
+## A testing-methodology note worth remembering (expanded from M4b)
+Same-profile multi-tab testing needs a distinct player identity per tab,
+but all tabs share one `localStorage`. The fix, now exercised for 4 tabs
+instead of 2: navigate the new tab once, then in the *same* script call,
+`localStorage.clear(); location.reload();` before doing anything else with
+it — and re-check every *previously* set-up tab is still intact afterward.
+Batching multiple `dispatch`-triggering clicks together in one script (no
+gap between them) can also produce misleading results — React's state
+updates aren't necessarily visible to a synchronous script's very next line
+even though they're correctly ordered under the hood; fire one user action,
+then re-read the DOM, rather than chaining several `.click()` calls back to
+back and trusting the immediate read. Also: a console error that persists
+across a `console.clear()` + reload in one tab, but is entirely absent in a
+different tab that never hit the same code path, is very likely a stale
+buffered log tied to that specific tab's earlier state, not a live bug —
+cross-check against a tab that never rendered the old code before treating
+it as real.
 
 ## Pending Tasks
-- **M4c — Teams.** Two or more players per side sharing a board, via a
-  per-side Realtime channel (`ADR-0005` §6 already documents why this is
-  meaningfully less airtight than 1 vs 1, and why that's accepted). No task
-  spec written yet.
-- **Founder playtest of Battleship (M4a + M4b, full weapons and all) on
-  real phones**, independent of M4c starting. Verification so far across
-  every Battleship task has used two browser contexts on one machine, not
-  two real devices over a real network.
+- **M4d — Tournament.** A bracket of sequential 1-vs-1 matches, built as a
+  **platform** capability above `GameModule` (not inside Battleship, since
+  it applies to any future two-side game — Connect 4, Ludo, ¿Quién es
+  Quién?, all in `BACKLOG.md`). No task spec written yet.
+- **Founder playtest of Battleship (M4a through M4c — full weapons and
+  2-vs-2 teams) on real phones**, independent of M4d starting. Verification
+  so far across every Battleship task has used up to four browser contexts
+  on one machine, never real separate devices over a real network.
 - Founder playtest of multi-device Who Am I on real phones (M3's last open
   item, independent of the above).
 - M1's dedicated two-real-phones reconnection test (open since M1,
@@ -168,6 +171,9 @@ storage, so it can't happen in real play.
   slice — the latent leak the ADR documents is real but not urgent.
 
 ## Next Suggested Task
-- Write the M4c task spec (teams/per-side Realtime channel), then implement
-  it on top of M4a + M4b's reducer/view shape. Read `ADR-0005` §6 first —
-  it already scopes what team play can and can't guarantee.
+- Write the M4d task spec (tournament bracket, as a platform capability),
+  then implement it. Since it's platform-level rather than Battleship-
+  specific, expect it to touch `lib/types/room.ts`/the room lobby rather
+  than `games/battleship/` — read `ADR-0002` (the `GameModule` contract)
+  first, since a bracket almost certainly needs a way to run several
+  matches of the *same* game back to back, which nothing today provides.

@@ -335,6 +335,87 @@ describe("battleshipReducer", () => {
   });
 });
 
+describe("battleshipReducer — M4c team assignment", () => {
+  function startedTeamGame(): BattleshipState {
+    return createInitialState(["p1", "p2", "p3", "p4"], 8);
+  }
+
+  it("a 4-player match starts in teamSetup with both sides empty and the full roster recorded", () => {
+    const state = startedTeamGame();
+    expect(state.phase).toBe("teamSetup");
+    expect(state.sides).toEqual({ A: [], B: [] });
+    expect(state.rosterPlayerIds).toEqual(["p1", "p2", "p3", "p4"]);
+  });
+
+  it("ASSIGN_SIDE fills a side up to 2, rejecting a third, and re-assigning moves the player instead of duplicating them", () => {
+    let state = startedTeamGame();
+    state = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "p1", side: "A" });
+    state = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "p2", side: "A" });
+    expect(state.sides.A).toEqual(["p1", "p2"]);
+
+    // Side A is full — a third assignment is ignored.
+    const beforeThird = state;
+    state = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "p3", side: "A" });
+    expect(state).toEqual(beforeThird);
+
+    // Re-assigning p1 to B removes them from A first, not just adds a duplicate.
+    state = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "p1", side: "B" });
+    expect(state.sides).toEqual({ A: ["p2"], B: ["p1"] });
+  });
+
+  it("ASSIGN_SIDE ignores a playerId that isn't part of this match's roster", () => {
+    const state = startedTeamGame();
+    const after = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "stranger", side: "A" });
+    expect(after).toEqual(state);
+  });
+
+  it("ASSIGN_SIDE only applies during teamSetup", () => {
+    const state: BattleshipState = { ...startedTeamGame(), phase: "placing" };
+    const after = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "p1", side: "A" });
+    expect(after).toBe(state);
+  });
+
+  it("START_TEAMS moves to placing only once both sides have exactly 2", () => {
+    let state = startedTeamGame();
+    state = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "p1", side: "A" });
+    state = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "p2", side: "B" });
+
+    // Only one player per side so far — rejected.
+    const before = state;
+    state = battleshipReducer(state, { type: "START_TEAMS" });
+    expect(state).toEqual(before);
+
+    state = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "p3", side: "A" });
+    state = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "p4", side: "B" });
+    state = battleshipReducer(state, { type: "START_TEAMS" });
+    expect(state.phase).toBe("placing");
+  });
+
+  it("answerPendingShot only ever answers for a side's captain (sides[side][0]), never the other teammate", () => {
+    let state = startedTeamGame();
+    state = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "p1", side: "A" });
+    state = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "p2", side: "A" });
+    state = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "p3", side: "B" });
+    state = battleshipReducer(state, { type: "ASSIGN_SIDE", playerId: "p4", side: "B" });
+    state = battleshipReducer(state, { type: "START_TEAMS" });
+    state = battleshipReducer(state, { type: "SIDE_READY", side: "A" });
+    state = battleshipReducer(state, { type: "SIDE_READY", side: "B" });
+    state = battleshipReducer(state, { type: "FIRE", side: "A", cells: ["0-0"], weapon: null });
+
+    const bPrivate: BattleshipPrivate = { fleet: [{ type: "patrol", cells: ["0-0", "0-1"] }] };
+    // p3 is B's captain (assigned first) — answers normally.
+    expect(answerPendingShot(state, bPrivate, "p3")).toEqual({
+      type: "RESOLVE_SHOT",
+      side: "B",
+      results: [{ cell: "0-0", result: "hit" }],
+      sunk: [],
+    });
+    // p4 is B's *other* teammate — never the one trusted to answer, even
+    // though they're on the defending side too.
+    expect(answerPendingShot(state, bPrivate, "p4")).toBeNull();
+  });
+});
+
 describe("otherSide", () => {
   it("flips A/B", () => {
     expect(otherSide("A")).toBe("B");
