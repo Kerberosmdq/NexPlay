@@ -24,6 +24,12 @@ export interface BattleshipState {
   // are (that's each device's private slice, ADR-0005).
   shots: Record<BattleshipSide, Record<string, CellResult>>;
   sunkShips: Record<BattleshipSide, string[]>;
+  // The cells of each sunk ship, in the same order as `sunkShips` — lets the
+  // shooter's device render the actual ship shape over its hit dots once
+  // it's confirmed sunk, without ever knowing the rest of the opponent's
+  // fleet layout (only a fully-hit ship's own cells are revealed here, by
+  // the defending device itself in `answerPendingShot`).
+  sunkShipCells: Record<BattleshipSide, ShipPlacement[]>;
 
   turn: BattleshipSide;
 
@@ -47,7 +53,14 @@ export type BattleshipAction =
   // the room only ever learns that a side finished placing.
   | { type: "SIDE_READY"; side: BattleshipSide }
   | { type: "FIRE"; side: BattleshipSide; cell: string }
-  | { type: "RESOLVE_SHOT"; side: BattleshipSide; cell: string; result: CellResult; sunkShipType: string | null }
+  | {
+      type: "RESOLVE_SHOT";
+      side: BattleshipSide;
+      cell: string;
+      result: CellResult;
+      sunkShipType: string | null;
+      sunkShipCells: string[] | null;
+    }
   | { type: "REVEAL_FLEET"; side: BattleshipSide; fleet: ShipPlacement[] }
   | { type: "PLAY_AGAIN" };
 
@@ -80,6 +93,7 @@ export function answerPendingShot(
   const result: CellResult = hitShip ? "hit" : "miss";
 
   let sunkShipType: string | null = null;
+  let sunkShipCells: string[] | null = null;
   if (hitShip) {
     const alreadyHit = new Set(
       Object.entries(state.shots[defendingSide])
@@ -89,10 +103,11 @@ export function answerPendingShot(
     alreadyHit.add(cell);
     if (hitShip.cells.every((c) => alreadyHit.has(c))) {
       sunkShipType = hitShip.type;
+      sunkShipCells = hitShip.cells;
     }
   }
 
-  return { type: "RESOLVE_SHOT", side: defendingSide, cell, result, sunkShipType };
+  return { type: "RESOLVE_SHOT", side: defendingSide, cell, result, sunkShipType, sunkShipCells };
 }
 
 function applyPoints(scores: BattleshipState["scores"], pointsAwarded: Record<string, number>) {
@@ -116,6 +131,7 @@ export function createInitialState(playerIds: string[], boardSize: number): Batt
     readySides: { A: false, B: false },
     shots: { A: {}, B: {} },
     sunkShips: { A: [], B: [] },
+    sunkShipCells: { A: [], B: [] },
     turn: "A",
     pendingShot: null,
     revealedFleets: {},
@@ -162,6 +178,16 @@ export function battleshipReducer(state: BattleshipState, action: BattleshipActi
       const sunkShips = action.sunkShipType
         ? { ...state.sunkShips, [defendingSide]: [...state.sunkShips[defendingSide], action.sunkShipType] }
         : state.sunkShips;
+      const sunkShipCells =
+        action.sunkShipType && action.sunkShipCells
+          ? {
+              ...state.sunkShipCells,
+              [defendingSide]: [
+                ...state.sunkShipCells[defendingSide],
+                { type: action.sunkShipType, cells: action.sunkShipCells },
+              ],
+            }
+          : state.sunkShipCells;
 
       const fleetFullySunk = sunkShips[defendingSide].length === state.fleetSpec.length;
 
@@ -173,6 +199,7 @@ export function battleshipReducer(state: BattleshipState, action: BattleshipActi
           phase: "resolution",
           shots,
           sunkShips,
+          sunkShipCells,
           pendingShot: null,
           winner: shooterSide,
           scores: applyPoints(state.scores, pointsAwarded),
@@ -182,6 +209,7 @@ export function battleshipReducer(state: BattleshipState, action: BattleshipActi
       return {
         ...state,
         shots,
+        sunkShipCells,
         sunkShips,
         pendingShot: null,
         turn: defendingSide, // the side just fired upon gets to fire back
@@ -201,6 +229,7 @@ export function battleshipReducer(state: BattleshipState, action: BattleshipActi
         readySides: { A: false, B: false },
         shots: { A: {}, B: {} },
         sunkShips: { A: [], B: [] },
+        sunkShipCells: { A: [], B: [] },
         turn: "A",
         pendingShot: null,
         revealedFleets: {},

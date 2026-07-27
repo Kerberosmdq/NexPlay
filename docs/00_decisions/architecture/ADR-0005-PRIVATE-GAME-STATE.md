@@ -2,7 +2,7 @@
 id: ADR-0005
 title: Private Per-Player Game State
 status: Accepted
-version: 1.1.0
+version: 1.2.0
 category: Architecture Decision Record
 
 authors:
@@ -10,7 +10,7 @@ authors:
   - Claude (AI Architect)
 
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-07-27
 
 language: English
 
@@ -225,6 +225,21 @@ same room or the same family, which is what it is for.
 - `docs/09_ai/tasks/TASK-0031-battleship-core.md`
 
 ## Changelog
+### Version 1.2.0
+- A narrow, deliberate exception to §3's "the layout that produced it never
+  does": once every one of a ship's cells is independently confirmed a hit
+  (i.e. it's sunk), `RESOLVE_SHOT`/`BattleshipState.sunkShipCells` now carries
+  *that ship's own* cells into shared state, so the shooter's device can
+  render the actual ship shape over its hit dots instead of bare dots —
+  founder feedback after the M4a polish pass ("que aparezca el barco medio
+  fantasma en los puntos rojos"). This reveals no new strategic information:
+  every one of those cells already read "hit" individually; only the
+  grouping/shape is new, and only for a ship that's already dead. Every other
+  ship's cells — sunk or not — remain absent from shared state until
+  `revealedFleets` at match resolution, unchanged. Same shape of exception as
+  §6's already-documented team-play limits: narrowed and written down, not
+  silently expanded.
+
 ### Version 1.1.0
 - Accepted — implemented in `TASK-0031`. `setupPrivate`'s signature dropped
   the `config` parameter drafted in the proposal: the platform never stores

@@ -205,6 +205,8 @@
       "hitAnnouncement": "¡Tocado!",
       "missAnnouncement": "Agua...",
       "sunkAnnouncement": "¡Hundiste {ship}!",
+      "shipSunkAnnouncement": "¡Te hundieron {ship}!",
+      "tapToContinue": "Tocá para continuar",
       "layoutStacked": "Uno arriba del otro",
       "layoutSideBySide": "Lado a lado",
       "layoutOneAtATime": "De a uno"

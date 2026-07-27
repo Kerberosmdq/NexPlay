@@ -205,6 +205,8 @@
       "hitAnnouncement": "Hit!",
       "missAnnouncement": "Miss...",
       "sunkAnnouncement": "You sank their {ship}!",
+      "shipSunkAnnouncement": "They sank your {ship}!",
+      "tapToContinue": "Tap to continue",
       "layoutStacked": "Stacked",
       "layoutSideBySide": "Side by side",
       "layoutOneAtATime": "One at a time"

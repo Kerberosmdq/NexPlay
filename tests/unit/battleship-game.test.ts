@@ -131,7 +131,14 @@ describe("battleshipReducer", () => {
 
     const bPrivate: BattleshipPrivate = { fleet: [{ type: "patrol", cells: ["0-0", "0-1"] }] };
     const action = answerPendingShot(state, bPrivate, "p2"); // p2 is on side B, the defender
-    expect(action).toEqual({ type: "RESOLVE_SHOT", side: "B", cell: "5-5", result: "miss", sunkShipType: null });
+    expect(action).toEqual({
+      type: "RESOLVE_SHOT",
+      side: "B",
+      cell: "5-5",
+      result: "miss",
+      sunkShipType: null,
+      sunkShipCells: null,
+    });
 
     state = battleshipReducer(state, action!);
     expect(state.pendingShot).toBeNull();
@@ -153,7 +160,14 @@ describe("battleshipReducer", () => {
 
     state = battleshipReducer(state, { type: "FIRE", side: "A", cell: "0-0" });
     let action = answerPendingShot(state, bPrivate, "p2")!;
-    expect(action).toEqual({ type: "RESOLVE_SHOT", side: "B", cell: "0-0", result: "hit", sunkShipType: null });
+    expect(action).toEqual({
+      type: "RESOLVE_SHOT",
+      side: "B",
+      cell: "0-0",
+      result: "hit",
+      sunkShipType: null,
+      sunkShipCells: null,
+    });
     state = battleshipReducer(state, action);
     expect(state.phase).toBe("firing"); // one ship remains — match continues
 
@@ -165,9 +179,17 @@ describe("battleshipReducer", () => {
 
     state = battleshipReducer(state, { type: "FIRE", side: "A", cell: "0-1" });
     action = answerPendingShot(state, bPrivate, "p2")!;
-    expect(action).toEqual({ type: "RESOLVE_SHOT", side: "B", cell: "0-1", result: "hit", sunkShipType: "patrol" });
+    expect(action).toEqual({
+      type: "RESOLVE_SHOT",
+      side: "B",
+      cell: "0-1",
+      result: "hit",
+      sunkShipType: "patrol",
+      sunkShipCells: ["0-0", "0-1"],
+    });
     state = battleshipReducer(state, action);
     expect(state.sunkShips.B).toEqual(["patrol"]);
+    expect(state.sunkShipCells.B).toEqual([{ type: "patrol", cells: ["0-0", "0-1"] }]);
     expect(state.phase).toBe("firing"); // carrier still afloat
   });
 
@@ -206,6 +228,7 @@ describe("battleshipReducer", () => {
     expect(state.winner).toBe("A");
     expect(state.scores.p1).toBe(20);
     expect(state.sunkShips.B.sort()).toEqual(FLEET_8.map((s) => s.type).sort());
+    expect(state.sunkShipCells.B.map((s) => s.type).sort()).toEqual(FLEET_8.map((s) => s.type).sort());
   });
 
   it("answerPendingShot returns null on the device that isn't the defender", () => {
