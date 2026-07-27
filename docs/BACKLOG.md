@@ -14,9 +14,47 @@
 ---
 
 ## Game ideas
-- **Pictionary-style drawing/guessing game.** Fits the shared platform well
-  (rooms, turns, reveal); suggested as a strong candidate for a 4th/5th game
-  given it's a natural fit for the target ages. Not yet scoped as a milestone.
+- **Future games after M4 (Battleship), in the founder's proposed order
+  (2026-07-25).** Everything below must support *both* device modes so the
+  founder's kids can play with friends who are each in their own house, not
+  physically together — this isn't a new requirement to design for, it's
+  already guaranteed by the shared `GameModule` contract (`ADR-0002`): every
+  game implements single-device *and* multi-device from the same reducer.
+  1. **Connect 4 (4 en línea).** Strictly 2 players, a fully open board (no
+     hidden information at all) — the simplest of this batch technically,
+     good as a quick win right after Battleship.
+  2. **Juego de la Oca.** No player maximum — everyone shares one spiral
+     board and takes turns rolling a die. A deliberate identity touch (a
+     game the family actually knows from Argentina, not a generic import).
+  3. **Ludo / Parchís.** 4 players max, matching the classic cross-shaped
+     board's four starting arms. Shared board + dice + a "capture the
+     opponent's piece" mechanic.
+  4. **Memory (memoria / buscar parejas).** The first game in this batch
+     with a *shared, simultaneously-visible* board rather than the
+     per-device private state Impostor/Who Am I use (your own secret
+     word/role) — turn-based flip-and-match on one board everyone sees at
+     once. Worth building once the simpler shared-board games above prove
+     that sync pattern.
+  5. **¿Quién es Quién? (Guess Who).** Deliberately named differently from
+     the existing "¿Quién Soy?" despite the similar name in casual
+     conversation — this is a genuinely different game, not a variant:
+     each player has one secret character from a shared gallery, and wins
+     by asking yes/no questions about physical traits (glasses? hat? hair
+     color?) to eliminate candidates and guess the *opponent's* character
+     — the inverse of "¿Quién Soy?", where you guess your *own* hidden
+     word instead. Technically fits the existing per-device-private-state
+     pattern (same shape as Impostor's secret role); the real cost is
+     content authoring — a character roster tagged with checkable
+     attributes, not just a word list, the heaviest content lift of this
+     batch. Like every other verbal game here, assumes remote players are
+     on a call while playing; the app doesn't handle voice.
+  6. **Pictionary-style drawing/guessing game.** Placed **last on purpose**
+     (founder's explicit call): unlike the five games above, this needs a
+     genuinely new platform capability — real-time synced drawing strokes
+     over Supabase Realtime, not just discrete phase/state sync like every
+     game built so far. Benefits from the platform having several more
+     games under its belt (and the shared-board sync pattern proven by
+     Oca/Ludo/Memory) before taking this on.
 - **More Impostor categories/word packs.** Ongoing — new packs are additions
   via PR (ADR-0003 §Seam 4), not a milestone; add packs here as ideas come up
   before someone writes them:
