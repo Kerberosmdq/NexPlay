@@ -268,9 +268,47 @@ independently playable phases** rather than one PR.
   oriented correctly on placement/own/revealed boards while the opponent's
   board stays empty (privacy intact), hit markers stay visible on top of
   ship art, all three layouts render correctly.
-- **M4b — Special weapons.** Charges, the ship-bound weapon table, the four
-  shot shapes (double horizontal, double vertical, triple, cross), and the
-  aim → preview → confirm interaction the shapes require.
+- **M4a polish fixes (PRs #41–#44, done).** Founder playtest of the just-shipped
+  M4a polish surfaced four follow-up fixes, each shipped as its own small PR
+  rather than one batch: (#41) the carrier's ship art left a visible gap at
+  its bow/stern — `object-contain` letterboxed the image's short axis because
+  the carrier's own aspect ratio didn't match its cell-span box; switched to
+  `object-cover`. (#42) the founder explicitly rejected the tap/tap/confirm
+  placement flow from `TASK-0033` ("quiero ver como si uno lo arrastrara por
+  el tablero") — reworked into genuine continuous-pointer drag-and-drop,
+  including picking an already-placed ship back up without it jumping to the
+  press point. (#43) that drag rework had two bugs: moving a ship only
+  recolored cells instead of showing the actual ship, and rotating a
+  picked-up ship silently did nothing because a zero-movement pickup tap
+  re-committed the ship before the rotate button could ever apply — fixed
+  with a translucent ship-shaped ghost overlay and a `justPickedUpRef` guard
+  distinguishing a real drag from a plain pickup tap. (#44) sinking a ship
+  gave no strong signal of what was destroyed — added a full-screen sink
+  modal (phrasing flips correctly between "you sank it" and "it was sunk on
+  you") and a faded/grayscale ship silhouette left over its hit dots on the
+  target board, which required a small, explicitly documented exception to
+  ADR-0005 §3 (`ADR-0005` v1.2.0: a *sunk* ship's own cells become visible,
+  never the rest of the fleet).
+- **M4b — Special weapons (`TASK-0034`, done).** Charges, the ship-bound
+  weapon table, the four shot shapes, and the aim → preview → confirm
+  interaction they need. Design decisions taken with the founder before
+  implementation (not just improvised): weapon-to-ship mapping (carrier→
+  Cross, battleship→Triple [10×10 only], destroyer→Double Vertical,
+  submarine→Double Horizontal, patrol→none); charges accrue +1 automatically
+  at the start of a side's own turn, a plain single-cell shot stays free
+  (0 cost) always, weapon costs scale with shape size (Double=2, Triple=3,
+  Cross=4); anti-snowball compensation (+2 charges) lands on whichever side
+  just lost a ship, not the attacker. `games/battleship/weapons.ts` (new)
+  holds the shape geometry (pure, clips off-board cells rather than
+  rejecting the shot) and the table, independent of the reducer/React.
+  `BattleshipState` gained `charges`; `pendingShot`/`RESOLVE_SHOT` moved from
+  a single cell to a `cells`/`results` array so `answerPendingShot` can
+  resolve — and potentially sink — more than one ship in a single shot (a
+  Cross is the shape most likely to do this). Verified live across two real
+  browser contexts, including forcing a ship-carrying weapon's owner to lose
+  that weapon the instant its ship sinks, and firing a Double weapon to sink
+  a ship in one multi-cell shot with the sunk modal/ghost/compensation-charge
+  system all firing correctly.
 - **M4c — Teams.** Two or more players per side sharing a board, via a
   per-side Realtime channel (ADR-0005 §6 documents why this is meaningfully
   less airtight than 1 vs 1, and why that is accepted).

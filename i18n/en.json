@@ -209,7 +209,17 @@
       "tapToContinue": "Tap to continue",
       "layoutStacked": "Stacked",
       "layoutSideBySide": "Side by side",
-      "layoutOneAtATime": "One at a time"
+      "layoutOneAtATime": "One at a time",
+      "chargesLabel": "Charges: {count}",
+      "plainShotButton": "Plain shot",
+      "weapon": {
+        "doubleHorizontal": "Double horizontal",
+        "doubleVertical": "Double vertical",
+        "triple": "Triple",
+        "cross": "Cross"
+      },
+      "aimHint": "Tap the enemy board to aim",
+      "confirmShotButton": "Fire! ({cost} charges)"
     },
     "resolution": {
       "youWon": "YOU WON!",

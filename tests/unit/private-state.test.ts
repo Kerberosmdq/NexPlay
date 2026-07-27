@@ -87,14 +87,12 @@ describe("ADR-0005: the private slice never appears in shared state", () => {
     let state: BattleshipState = createInitialState(["p1", "p2"], 8);
     state = battleshipReducer(state, { type: "SIDE_READY", side: "A" });
     state = battleshipReducer(state, { type: "SIDE_READY", side: "B" });
-    state = battleshipReducer(state, { type: "FIRE", side: "A", cell: "3-3" });
+    state = battleshipReducer(state, { type: "FIRE", side: "A", cells: ["3-3"], weapon: null });
     state = battleshipReducer(state, {
       type: "RESOLVE_SHOT",
       side: "B",
-      cell: "3-3",
-      result: "hit",
-      sunkShipType: null,
-      sunkShipCells: null,
+      results: [{ cell: "3-3", result: "hit" }],
+      sunk: [],
     });
 
     // Only the one fired-at cell is now visible in shared state, as a
@@ -116,14 +114,12 @@ describe("ADR-0005: the private slice never appears in shared state", () => {
     let state: BattleshipState = createInitialState(["p1", "p2"], 8);
     state = battleshipReducer(state, { type: "SIDE_READY", side: "A" });
     state = battleshipReducer(state, { type: "SIDE_READY", side: "B" });
-    state = battleshipReducer(state, { type: "FIRE", side: "A", cell: "0-0" });
+    state = battleshipReducer(state, { type: "FIRE", side: "A", cells: ["0-0"], weapon: null });
     state = battleshipReducer(state, {
       type: "RESOLVE_SHOT",
       side: "B",
-      cell: "0-0",
-      result: "hit",
-      sunkShipType: "patrol",
-      sunkShipCells: ["0-0", "0-1"],
+      results: [{ cell: "0-0", result: "hit" }],
+      sunk: [{ type: "patrol", cells: ["0-0", "0-1"] }],
     });
 
     expect(state.sunkShipCells.B).toEqual([{ type: "patrol", cells: ["0-0", "0-1"] }]);

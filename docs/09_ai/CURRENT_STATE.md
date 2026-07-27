@@ -3,22 +3,23 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 13 - M4a polish done (founder playtest feedback); M4b next
-- Status: `TASK-0031` (Battleship core) and `TASK-0033` (M4a polish — real
-  ship art, placement preview, hit/sink feedback, board layout) both
-  shipped. Battleship is now genuinely presentable, not just functional.
+- Sprint: Sprint 14 - M4b (special weapons) done; M4c (teams) next
+- Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
+  playtest follow-up fixes (PRs #41–#44), and `TASK-0034` (M4b special
+  weapons) all shipped. Battleship is now feature-complete for 1-vs-1 play.
 
 ## Current Objective
 M1 and M2 are complete; M3.5 is complete (see below); M3 is implemented but
 still awaiting the founder's multi-device playtest (Known Issues, unrelated
-to and not blocked by the below). **M4a and its polish pass are both done**:
-Battleship plays a full 1-vs-1 match (place fleets with a live movable
-preview, fire, see an explicit hit/miss/sunk announcement with a fire
-animation, win, reveal the loser's board with real ship art throughout) with
-genuine ship-position privacy — a device's fleet never leaves it, proven
-both by a reducer-level test and by inspecting a real two-device match live.
-Next up is **M4b** (special weapons: charges, ship-bound weapons, the four
-shot shapes) on top of the core + polish just laid down.
+to and not blocked by the below). **M4a, its polish pass, and M4b are all
+done**: Battleship plays a full 1-vs-1 match — place fleets with a real
+continuous-drag preview, fire plain shots for free or spend charges on one
+of four special weapons (each bound to a specific ship type, lost if that
+ship sinks), see an explicit hit/sink modal with a sunk-ship silhouette left
+on the board, win, reveal the loser's board — with genuine ship-position
+privacy throughout (a device's fleet never leaves it, proven both by
+reducer-level tests and by inspecting real two-device matches live). Next up
+is **M4c** (teams: two or more players per side sharing a board).
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -518,6 +519,93 @@ shot shapes) on top of the core + polish just laid down.
       placement/own/revealed boards while the opponent's board stays
       genuinely empty (privacy intact); hit markers stay visible layered on
       top of ship art; all three layouts render and switch correctly.
+- [x] **Battleship playtest follow-up fixes (PRs #41–#44)**: four small,
+      independently-merged fixes from the founder playing the just-shipped
+      M4a polish live, documented here together since none of them got a
+      state-doc update at the time (an acknowledged process gap, closed by
+      this entry rather than repeated).
+      (#41) The carrier's ship art left a visible gap at its bow/stern even
+      though it correctly occupied its cells — `object-contain` letterboxed
+      the image's short axis because the carrier's own aspect ratio (2.59)
+      didn't match its 4-cell-span box aspect (4.0); the other four ships'
+      aspect ratios happened to already exceed their box's, so only the
+      carrier showed it. Fixed by switching `ShipOverlay`'s `<img>` to
+      `object-cover`, verified by comparing `getBoundingClientRect()` of the
+      image against its container for all 5 ship types.
+      (#42) The founder explicitly rejected `TASK-0033`'s tap/tap/confirm
+      placement flow mid-verification ("quiero ver como si uno lo
+      arrastrara por el tablero") — reworked into genuine continuous
+      pointer-driven drag-and-drop: `BoardGrid` gained `onDragStart`/
+      `onDragMove`/`onDragEnd`, window-level `pointermove`/`pointerup`
+      listeners track the drag, and picking an already-placed ship back up
+      re-anchors to its *existing* position rather than jumping to the
+      press point. Pure placement-logic helpers (`shipTypeAt`, `shipAt`,
+      `orientationOf`, `anchorOf`) moved from the view into
+      `games/battleship/placement.ts` for unit-testability.
+      (#43) That drag rework shipped with two bugs the founder found on the
+      next live pass: moving a ship only recolored cells instead of showing
+      the actual ship following the pointer, and rotating a picked-up ship
+      silently did nothing. Root cause of the second bug: a plain
+      tap-to-pick-up (press+release with no movement) was treated as a
+      zero-distance drag-and-drop, instantly re-committing the ship to its
+      original cells before the rotate button could ever have an effect —
+      closing the only window (`nextShip` truthy) rotation depends on.
+      Fixed with (a) a translucent ship-shaped ghost overlay (tinted by
+      placement validity) replacing the plain colored-cell highlight, and
+      (b) a `justPickedUpRef` flag that only allows a release to commit once
+      real pointer movement has happened since pickup.
+      (#44) Sinking a ship gave no strong signal of what was destroyed, and
+      the target board only ever showed bare hit/miss dots with no lasting
+      memory of what had already been eliminated where. Added a full-screen
+      sink modal (tap to dismiss) whose phrasing correctly flips between
+      "¡Hundiste X!" and "¡Te hundieron X!" depending on whose ship it was
+      — previously both cases used identical text, wrong for the defender.
+      Added a faded/grayscale ship silhouette over a sunk ship's hit cells
+      on the target board. This needed a small, deliberate, documented
+      exception to `ADR-0005` §3 ("the layout that produced it never
+      does"): `RESOLVE_SHOT` now carries a newly-*sunk* ship's own cells
+      into shared state (never an unsunk ship's) — recorded as `ADR-0005`
+      v1.2.0, reasoned as revealing no new strategic information since
+      every one of those cells already independently read "hit".
+      All four verified live across two real, separately-connected browser
+      tabs over actual Supabase Realtime (not single-tab simulation).
+- [x] **TASK-0034**: Battleship — Special Weapons (M4b) — charges, a
+      ship-bound weapon table, the four shot shapes, and the aim → preview →
+      confirm interaction they need, on top of M4a + its polish/fixes.
+      Design (weapon-to-ship mapping, charge economy numbers, whether a
+      "pass turn to save charges" mechanic was needed) was worked out with
+      the founder in conversation *before* writing a task spec or any code —
+      same discipline as M4's original design — landing on: carrier→Cross,
+      battleship→Triple (10×10 only), destroyer→Double Vertical, submarine→
+      Double Horizontal, patrol→no weapon; charges accrue +1 automatically
+      at the start of a side's own turn; a plain single-cell shot stays free
+      always (so no "pass turn" mechanic was needed — you're never forced to
+      spend down to zero just to keep playing); weapon costs scale with
+      shape size (Double=2, Triple=3, Cross=4); a side that just lost a ship
+      gets +2 anti-snowball compensation charges, landing on the loser, not
+      the attacker. `games/battleship/weapons.ts` (new) holds the shape
+      geometry (pure functions, clip off-board cells rather than rejecting
+      the whole shot) and the ship→weapon→cost table, independent of the
+      reducer/React — mirrors `placement.ts`'s pattern. `BattleshipState`
+      gained `charges: Record<Side, number>`; `pendingShot`/`RESOLVE_SHOT`
+      changed from a single cell to a `cells`/`results` array so
+      `answerPendingShot` can resolve — and potentially sink — more than one
+      ship in a single multi-cell shot (a Cross is the shape most likely to
+      do this; a dedicated unit test covers a shot sinking two ships at
+      once, verifying compensation charges don't double-count). `Player.tsx`
+      gained a weapon selector (only shows a weapon if its ship is still
+      afloat, disables it if unaffordable), an aim-then-confirm flow
+      reusing the ghost-overlay pattern (a tinted reticle, not a ship image,
+      since you're bombarding unknown territory) plus an orientation toggle
+      for Triple, and a visible charge counter. 8 new/expanded unit tests
+      (weapon geometry, charge economy math, weapon-unavailable-once-sunk,
+      multi-ship-sinking shot). Verified live across two real browser tabs:
+      accrued charges over several turns, sank a weapon-carrying ship
+      (carrier) via ordinary hits and confirmed its own owner immediately
+      lost the Cross option from their selector, then fired a Double weapon
+      to sink a 2-cell ship in a single multi-cell shot and confirmed the
+      sunk modal, sunk-ship ghost, and compensation charges (landing on the
+      defender) all fired correctly. Zero console/server errors throughout.
 
 ## Tasks In Progress
 - [ ] None.
@@ -533,15 +621,17 @@ shot shapes) on top of the core + polish just laid down.
   (only single-device was, locally). Do this before calling M3 done.
 
 ## Next Task
-- **M4b — Special weapons** (charges, the ship-bound weapon table, the four
-  shot shapes, the aim → preview → confirm interaction they need). Builds
-  directly on M4a's reducer/state shape and reuses `TASK-0033`'s
-  hit/sink-announcement + fire-animation system; no task spec written yet.
+- **M4c — Teams** (two or more players per side sharing a board, via a
+  per-side Realtime channel — `ADR-0005` §6 already documents why this is
+  meaningfully less airtight than 1 vs 1, and why that's accepted). No task
+  spec written yet.
 - Still open, independent of the above: founder playtests a real
   multi-device Who Am I match; mark M3 ✅ in `docs/ROADMAP.md` once confirmed.
 - Also independent: the founder should actually playtest Battleship
-  (M4a + its polish pass) on real phones before M4b builds further on top of
-  it — verification so far used two browser contexts, not two real devices.
+  (M4a + M4b, full weapons and all) on real phones before M4c builds team
+  play on top of it — verification so far across every Battleship task has
+  used two browser contexts on one machine, not two real devices over a
+  real network.
 
 ## Last Updated
-- 2026-07-26
+- 2026-07-27
