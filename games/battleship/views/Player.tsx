@@ -61,6 +61,7 @@ function ShipOverlay({
   type,
   ghost,
   valid,
+  sunk,
 }: {
   boardSize: number;
   cells: string[];
@@ -70,6 +71,11 @@ function ShipOverlay({
   // ship following the pointer, not just colored cells underneath it.
   ghost?: boolean;
   valid?: boolean;
+  // A sunk ship renders faded and desaturated over its own hit dots on the
+  // *target* board — a visual reminder of what's already been eliminated
+  // there, once its shape is known (only once every one of its cells has
+  // been hit; never before, since that would leak the rest of the fleet).
+  sunk?: boolean;
 }) {
   const cellPct = 100 / boardSize;
   const coords = cells.map((c) => c.split("-").map(Number));
@@ -106,7 +112,7 @@ function ShipOverlay({
         // fills the ship's full length, at the cost of a small crop on the
         // narrow axis — invisible in practice, since every crop already
         // carries transparent padding there.
-        className={`absolute object-cover ${ghost ? "opacity-60" : ""}`}
+        className={`absolute object-cover ${ghost ? "opacity-60" : sunk ? "opacity-50 grayscale" : ""}`}
         style={
           isHorizontal
             ? {
@@ -136,6 +142,7 @@ function BoardGrid({
   ships,
   hitCells,
   ghost,
+  sunkShips,
 }: {
   boardSize: number;
   cellClassName: (row: number, col: number, cell: string) => string;
@@ -156,6 +163,10 @@ function BoardGrid({
   // ship-shaped overlay (not just colored cells) so it actually looks like
   // the real ship following the pointer.
   ghost?: { cells: string[]; type: string; valid: boolean } | null;
+  // Ships confirmed sunk on this board, rendered faded over their hit dots
+  // — only ever populated with ships whose every cell is already known to
+  // be a hit, so this never reveals anything not already visible.
+  sunkShips?: ShipPlacement[];
 }) {
   const cellPct = 100 / boardSize;
   const gridRef = useRef<HTMLDivElement>(null);
@@ -239,6 +250,15 @@ function BoardGrid({
       {ghost && (
         <ShipOverlay boardSize={boardSize} cells={ghost.cells} type={ghost.type} ghost valid={ghost.valid} />
       )}
+      {sunkShips?.map((ship) => (
+        <ShipOverlay
+          key={`sunk-${ship.type}-${ship.cells[0]}`}
+          boardSize={boardSize}
+          cells={ship.cells}
+          type={ship.type}
+          sunk
+        />
+      ))}
       {/* Drawn above the ship art so a hit on an occupied cell stays visible
        * instead of being hidden underneath the ship image. */}
       {hitCells?.map((cell) => {
@@ -304,6 +324,19 @@ export function PlayerView({
     }
   }, [layout]);
 
+  const me = players.find((p) => p.id === rawPlayerId) ?? players.find((p) => p.isHost);
+  const playerId = rawPlayerId ?? me?.id ?? "";
+  const isHost = me?.isHost || false;
+
+  const mySide: BattleshipSide | null = state.sides.A.includes(playerId)
+    ? "A"
+    : state.sides.B.includes(playerId)
+      ? "B"
+      : null;
+  const opponentSide = mySide ? otherSide(mySide) : null;
+  const fleet = privateState?.fleet ?? [];
+  const loserSide = state.winner ? otherSide(state.winner) : null;
+
   // Fire animation + hit/sink announcement: diffs the shared `shots`/
   // `sunkShips` against what this device last saw, so both devices play
   // the same feedback independently from the same shared state — no new
@@ -314,7 +347,9 @@ export function PlayerView({
   const prevSunkRef = useRef<{ A: string[]; B: string[] }>({ A: [], B: [] });
   const strikeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [strikeCell, setStrikeCell] = useState<string | null>(null); // `${side}:${cell}`
-  const [announcement, setAnnouncement] = useState<{ text: string; sunk: boolean } | null>(null);
+  const [announcement, setAnnouncement] = useState<{ text: string; sunk: boolean; shipType: string | null } | null>(
+    null
+  );
 
   useEffect(() => {
     for (const side of ["A", "B"] as const) {
@@ -325,16 +360,23 @@ export function PlayerView({
         const prevSunkCount = prevSunkRef.current[side].length;
         const currSunkCount = state.sunkShips[side].length;
         const sunkType = currSunkCount > prevSunkCount ? state.sunkShips[side][currSunkCount - 1] : null;
+        // `side` is the *defending* side here (whose ship, if any, was just
+        // hit) — when it's my own side, the sinking was done TO me, not BY
+        // me, so the phrasing has to flip (this is the modal the founder
+        // asked for: "que aparezca un modal que diga que lo hundiste" only
+        // reads right from the shooter's side).
+        const iWasSunk = side === mySide;
 
         if (strikeTimerRef.current) clearTimeout(strikeTimerRef.current);
         setStrikeCell(`${side}:${cell}`);
         setAnnouncement({
           text: sunkType
-            ? t("firing.sunkAnnouncement", { ship: tShips(sunkType) })
+            ? t(iWasSunk ? "firing.shipSunkAnnouncement" : "firing.sunkAnnouncement", { ship: tShips(sunkType) })
             : result === "hit"
               ? t("firing.hitAnnouncement")
               : t("firing.missAnnouncement"),
           sunk: Boolean(sunkType),
+          shipType: sunkType,
         });
         strikeTimerRef.current = setTimeout(() => {
           setStrikeCell(null);
@@ -353,19 +395,6 @@ export function PlayerView({
     },
     []
   );
-
-  const me = players.find((p) => p.id === rawPlayerId) ?? players.find((p) => p.isHost);
-  const playerId = rawPlayerId ?? me?.id ?? "";
-  const isHost = me?.isHost || false;
-
-  const mySide: BattleshipSide | null = state.sides.A.includes(playerId)
-    ? "A"
-    : state.sides.B.includes(playerId)
-      ? "B"
-      : null;
-  const opponentSide = mySide ? otherSide(mySide) : null;
-  const fleet = privateState?.fleet ?? [];
-  const loserSide = state.winner ? otherSide(state.winner) : null;
 
   // ADR-0005: once the match resolves, the losing side's own device reveals
   // its board — it's no longer secret at that point. Every hook must run
@@ -550,6 +579,7 @@ export function PlayerView({
                 }
               : undefined
           }
+          sunkShips={opponentSide ? state.sunkShipCells[opponentSide] : []}
           cellClassName={(_r, _c, cell) => {
             const result = shotsIFired[cell];
             const striking = opponentSide && strikeCell === `${opponentSide}:${cell}`;
@@ -592,17 +622,40 @@ export function PlayerView({
       <div className="flex flex-col items-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
         <h2 className="font-display text-2xl text-ink text-center">{t("firing.title")}</h2>
 
-        {announcement && (
+        {announcement && !announcement.sunk && (
           <div
             role="status"
             aria-live="assertive"
-            className={`w-full text-center py-3 px-4 rounded-2xl font-black text-lg ${
-              announcement.sunk
-                ? "bg-danger-surface text-on-danger-surface motion-celebrate"
-                : "bg-surface-sunken text-ink motion-deal"
-            }`}
+            className="w-full text-center py-3 px-4 rounded-2xl font-black text-lg bg-surface-sunken text-ink motion-deal"
           >
             {announcement.text}
+          </div>
+        )}
+
+        {announcement?.sunk && (
+          <div
+            role="alertdialog"
+            aria-live="assertive"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 px-4"
+            onClick={() => {
+              if (strikeTimerRef.current) clearTimeout(strikeTimerRef.current);
+              setStrikeCell(null);
+              setAnnouncement(null);
+            }}
+          >
+            <div className="bg-surface rounded-3xl px-8 py-8 max-w-xs w-full text-center space-y-4 motion-celebrate">
+              {announcement.shipType && (
+                // eslint-disable-next-line @next/next/no-img-element -- a fixed local asset, no next/image optimization needed for a small modal icon
+                <img
+                  src={`/battleship/${announcement.shipType}.png`}
+                  alt=""
+                  aria-hidden="true"
+                  className="w-20 h-20 mx-auto object-contain"
+                />
+              )}
+              <p className="font-black text-2xl text-ink">{announcement.text}</p>
+              <p className="text-xs text-ink-muted">{t("firing.tapToContinue")}</p>
+            </div>
           </div>
         )}
 
