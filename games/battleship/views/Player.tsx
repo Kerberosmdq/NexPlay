@@ -38,7 +38,10 @@ function BoardGrid({
   onCellClick?: (row: number, col: number, cell: string) => void;
 }) {
   return (
-    <div className="inline-grid gap-[3px]" style={{ gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))` }}>
+    <div
+      className="grid w-full max-w-xs sm:max-w-sm mx-auto gap-[3px]"
+      style={{ gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))` }}
+    >
       {Array.from({ length: boardSize }).flatMap((_, row) =>
         Array.from({ length: boardSize }).map((_, col) => {
           const cell = `${row}-${col}`;
