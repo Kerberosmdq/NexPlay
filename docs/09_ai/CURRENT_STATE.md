@@ -3,21 +3,21 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 11 - M3.5 complete, M4a (Battleship core) ready to start
-- Status: M3.5's last item, code task 3b, is done (`TASK-0032`) — **M3.5 is
-  now fully complete**. `TASK-0031` (Battleship core 1 vs 1 + `ADR-0005`
-  private state) is specced and unblocked.
+- Sprint: Sprint 12 - M4a (Battleship core) done; M4b (special weapons) next
+- Status: `TASK-0031` shipped — Battleship's 1 vs 1 core is playable end to
+  end, and `ADR-0005` (private per-player state) is Accepted and real,
+  proven live on two separate browser contexts, not just in tests.
 
 ## Current Objective
-M1 and M2 are complete; M3 is implemented but still awaiting the founder's
-multi-device playtest (see Known Issues — unrelated to and not blocked by
-the below). **M3.5 is complete**: the full UX/UI audit that opened it found
-no enforced visual system (see `BDR-0001`/`ADR-0004`), and all four code
-tasks closed the gap — tokens/primitives/motion (`TASK-0028`), the Paper &
-Felt direction (`TASK-0029`), the hexagon identity/PWA icons (`TASK-0030`),
-and now the language switcher/room-code share/accessibility pass
-(`TASK-0032`). Next up is `TASK-0031` (M4a — Battleship's core 1 vs 1 and
-`ADR-0005`'s private-state mechanism), the load-bearing first phase of M4.
+M1 and M2 are complete; M3.5 is complete (see below); M3 is implemented but
+still awaiting the founder's multi-device playtest (Known Issues, unrelated
+to and not blocked by the below). **M4a is now done**: Battleship plays a
+full 1-vs-1 match (place fleets, fire, hit/miss/sink, win, reveal the
+loser's board) with genuine ship-position privacy — a device's fleet never
+leaves it, proven both by a reducer-level test and by inspecting a real
+two-device match live. Next up is **M4b** (special weapons: charges,
+ship-bound weapons, the four shot shapes) on top of the core M4a just laid
+down.
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -400,6 +400,51 @@ and now the language switcher/room-code share/accessibility pass
       never actually implemented and is fatal for Battleship specifically.
       M4 is split into four independently playable phases (M4a–M4d);
       `TASK-0031` specs the first.
+- [x] **TASK-0031**: Battleship — Core 1 vs 1 & Private State (M4a) — the
+      load-bearing phase of M4. Two platform changes plus a new game.
+      **Platform:** `GameModule` gained a fourth type parameter
+      (`TPrivate = never`) and optional `setupPrivate`/`answerPending`
+      members exactly per `ADR-0005` §2 (verified non-breaking — Impostor
+      and Who Am I needed zero changes). `lib/realtime/privateState.ts`
+      (new): `usePrivateState` (a device's slice, mirrored to `localStorage`,
+      never folded into `PlatformState`) and `useAnswerPending` (runs a
+      game's `answerPending` against this device's slice whenever shared
+      state changes, dispatching the result at most once per distinct
+      pending request). `MultiDeviceRoom.tsx` wires both in, unconditionally
+      before any phase-based early return (Rules of Hooks). The
+      single-device game picker (`app/[locale]/page.tsx`) now filters by
+      `meta.supportedModes` instead of listing every registered game —
+      `views.singleDevice` is optional in the contract accordingly.
+      **Game:** `games/battleship/` — pure `reducer.ts` (`placing` →
+      `firing` → `resolution`, `SIDE_READY`/`FIRE`/`RESOLVE_SHOT`/
+      `REVEAL_FLEET`/`PLAY_AGAIN`), `answerPendingShot` (the `answerPending`
+      implementation — hit/miss/sunk computed from the defending device's
+      own private fleet, never from shared state), `placement.ts` (pure
+      placement validation + a `Math.random()`-based random-fill helper kept
+      outside the reducer, same rule as `games/who-am-i/pickRound.ts`), and
+      `views/Player.tsx` (placement grid with rotate/random/undo, firing
+      grids for both boards, an explicit "waiting for your opponent" state
+      per `ADR-0005` §5, and the loser's board reveal on resolution). Both
+      board sizes (8×8/10×10) are a host-facing config choice. Two sides of
+      one player each (`Record<Side, string[]>` from the start, so M4c adds
+      to it rather than reshaping it) — no single-device view, deliberately.
+      22 new unit tests (16 reducer + 6 privacy/private-state) plus a new
+      e2e test (two real Playwright browser contexts joining, placing
+      fleets, and firing a shot over real Supabase Realtime).
+      **Live two-device verification** (not just automated tests) confirmed:
+      a fleet exists only in its owner's `localStorage`, the shared state
+      the reducer produces never contains cell/ship data even after full
+      placement, hit/miss renders correctly on both boards, the turn
+      correctly flips, and — closing an opponent's tab mid-shot — the
+      shooter sees an explicit "waiting for your opponent" message (not a
+      frozen screen) that resolves the instant the opponent reconnects. This
+      same live testing surfaced one real bug, fixed before merge: the
+      `answerPending` driver could run once against this device's
+      not-yet-initialized private slice at the exact instant a match
+      starts, crashing on `privateState.fleet` of `undefined` — fixed in
+      the driver itself (skip silently until the slice exists), documented
+      in `ADR-0005`'s changelog so the reasoning survives the fix.
+      `ADR-0005` moved Proposed → Accepted in this same task.
 - [x] **TASK-0032**: Language Switcher, Room-Code Share & Accessibility Pass
       (M3.5 code task 3b) — **closes M3.5.** `components/ui/LanguageSwitcher.tsx`
       (new): a real ES/EN toggle via `next-intl`'s locale-aware `useRouter`/
@@ -449,13 +494,14 @@ and now the language switcher/room-code share/accessibility pass
   (only single-device was, locally). Do this before calling M3 done.
 
 ## Next Task
-- **`TASK-0031` — Battleship core 1 vs 1 + `ADR-0005` private state (M4a)**.
-  M3.5 is now fully complete, so this is unambiguously next per `ROADMAP.md`'s
-  ship-in-order rule — no ordering caveat remains. It is the load-bearing
-  phase of M4: M4b (special weapons), M4c (teams), and M4d (tournament) all
-  build on it.
+- **M4b — Special weapons** (charges, the ship-bound weapon table, the four
+  shot shapes, the aim → preview → confirm interaction they need). Builds
+  directly on M4a's reducer/state shape; no task spec written yet.
 - Still open, independent of the above: founder playtests a real
   multi-device Who Am I match; mark M3 ✅ in `docs/ROADMAP.md` once confirmed.
+- Also independent: the founder should actually playtest Battleship M4a on
+  real phones before M4b builds further on top of it — M4a was verified via
+  two browser contexts, not two real devices.
 
 ## Last Updated
 - 2026-07-26

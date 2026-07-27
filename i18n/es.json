@@ -60,6 +60,15 @@
         "time10min": "10 minutos",
         "timeUnlimited": "Sin límite de tiempo"
       }
+    },
+    "battleship": {
+      "name": "Batalla Naval",
+      "description": "Hundí la flota de tu rival antes de que hunda la tuya.",
+      "config": {
+        "boardSize": "Tamaño del tablero",
+        "boardSize8": "8x8 (rápido)",
+        "boardSize10": "10x10 (clásico)"
+      }
     }
   },
   "Impostor": {
@@ -160,6 +169,44 @@
       "title": "¡Fin de la ronda!",
       "scoresTitle": "Puntuaciones",
       "nextRoundButton": "Siguiente ronda"
+    }
+  },
+  "Battleship": {
+    "notInMatch": "No estás en esta partida",
+    "ships": {
+      "carrier": "Portaaviones",
+      "battleship": "Acorazado",
+      "destroyer": "Destructor",
+      "submarine": "Submarino",
+      "patrol": "Lancha"
+    },
+    "placing": {
+      "title": "Coloca tu flota",
+      "placingShip": "Colocando",
+      "fleetComplete": "¡Flota lista!",
+      "cellsLong": "{count} casillas",
+      "orientationHorizontal": "Horizontal",
+      "orientationVertical": "Vertical",
+      "randomButton": "Colocar al azar",
+      "undoButton": "Deshacer",
+      "readyButton": "¡Listo!",
+      "waitingForOpponentReady": "Esperando a que tu rival termine de colocar su flota..."
+    },
+    "firing": {
+      "title": "¡A hundir la flota!",
+      "yourTurn": "Tu turno — elegí una casilla",
+      "opponentTurn": "Turno de tu rival",
+      "waitingForOpponent": "Esperando la respuesta de tu rival...",
+      "resolvingYourAnswer": "Respondiendo el disparo...",
+      "targetBoardLabel": "Tablero de tu rival",
+      "yourBoardLabel": "Tu tablero"
+    },
+    "resolution": {
+      "youWon": "¡GANASTE!",
+      "youLost": "Perdiste esta vez",
+      "revealedFleetLabel": "La flota de tu rival era",
+      "waitingForReveal": "Revelando la flota...",
+      "nextRoundButton": "Jugar de nuevo"
     }
   }
 }

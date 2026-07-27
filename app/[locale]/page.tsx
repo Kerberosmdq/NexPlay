@@ -204,10 +204,17 @@ function SingleDeviceGamePicker({
   const tGame = useTranslations();
 
   if (platformState.status === "LOBBY") {
+    // Not every game supports single-device pass-and-play (Battleship can't —
+    // there's no way to hide a board between turns on one phone), so this
+    // list must filter by meta.supportedModes rather than listing every
+    // registered game unconditionally.
+    const singleDeviceGames = Object.values(AVAILABLE_GAMES).filter((game) =>
+      game.meta.supportedModes.includes("single-device")
+    );
     return (
       <div className="w-full max-w-md space-y-4">
         <h3 className="font-display text-2xl text-ink text-center">{t("gamesLabel")}</h3>
-        {Object.values(AVAILABLE_GAMES).map((game) => (
+        {singleDeviceGames.map((game) => (
           <Button
             key={game.id}
             variant="primary"
@@ -222,7 +229,7 @@ function SingleDeviceGamePicker({
   }
 
   const activeGame = platformState.activeGameId ? AVAILABLE_GAMES[platformState.activeGameId] : null;
-  if (!activeGame) return null;
+  if (!activeGame || !activeGame.views.singleDevice) return null;
 
   const gameDispatch = (action: unknown) => dispatch({ type: "GAME_ACTION", action });
 

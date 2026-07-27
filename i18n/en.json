@@ -60,6 +60,15 @@
         "time10min": "10 minutes",
         "timeUnlimited": "No time limit"
       }
+    },
+    "battleship": {
+      "name": "Battleship",
+      "description": "Sink your opponent's fleet before they sink yours.",
+      "config": {
+        "boardSize": "Board size",
+        "boardSize8": "8x8 (fast)",
+        "boardSize10": "10x10 (classic)"
+      }
     }
   },
   "Impostor": {
@@ -160,6 +169,44 @@
       "title": "Round over!",
       "scoresTitle": "Scores",
       "nextRoundButton": "Next round"
+    }
+  },
+  "Battleship": {
+    "notInMatch": "You're not in this match",
+    "ships": {
+      "carrier": "Carrier",
+      "battleship": "Battleship",
+      "destroyer": "Destroyer",
+      "submarine": "Submarine",
+      "patrol": "Patrol Boat"
+    },
+    "placing": {
+      "title": "Place your fleet",
+      "placingShip": "Placing",
+      "fleetComplete": "Fleet ready!",
+      "cellsLong": "{count} cells",
+      "orientationHorizontal": "Horizontal",
+      "orientationVertical": "Vertical",
+      "randomButton": "Place randomly",
+      "undoButton": "Undo",
+      "readyButton": "Ready!",
+      "waitingForOpponentReady": "Waiting for your opponent to finish placing their fleet..."
+    },
+    "firing": {
+      "title": "Sink the fleet!",
+      "yourTurn": "Your turn — pick a cell",
+      "opponentTurn": "Your opponent's turn",
+      "waitingForOpponent": "Waiting for your opponent's answer...",
+      "resolvingYourAnswer": "Resolving the shot...",
+      "targetBoardLabel": "Your opponent's board",
+      "yourBoardLabel": "Your board"
+    },
+    "resolution": {
+      "youWon": "YOU WON!",
+      "youLost": "You lost this time",
+      "revealedFleetLabel": "Your opponent's fleet was",
+      "waitingForReveal": "Revealing the fleet...",
+      "nextRoundButton": "Play again"
     }
   }
 }

@@ -1,8 +1,8 @@
 ---
 id: ADR-0005
 title: Private Per-Player Game State
-status: Proposed
-version: 1.0.0
+status: Accepted
+version: 1.1.0
 category: Architecture Decision Record
 
 authors:
@@ -32,7 +32,10 @@ tags:
 # ADR-0005 — Private Per-Player Game State
 
 ## Status
-Proposed.
+Accepted. Implemented in `TASK-0031` (M4a — Battleship core 1 vs 1): the
+contract additions in §2, the challenge/response driver in §3, and the
+visible-waiting-state requirement in §5 all ship there, exercised for real by
+Battleship's fleet placement and firing.
 
 Supersedes the third bullet of ADR-0002 §3 ("Per-player private data lives in
 `TState` but is filtered by the platform before it reaches another player's
@@ -94,8 +97,12 @@ interface GameModule<TConfig, TState, TAction, TPrivate = never> {
   // ...existing members unchanged...
 
   /** Produces this device's private slice at game start. Runs locally on
-   * each device, for its own player only. Never broadcast. */
-  setupPrivate?: (playerId: string, state: TState, config: TConfig) => TPrivate;
+   * each device, for its own player only. Never broadcast. Takes `state`,
+   * not `config` — the platform never stores a started match's config
+   * separately from the `TState` it produced, so any config-derived value
+   * (e.g. board size) must already be a field on `state`, same as every
+   * existing game already does via `setup(players, config): TState`. */
+  setupPrivate?: (playerId: string, state: TState) => TPrivate;
 
   /** When the shared state is waiting on information only this device holds,
    * returns the action that answers it — or null if this device is not the
@@ -218,5 +225,19 @@ same room or the same family, which is what it is for.
 - `docs/09_ai/tasks/TASK-0031-battleship-core.md`
 
 ## Changelog
+### Version 1.1.0
+- Accepted — implemented in `TASK-0031`. `setupPrivate`'s signature dropped
+  the `config` parameter drafted in the proposal: the platform never stores
+  a started match's config separately from the `TState` it produced, so it
+  wasn't actually available to pass; any config-derived value a private
+  slice needs is a field on `state` instead, matching how every game's own
+  `setup(players, config)` already bakes config into `TState`.
+- A real bug surfaced during live two-device verification, worth recording:
+  the answerPending driver could run once with this device's private slice
+  still uninitialized (the instant a match starts, before `usePrivateState`'s
+  own effect catches up to a new game id), calling a game's `answerPending`
+  with `undefined` and crashing. Fixed by having the driver skip silently
+  until the slice exists, rather than by changing the mechanism itself.
+
 ### Version 1.0.0
 - Initial proposed version.

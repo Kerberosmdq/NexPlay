@@ -1,18 +1,19 @@
 import { impostorGameModule } from "@/games/impostor/module";
 import { whoAmIGameModule } from "@/games/who-am-i/module";
+import { battleshipGameModule } from "@/games/battleship/module";
 import type { AnyGameModule, GameModule, Player } from "@/lib/types/room";
 
 /**
  * A heterogeneous registry (`AVAILABLE_GAMES`) necessarily erases each
- * game's concrete TConfig/TState/TAction to `unknown` — that's what
+ * game's concrete TConfig/TState/TAction/TPrivate to `unknown` — that's what
  * `AnyGameModule` is for. Assigning a concrete `GameModule<TConfig, ...>`
  * into that shape is a legitimate upcast (every concrete module really is
  * usable through the erased interface — the platform never fabricates a
  * config or state, it only ever passes back what it was given), so this one
  * cast is centralized here instead of scattered/unsafe at each call site.
  */
-function toAnyGameModule<TConfig, TState, TAction>(
-  mod: GameModule<TConfig, TState, TAction>
+function toAnyGameModule<TConfig, TState, TAction, TPrivate>(
+  mod: GameModule<TConfig, TState, TAction, TPrivate>
 ): AnyGameModule {
   return mod as unknown as AnyGameModule;
 }
@@ -21,6 +22,7 @@ function toAnyGameModule<TConfig, TState, TAction>(
 export const AVAILABLE_GAMES: Record<string, AnyGameModule> = {
   [impostorGameModule.id]: toAnyGameModule(impostorGameModule),
   [whoAmIGameModule.id]: toAnyGameModule(whoAmIGameModule),
+  [battleshipGameModule.id]: toAnyGameModule(battleshipGameModule),
 };
 
 /** Derives a game's starting config from its configSchema defaults — the
