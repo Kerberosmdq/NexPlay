@@ -59,10 +59,17 @@ function ShipOverlay({
   boardSize,
   cells,
   type,
+  ghost,
+  valid,
 }: {
   boardSize: number;
   cells: string[];
   type: string;
+  // A ghost renders the same ship art translucent, with a green/red tint
+  // for placement validity — so moving or placing a ship shows the actual
+  // ship following the pointer, not just colored cells underneath it.
+  ghost?: boolean;
+  valid?: boolean;
 }) {
   const cellPct = 100 / boardSize;
   const coords = cells.map((c) => c.split("-").map(Number));
@@ -99,7 +106,7 @@ function ShipOverlay({
         // fills the ship's full length, at the cost of a small crop on the
         // narrow axis — invisible in practice, since every crop already
         // carries transparent padding there.
-        className="absolute object-cover"
+        className={`absolute object-cover ${ghost ? "opacity-60" : ""}`}
         style={
           isHorizontal
             ? {
@@ -112,6 +119,9 @@ function ShipOverlay({
             : { inset: 0, width: "100%", height: "100%" }
         }
       />
+      {ghost && (
+        <div className={`absolute inset-0 rounded-sm ${valid ? "bg-action-primary/25" : "bg-action-danger/40"}`} />
+      )}
     </div>
   );
 }
@@ -125,6 +135,7 @@ function BoardGrid({
   onDragEnd,
   ships,
   hitCells,
+  ghost,
 }: {
   boardSize: number;
   cellClassName: (row: number, col: number, cell: string) => string;
@@ -141,6 +152,10 @@ function BoardGrid({
   onDragEnd?: () => void;
   ships?: ShipPlacement[];
   hitCells?: string[];
+  // The ship currently being placed/moved, rendered as a translucent
+  // ship-shaped overlay (not just colored cells) so it actually looks like
+  // the real ship following the pointer.
+  ghost?: { cells: string[]; type: string; valid: boolean } | null;
 }) {
   const cellPct = 100 / boardSize;
   const gridRef = useRef<HTMLDivElement>(null);
@@ -221,6 +236,9 @@ function BoardGrid({
       {ships?.map((ship) => (
         <ShipOverlay key={`${ship.type}-${ship.cells[0]}`} boardSize={boardSize} cells={ship.cells} type={ship.type} />
       ))}
+      {ghost && (
+        <ShipOverlay boardSize={boardSize} cells={ghost.cells} type={ghost.type} ghost valid={ghost.valid} />
+      )}
       {/* Drawn above the ship art so a hit on an occupied cell stays visible
        * instead of being hidden underneath the ship image. */}
       {hitCells?.map((cell) => {
@@ -255,6 +273,15 @@ export function PlayerView({
   // (founder feedback: the old tap-to-instantly-place flow gave no chance
   // to see where a ship would land before it was already placed).
   const [previewCell, setPreviewCell] = useState<{ row: number; col: number } | null>(null);
+  // True for the instant between picking an already-placed ship back up and
+  // either moving it or releasing again. A plain tap-to-pick-up (press and
+  // release with no movement in between) must NOT re-commit the ship right
+  // back where it was — that would silently undo the pickup before the
+  // player has a chance to hit the rotate button, which is exactly the "no
+  // me deja girarlo" bug: rotating only has an effect while the ship is
+  // off the fleet (i.e. while `nextShip` is standing in for it), and that
+  // window used to close itself instantly on release.
+  const justPickedUpRef = useRef(false);
 
   // Per-device display preference (not game state — never touches the
   // reducer or syncs between players). Read lazily on first render rather
@@ -385,12 +412,14 @@ export function PlayerView({
     // (very short) drag onto the cell you tapped.
     const handleDragStart = (row: number, col: number) => {
       if (iAmReady || !setPrivateState) return;
+      justPickedUpRef.current = false;
       if (!nextShip) {
         const existing = shipAt(fleet, `${row}-${col}`);
         if (existing) {
           setPrivateState((prev) => ({ fleet: prev.fleet.filter((s) => s.type !== existing.type) }));
           setOrientation(orientationOf(existing));
           setPreviewCell(anchorOf(existing)); // resumes exactly where it was, no jump on pickup
+          justPickedUpRef.current = true;
           return;
         }
       }
@@ -398,6 +427,14 @@ export function PlayerView({
     };
 
     const handleDragEnd = () => {
+      // A plain tap that only picked a ship back up (no movement in between)
+      // must leave it picked up rather than instantly re-placing it — that
+      // instant re-placement was what made the rotate button a no-op right
+      // after grabbing an already-placed ship.
+      if (justPickedUpRef.current) {
+        justPickedUpRef.current = false;
+        return;
+      }
       if (!nextShip || !ghostCells || !ghostValid || !setPrivateState) return;
       setPrivateState((prev) => ({ fleet: [...prev.fleet, { type: nextShip.type, cells: ghostCells }] }));
       setPreviewCell(null);
@@ -430,14 +467,18 @@ export function PlayerView({
             <BoardGrid
               boardSize={state.boardSize}
               onDragStart={handleDragStart}
-              onDragMove={(row, col) => setPreviewCell({ row, col })}
+              onDragMove={(row, col) => {
+                // Real movement means this is a genuine drag, not a
+                // pickup-tap — from here on, releasing should commit.
+                justPickedUpRef.current = false;
+                setPreviewCell({ row, col });
+              }}
               onDragEnd={handleDragEnd}
               ships={fleet}
+              ghost={nextShip && ghostCells ? { cells: ghostCells, type: nextShip.type, valid: ghostValid } : null}
               cellClassName={(_r, _c, cell) => {
                 if (shipTypeAt(fleet, cell)) return "bg-transparent"; // the ship image itself shows
-                if (ghostCells?.includes(cell)) {
-                  return ghostValid ? "bg-action-primary opacity-40" : "bg-action-danger opacity-40";
-                }
+                if (ghostCells?.includes(cell)) return "bg-transparent"; // the ghost ship image shows instead
                 return "bg-surface-sunken border border-line";
               }}
             />
