@@ -42,3 +42,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm run test:e2e
+        env:
+          # Public anon key by design (NEXT_PUBLIC_*, baked into the client
+          # bundle at build time) — required so e2e specs that exercise real
+          # multi-device Realtime sync (e.g. Battleship) can actually connect,
+          # not a sensitive credential on the level of a service_role key.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}

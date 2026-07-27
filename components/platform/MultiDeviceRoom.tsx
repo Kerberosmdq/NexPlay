@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useRoomConnection } from "@/lib/realtime/hooks/useRoomConnection";
+import { usePrivateState, useAnswerPending } from "@/lib/realtime/privateState";
 import { RoomWaitingLobby } from "./RoomWaitingLobby";
 import {
   platformReducer,
@@ -30,6 +31,7 @@ interface MultiDeviceRoomProps {
 const TERMINAL_PHASE_BY_GAME: Record<string, string> = {
   impostor: "resolution",
   "who-am-i": "resolution",
+  battleship: "resolution",
 };
 
 export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDeviceRoomProps) {
@@ -46,6 +48,26 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
   // to handle Host Migration if the host reconnects or drops.
   const me = players.find((p) => p.id === userId);
   const isHost = me?.isHost ?? (role === "host");
+
+  const activeGame = gameState.activeGameId ? AVAILABLE_GAMES[gameState.activeGameId] : null;
+
+  // ADR-0005: this device's private slice, and the driver that answers a
+  // pending request when this device (not necessarily the acting player)
+  // holds the relevant secret. Both must run on every render regardless of
+  // connection/lobby/game phase — calling hooks after the early returns
+  // below would violate the Rules of Hooks. `activeGame?.id ?? "none"` keys
+  // the slice to "no game yet" while still in the lobby; usePrivateState
+  // re-initializes automatically once that key changes to a real game id.
+  const [privateState, setPrivateState] = usePrivateState(
+    roomCode,
+    activeGame?.id ?? "none",
+    userId,
+    () => (activeGame?.setupPrivate ? activeGame.setupPrivate(userId, gameState.gameState) : undefined)
+  );
+
+  useAnswerPending(gameState.gameState, privateState, userId, activeGame?.answerPending, (action: unknown) =>
+    dispatchAction({ type: "GAME_ACTION", action } as PlatformAction)
+  );
 
   // Only the host records durable analytics, so a multi-device room emits
   // one row per lifecycle event rather than one per connected phone.
@@ -133,8 +155,6 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
     );
   }
 
-  const activeGame = gameState.activeGameId ? AVAILABLE_GAMES[gameState.activeGameId] : null;
-
   if (!activeGame) {
     return <div className="text-action-danger font-bold">Error: Juego no encontrado.</div>;
   }
@@ -152,6 +172,8 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
       playerId={userId}
       roomCode={roomCode}
       dispatch={gameDispatch}
+      privateState={privateState}
+      setPrivateState={setPrivateState}
     />
   );
 }

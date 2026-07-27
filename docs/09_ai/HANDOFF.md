@@ -3,114 +3,210 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: TASK-0032
-- **Title**: Language Switcher, Room-Code Share & Accessibility Pass (M3.5 code task 3b) — **closes M3.5**
+- **Task ID**: TASK-0031
+- **Title**: Battleship — Core 1 vs 1 & Private State (M4a)
 
 ## Current Branch
-- `feat/lang-switcher-share-a11y`, branched off `main` after PR #37 (the M4
-  planning docs) merged.
+- `feat/battleship-core-private-state`, branched off `main` after PR #38
+  (M3.5 code task 3b) merged.
 
 ## What's in this task
 
-M3.5's last open item, three small independent pieces bundled because the
-original audit scoped them together, not because they depend on each other.
+M4a — the load-bearing first phase of Battleship. Two platform changes
+(`ADR-0005`'s mechanism made real, plus a small platform gap it exposed)
+and one new game.
 
-### 1. A real language switcher
-`components/ui/LanguageSwitcher.tsx` (new): renders an ES/EN toggle using
-`next-intl`'s locale-aware `useRouter()`/`usePathname()` (from `@/i18n/navigation`),
-calling `router.replace(pathname, { locale })` — this app has no localized
-pathnames configured (`routing.ts` only sets `locales`/`defaultLocale`), so
-the plain string form of `replace` is correct; don't add a `pathnames` config
-unless a future task actually needs distinct per-locale URL segments.
+### Platform: `ADR-0005` implemented, not just designed
 
-This retires every bilingual slash-separated label `TASK-0027`'s original
-audit found in `RoomLobby.tsx` — `"¡ÚNETE AL JUEGO! / JOIN THE GAME!"`,
-`"MULTIDISPOSITIVO"`'s English sibling, `"TU NOMBRE / NICKNAME"`, the join/
-create button labels — replacing each with a real per-locale key in
-`i18n/es.json`/`en.json`. While in there, several hardcoded Spanish defaults
-that had **never** gone through the catalog at all (`"Anfitrión"`,
-`"Jugador"`, `"Jugador 1"`, the invalid-code error text) were moved in too —
-they were the same underlying gap (no switcher, so no reason to translate)
-wearing a different disguise. `RoomLobby.tsx` now calls `useTranslations("Lobby")`
-throughout; grep for `" / "` in `components/` turns up nothing user-facing
-anymore (only code comments).
+`lib/types/room.ts` — `GameModule` gained a fourth type parameter
+(`TPrivate = never`) and two optional members:
+- `setupPrivate?: (playerId, state) => TPrivate` — a device's initial private
+  slice. Note: the drafted signature in `ADR-0005` also took `config`; that
+  was dropped during implementation because the platform never stores a
+  started match's config separately from the `TState` `setup()` produced
+  from it — there was nothing to actually pass. Any config-derived value a
+  private slice needs (Battleship's board size) is already a field on
+  `state`, same as every game already bakes config into `TState`. `ADR-0005`
+  itself was updated to match — read the doc, not just this summary.
+- `answerPending?: (state, privateState, playerId) => TAction | null` — pure,
+  per `ADR-0005` §3's challenge/response flow.
 
-`Screen.tsx`'s `exitLabel` prop default was changed from the hardcoded
-`"Salir"` to `"Exit"` — a neutral last-resort fallback for a generic
-`components/ui/` primitive that (correctly, matching `Field`/`CodeInput`'s
-existing pattern) takes labels as props rather than calling
-`useTranslations` itself. The real caller, `app/[locale]/page.tsx`, now
-passes `exitLabel={t("exitLabel")}` explicitly.
+Verified non-breaking: Impostor and Who Am I needed zero changes (`TPrivate`
+defaults to `never`, `views.singleDevice` — also made optional here, see
+below — stayed present on both).
 
-### 2. Room-code copy/share
-`components/ui/ShareCode.tsx` (new), wired into `RoomWaitingLobby.tsx`:
-copies the room code via `navigator.clipboard.writeText`, and additionally
-offers `navigator.share` when the browser supports it (feature-detected the
-same way `lib/hooks/useWakeLock.ts` detects the Wake Lock API — check, don't
-assume). Shows "¡Copiado!" for 2 seconds after a successful copy, with an
-`aria-live="polite"` status region for screen readers.
+`lib/realtime/privateState.ts` (new) — the actual mechanism:
+- `usePrivateState(roomCode, gameId, playerId, initialize)` — device-local
+  React state, mirrored to `localStorage` under
+  `nexplay:private:<roomCode>:<gameId>:<playerId>`, restored on mount,
+  re-initialized only when that key changes (not on every render — a
+  fleet-in-progress must not get wiped by unrelated shared-state churn).
+- `useAnswerPending(state, privateState, playerId, answerPending, dispatch)`
+  — runs a game's `answerPending` whenever shared state changes, dispatching
+  the result at most once per distinct pending request (a `JSON.stringify`
+  signature ref, not just relying on natural convergence). **Guards against
+  `privateState === undefined`** — see the bug below; this guard is why.
 
-**Worth recording so nobody re-chases this:** during verification, the copy
-button appeared not to update to "¡Copiado!" across several manual checks in
-this session's browser-testing tool. Temporarily instrumenting the actual
-handler with `console.log` (since removed) proved `setCopied(true)` fired
-correctly on every click. Sampling the DOM every 50ms in a single in-page
-loop then showed "¡Copiado!" was in fact rendered for the full 2-second
-window — every earlier check had simply landed *after* that window closed,
-because each separate tool round-trip (dispatch a click, then a separate
-call to read the page) took longer than 2 seconds end-to-end on its own.
-**Not a product bug.** If this resurfaces in a future verification, sample
-state in a single script with a short in-page delay loop rather than
-chaining separate tool calls with unknown latency between them.
+`components/platform/MultiDeviceRoom.tsx` — wires both in. Critical detail:
+both hooks are called **unconditionally, before any phase-based early
+return** (connectionError/!isConnected/LOBBY/!activeGame all return early
+further down) — calling hooks after those would violate the Rules of Hooks.
+`activeGame?.id ?? "none"` keys the private slice to "no game yet" while
+still in the lobby.
 
-### 3. Accessibility pass
-- `components/ui/Button.tsx`: the existing `active` prop (already driving
-  `RoomLobby`'s mode switcher and now the language toggle) now also sets
-  `aria-pressed={active}` automatically. This was a real, previously-unnoticed
-  gap — those controls behaved as toggles but read as plain buttons to a
-  screen reader. Fixing it once in the primitive means every current and
-  future toggle-style `Button` gets it for free, not just the two touched in
-  this task. Verified live: `aria-pressed` correctly flips on both the mode
-  switcher and the language switcher after a click.
-- `RoomLobby.tsx`'s error banner and `RoomWaitingLobby.tsx`'s room-code
-  display both got `aria-live` regions (`role="alert"`/`aria-live="assertive"`
-  for the error, `aria-live="polite"` for the code) so they're announced
-  without requiring the error/code to already have focus.
-- Existing focus-visible states (`Button`, `Field` already had them from
-  `TASK-0028`) and 44px+ tap targets (`Button`'s `min-h-14` = 56px) were
-  spot-checked, not rebuilt — they were already correct.
+`app/[locale]/page.tsx` — the single-device game picker now filters by
+`meta.supportedModes` instead of listing every registered game
+unconditionally. This is what makes Battleship's "no single-device support"
+design decision (`ROADMAP.md` M4) actually true rather than merely declared;
+without it, Battleship would have appeared in a mode it can't run in.
+`views.singleDevice` is optional in the `GameModule` contract now, to match.
+
+### The game: `games/battleship/`
+
+- `reducer.ts` — pure. Phases `placing → firing → resolution`. Actions:
+  `START_GAME`, `SIDE_READY` (carries **no fleet data** — placement is a
+  purely private change, the room only learns a side finished), `FIRE`
+  (records a `pendingShot` marker, doesn't resolve it), `RESOLVE_SHOT`
+  (applies a hit/miss/sunk result, flips `turn` to the side just fired
+  upon — official alternating-turn rule, no "go again on hit"), `REVEAL_FLEET`
+  (resolution-only — the losing side's own device reveals its board once
+  it's no longer secret), `PLAY_AGAIN`. Also exports `answerPendingShot`
+  (the actual `answerPending` implementation: hit/miss/sunk computed from
+  the *defending* device's own private fleet, argument-passed, never read
+  from shared state) and `createInitialState` (the one place a fresh
+  `BattleshipState` is built, shared by `START_GAME` and `GameModule.setup`
+  so there's no second copy of the shape to keep in sync).
+- `placement.ts` — pure validation (`shipCells` bounds-checks, `canPlaceShip`
+  overlap-checks, `isFleetComplete`) plus `randomFleetPlacement` (uses
+  `Math.random()`, kept outside the reducer — same rule as
+  `games/who-am-i/pickRound.ts`). `FLEET_8`/`FLEET_10` are the two
+  host-configurable board sizes' ship specs.
+- `module.ts` — `meta.supportedModes: ["multi-device"]` only;
+  `minPlayers`/`maxPlayers: 2` (M4c raises this once >1 player per side is
+  supported); config schema is just `boardSize: "8" | "10"`.
+- `views/Player.tsx` — placement grid (tap-to-place, rotate, random-fill,
+  undo, a disabled-until-complete "ready" button), firing phase (two
+  grids — opponent's targeting board is clickable when it's your turn and
+  no shot is pending, your own board shows received hits/misses plus your
+  own ship layout), and — **the `ADR-0005` §5 requirement made real** — an
+  explicit "waiting for your opponent" state whenever `pendingShot` is
+  yours, never a screen that just stops responding. Resolution reveals the
+  loser's fleet once `REVEAL_FLEET` lands.
+- Ship names live in `i18n/es.json`/`en.json` under `Battleship.ships.*` —
+  deliberately **not** a `LocalizedContentPack` content-pack folder (that
+  pattern is for large randomized word banks; five fixed ship names are
+  ordinary UI strings).
 
 ## Files Modified / Added
-- `components/ui/LanguageSwitcher.tsx` (new)
-- `components/ui/ShareCode.tsx` (new)
-- `components/ui/Button.tsx` (`aria-pressed` wiring)
-- `components/ui/Screen.tsx` (`exitLabel` default)
-- `components/ui/index.ts` (export the two new components)
-- `components/platform/RoomLobby.tsx` (full i18n pass + switcher)
-- `components/platform/RoomWaitingLobby.tsx` (`ShareCode` + `aria-live`)
-- `app/[locale]/page.tsx` (`exitLabel={t("exitLabel")}`)
-- `i18n/es.json`, `i18n/en.json` (new `Lobby.*` keys)
-- `tests/e2e/locale-routing.spec.ts` (new switcher round-trip test)
-- `docs/09_ai/tasks/TASK-0032-lang-switcher-share-a11y.md` (new)
-- `docs/ROADMAP.md` (M3.5 marked ✅ Complete), `docs/09_ai/CURRENT_STATE.md`,
-  this file
+- `lib/types/room.ts`, `lib/realtime/privateState.ts` (new)
+- `components/platform/MultiDeviceRoom.tsx`, `app/[locale]/page.tsx`
+- `lib/realtime/platformReducer.ts` (registry entry)
+- `games/battleship/**` (new: `module.ts`, `reducer.ts`, `placement.ts`,
+  `views/Player.tsx`)
+- `i18n/es.json`, `i18n/en.json`
+- `tests/unit/battleship-game.test.ts`, `tests/unit/private-state.test.ts`
+  (new), `tests/e2e/battleship-multi-device.spec.ts` (new)
+- `docs/00_decisions/architecture/ADR-0005-PRIVATE-GAME-STATE.md`
+  (Proposed → Accepted, v1.1.0)
+- `docs/ROADMAP.md`, `docs/09_ai/CURRENT_STATE.md`, this file
+
+## A second real bug — invisible board, found by the founder watching the live test
+
+After the crash below was fixed and full live verification passed (privacy,
+firing, turn-flip, waiting-state, reconnection — all confirmed via DOM/class
+inspection), the founder — watching the Browser pane live while this was
+being tested — asked why no board seemed visible at all. That question is
+what actually caught it: `BoardGrid`'s container used `inline-grid` with
+`gridTemplateColumns: repeat(N, minmax(0, 1fr))`. An inline-level grid has
+no defined width to distribute among its tracks unless one is set
+explicitly, so every `1fr` column collapsed toward its content minimum —
+the whole board rendered at roughly **2px per cell** (37×37px total for an
+8×8 board). Every DOM/class-based check performed during verification
+looked correct (right classes, right cell count, right colors per class) —
+none of them measured actual rendered size, so all of them missed it.
+
+Fixed by switching the container to a block-level `grid` (fills its
+parent's width by default) with an explicit `max-w-xs`/`max-w-sm` cap,
+centered. Verified via `getBoundingClientRect()`: cells went from ~2px to
+~45px on a typical mobile width.
+
+**Takeaway:** DOM/class/computed-className checks (what most of this task's
+live verification relied on, given the Browser pane wasn't visibly rendering
+screenshots in this session) do not catch layout bugs where the classes are
+correct but produce a degenerate computed size. When verifying anything
+grid/flex-layout-based, check actual `getBoundingClientRect()` dimensions
+at least once, not just class names — this is now the second time in this
+project's history a "className is right but it doesn't look right" bug has
+gotten through class-only checks (see `TASK-0028`'s and `TASK-0029`'s
+`transition-*` bug for the first pattern; this is a different mechanism but
+the same category of blind spot).
+
+## A real bug found by live testing (not by the test suite)
+
+All 117 unit tests and 4 e2e tests passed the whole time this bug was live —
+worth internalizing why. Manually running two real browser contexts through
+a full match, `useAnswerPending`'s effect fired once against a
+**not-yet-initialized** private slice — the exact instant a match starts,
+before `usePrivateState`'s own key-change effect had caught up from `"none"`
+to the real game id — and crashed calling `.fleet` on `undefined`.
+
+No unit test caught this because `tests/unit/battleship-game.test.ts` tests
+`answerPendingShot` (the pure function) directly, always with a well-formed
+`BattleshipPrivate`, and `tests/unit/private-state.test.ts` can't exercise
+`useAnswerPending` at all (this project has no React-hook testing
+environment — no jsdom/`@testing-library/react` dependency; deliberately not
+added in this task, see below). The gap was specifically in the *driver's*
+handling of the transient undefined window between two hooks — a
+timing/wiring bug, not a logic bug in either hook considered alone.
+
+Fixed in `lib/realtime/privateState.ts`'s `useAnswerPending`: skip silently
+when `privateState === undefined`, rather than let a game's `answerPending`
+dereference it. Documented in `ADR-0005`'s changelog (v1.1.0) so the
+reasoning outlives the one-line diff.
+
+**Takeaway for future `GameModule`s using `TPrivate`:** the private slice is
+not guaranteed initialized on the very first render(s) after a game starts.
+Any code reading it (not just `answerPending`) needs the same guard, or
+needs to tolerate `undefined`.
+
+## A deliberate test-infrastructure gap, stated plainly
+
+`usePrivateState`/`useAnswerPending` are verified **live in-browser**, not
+via `renderHook` — this repo has no jsdom/`@testing-library/react`
+dependency, and adding one was out of `TASK-0031`'s scope (not listed in its
+task spec's touchable files). What IS unit-tested is everything
+plain-function-testable that the hooks are built from
+(`storageKeyFor`/`readStored`) and — the part that actually matters for
+`ADR-0005`'s promise — that `battleshipReducer`'s output never contains
+ship-position data (`tests/unit/private-state.test.ts`). If a future task
+adds real hook-testing infrastructure, revisit whether these two hooks
+deserve direct `renderHook` coverage; until then, live verification is the
+check, and the bug above is exactly the kind of thing it's for.
 
 ## External state (not in git, important for the next agent to know)
 - Same as prior handoffs: Supabase live, Vercel auto-deploying `main`, strict
-  branch protection on `main` (enforced for the founder too). Unchanged.
+  branch protection on `main`. Unchanged.
 
 ## Pending Tasks
-- **`TASK-0031` (M4a)** — Battleship core 1 vs 1 + `ADR-0005` private state.
-  This is now unambiguously next: M3.5 is fully complete, so `ROADMAP.md`'s
-  ship-in-order rule no longer has an open caveat blocking M4. Read
-  `ADR-0005` in full (especially §6, its honest limits) before starting.
+- **M4b — Special weapons.** Charges, the ship-bound weapon table, the four
+  shot shapes (double horizontal, double vertical, triple, cross), and the
+  aim → preview → confirm interaction they need. No task spec written yet —
+  write one before starting, following `TASK-0031`'s shape.
+- **Founder playtest of Battleship M4a on real phones**, independent of M4b
+  starting. This task's live verification used two Playwright/browser
+  contexts on one machine, not two real devices over a real network — the
+  privacy and reconnection claims are architecturally sound and
+  browser-verified, but a real two-phone playtest is still the deferred
+  M1-style confidence check, same category as the still-open two-real-phones
+  reconnection test below.
 - Founder playtest of multi-device Who Am I on real phones (M3's last open
   item, independent of the above).
 - M1's dedicated two-real-phones reconnection test (open since M1,
   independent of the above).
 - Migrating Impostor's and Who Am I's secrets onto `ADR-0005`'s private
-  slice, once it exists — the latent leak `ADR-0005` documents is real but
-  not urgent, and was deliberately kept out of `TASK-0031`'s scope.
+  slice — the latent leak the ADR documents is real but not urgent, and was
+  deliberately kept out of `TASK-0031`'s scope to keep that PR reviewable.
 
 ## Next Suggested Task
-- `TASK-0031` (M4a — Battleship core).
+- Write the M4b task spec, then implement it on top of M4a's reducer/state
+  shape.
