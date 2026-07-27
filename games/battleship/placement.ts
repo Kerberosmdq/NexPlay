@@ -97,3 +97,26 @@ export function randomFleetPlacement(fleetSpec: ShipSpec[], boardSize: number): 
   }
   return placements;
 }
+
+export function shipTypeAt(fleet: ShipPlacement[], cell: string): string | null {
+  return fleet.find((s) => s.cells.includes(cell))?.type ?? null;
+}
+
+export function shipAt(fleet: ShipPlacement[], cell: string): ShipPlacement | null {
+  return fleet.find((s) => s.cells.includes(cell)) ?? null;
+}
+
+/** A ship's current orientation, derived from its own cells — used when
+ * picking an already-placed ship back up to move it, so it resumes in the
+ * orientation it was actually placed in. */
+export function orientationOf(ship: ShipPlacement): Orientation {
+  const rows = ship.cells.map((c) => Number(c.split("-")[0]));
+  return Math.min(...rows) === Math.max(...rows) ? "horizontal" : "vertical";
+}
+
+/** The top-left cell of a ship's bounding box — its anchor for
+ * `shipCells(row, col, length, orientation, boardSize)`. */
+export function anchorOf(ship: ShipPlacement): { row: number; col: number } {
+  const coords = ship.cells.map((c) => c.split("-").map(Number));
+  return { row: Math.min(...coords.map(([r]) => r)), col: Math.min(...coords.map(([, c]) => c)) };
+}

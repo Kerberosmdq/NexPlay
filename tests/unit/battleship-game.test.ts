@@ -14,6 +14,10 @@ import {
   randomFleetPlacement,
   fleetSpecFor,
   FLEET_8,
+  shipTypeAt,
+  shipAt,
+  orientationOf,
+  anchorOf,
   type ShipPlacement,
 } from "@/games/battleship/placement";
 
@@ -36,6 +40,26 @@ describe("placement — pure validation, no randomness", () => {
 
     const full = randomFleetPlacement(FLEET_8, 8);
     expect(isFleetComplete(full, FLEET_8)).toBe(true);
+  });
+
+  it("shipAt/shipTypeAt find the ship occupying a cell, or nothing", () => {
+    const fleet: ShipPlacement[] = [
+      { type: "patrol", cells: ["2-2", "2-3"] },
+      { type: "carrier", cells: ["0-0", "0-1", "0-2", "0-3"] },
+    ];
+    expect(shipTypeAt(fleet, "2-3")).toBe("patrol");
+    expect(shipAt(fleet, "0-2")).toEqual(fleet[1]);
+    expect(shipAt(fleet, "5-5")).toBeNull();
+    expect(shipTypeAt(fleet, "5-5")).toBeNull();
+  });
+
+  it("orientationOf and anchorOf read a ship's placement back out of its cells", () => {
+    const horizontalShip: ShipPlacement = { type: "destroyer", cells: ["1-4", "1-5", "1-6"] };
+    const verticalShip: ShipPlacement = { type: "submarine", cells: ["3-2", "4-2", "5-2"] };
+    expect(orientationOf(horizontalShip)).toBe("horizontal");
+    expect(orientationOf(verticalShip)).toBe("vertical");
+    expect(anchorOf(horizontalShip)).toEqual({ row: 1, col: 4 });
+    expect(anchorOf(verticalShip)).toEqual({ row: 3, col: 2 });
   });
 
   it("randomFleetPlacement always produces a valid, non-overlapping fleet", () => {
