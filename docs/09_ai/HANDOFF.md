@@ -110,6 +110,37 @@ without it, Battleship would have appeared in a mode it can't run in.
   (Proposed → Accepted, v1.1.0)
 - `docs/ROADMAP.md`, `docs/09_ai/CURRENT_STATE.md`, this file
 
+## A second real bug — invisible board, found by the founder watching the live test
+
+After the crash below was fixed and full live verification passed (privacy,
+firing, turn-flip, waiting-state, reconnection — all confirmed via DOM/class
+inspection), the founder — watching the Browser pane live while this was
+being tested — asked why no board seemed visible at all. That question is
+what actually caught it: `BoardGrid`'s container used `inline-grid` with
+`gridTemplateColumns: repeat(N, minmax(0, 1fr))`. An inline-level grid has
+no defined width to distribute among its tracks unless one is set
+explicitly, so every `1fr` column collapsed toward its content minimum —
+the whole board rendered at roughly **2px per cell** (37×37px total for an
+8×8 board). Every DOM/class-based check performed during verification
+looked correct (right classes, right cell count, right colors per class) —
+none of them measured actual rendered size, so all of them missed it.
+
+Fixed by switching the container to a block-level `grid` (fills its
+parent's width by default) with an explicit `max-w-xs`/`max-w-sm` cap,
+centered. Verified via `getBoundingClientRect()`: cells went from ~2px to
+~45px on a typical mobile width.
+
+**Takeaway:** DOM/class/computed-className checks (what most of this task's
+live verification relied on, given the Browser pane wasn't visibly rendering
+screenshots in this session) do not catch layout bugs where the classes are
+correct but produce a degenerate computed size. When verifying anything
+grid/flex-layout-based, check actual `getBoundingClientRect()` dimensions
+at least once, not just class names — this is now the second time in this
+project's history a "className is right but it doesn't look right" bug has
+gotten through class-only checks (see `TASK-0028`'s and `TASK-0029`'s
+`transition-*` bug for the first pattern; this is a different mechanism but
+the same category of blind spot).
+
 ## A real bug found by live testing (not by the test suite)
 
 All 117 unit tests and 4 e2e tests passed the whole time this bug was live —

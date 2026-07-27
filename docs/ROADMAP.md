@@ -235,7 +235,12 @@ independently playable phases** rather than one PR.
   testing found and fixed one real bug: the `answerPending` driver could run
   once against an uninitialized private slice at the exact instant a match
   starts, crashing — fixed by having the driver skip silently until the
-  slice exists (see `ADR-0005`'s changelog). 22 new unit tests
+  slice exists (see `ADR-0005`'s changelog). A second bug — the board grid
+  rendering at ~2px per cell, effectively invisible (`inline-grid` with
+  `1fr` columns has no width to distribute) — was caught by the founder
+  watching the live test and asking why no board was visible; every
+  DOM/class-based check during verification had missed it since the classes
+  were correct, only the actual rendered size was wrong. 22 new unit tests
   (16 reducer + 6 private-state/privacy) plus an e2e test covering two real
   browser contexts joining, placing, and firing. Playable end to end.
 - **M4b — Special weapons.** Charges, the ship-bound weapon table, the four
