@@ -24,6 +24,7 @@ import {
   type Orientation,
 } from "../placement";
 import { weaponCells, weaponForShipType, WEAPON_COST, type WeaponType } from "../weapons";
+import { useTeamFleetChannel } from "@/lib/realtime/teamState";
 import { Button, Card, WaitingState } from "@/components/ui";
 
 type BoardLayout = "stacked" | "side-by-side" | "one-at-a-time";
@@ -296,6 +297,7 @@ export function PlayerView({
   state,
   players,
   playerId: rawPlayerId,
+  roomCode,
   dispatch,
   privateState,
   setPrivateState,
@@ -362,6 +364,17 @@ export function PlayerView({
   const fleet = privateState?.fleet ?? [];
   const loserSide = state.winner ? otherSide(state.winner) : null;
 
+  // M4c: the captain (`sides[side][0]`) is the one whose `privateState.fleet`
+  // is real — a 1-vs-1 match's one player is always their own side's
+  // captain, so this is a no-op there. A non-captain teammate's own private
+  // slice is never written to (their placement UI is read-only), so their
+  // usable fleet is whatever the captain last broadcast on the side channel
+  // (ADR-0005 §6), not their own `privateState`.
+  const isCaptain = mySide ? state.sides[mySide][0] === playerId : false;
+  const [mirroredFleet, setMirroredFleet] = useState<ShipPlacement[]>([]);
+  useTeamFleetChannel<ShipPlacement[]>(roomCode, "battleship", mySide ?? "A", isCaptain, fleet, setMirroredFleet);
+  const effectiveFleet = isCaptain ? fleet : mirroredFleet;
+
   // Fire animation + hit/sink announcement: diffs the shared `shots`/
   // `sunkShips` against what this device last saw, so both devices play
   // the same feedback independently from the same shared state — no new
@@ -427,19 +440,121 @@ export function PlayerView({
   useEffect(() => {
     if (state.phase !== "resolution" || !mySide || !setPrivateState) return;
     if (loserSide !== mySide || state.revealedFleets[mySide]) return;
-    dispatch({ type: "REVEAL_FLEET", side: mySide, fleet });
-    // `fleet`/`dispatch` are stable enough in practice (new closures each
+    dispatch({ type: "REVEAL_FLEET", side: mySide, fleet: effectiveFleet });
+    // `effectiveFleet`/`dispatch` are stable enough in practice (new closures each
     // render, but the guards above make this effect a no-op once it has
     // fired) — depending on the full array here would refire on every
     // unrelated private-state change without ever changing the outcome.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, state.winner, state.revealedFleets, mySide, loserSide]);
 
+  // M4c: a 4-player match starts here, before anyone has a `mySide` yet —
+  // must come before the `!mySide` guard below, which would otherwise
+  // wrongly show "not in this match" to every unassigned player.
+  if (state.phase === "teamSetup") {
+    const nameFor = (id: string) => players.find((p) => p.id === id)?.displayName ?? id;
+    const bothFull = state.sides.A.length === 2 && state.sides.B.length === 2;
+
+    return (
+      <div className="flex flex-col items-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
+        <h2 className="font-display text-2xl text-ink text-center">{t("teamSetup.title")}</h2>
+        {!isHost && <p className="text-sm text-ink-muted text-center">{t("teamSetup.waitingForHost")}</p>}
+
+        <div className="flex gap-4 w-full">
+          <Card className="flex-1 space-y-1 text-center">
+            <p className="text-xs font-bold uppercase tracking-widest text-ink-muted">{t("teamSetup.sideA")}</p>
+            {state.sides.A.map((id) => (
+              <p key={id} className="font-bold text-ink">
+                {nameFor(id)}
+              </p>
+            ))}
+          </Card>
+          <Card className="flex-1 space-y-1 text-center">
+            <p className="text-xs font-bold uppercase tracking-widest text-ink-muted">{t("teamSetup.sideB")}</p>
+            {state.sides.B.map((id) => (
+              <p key={id} className="font-bold text-ink">
+                {nameFor(id)}
+              </p>
+            ))}
+          </Card>
+        </div>
+
+        {isHost && (
+          <Card className="w-full space-y-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-ink-muted">{t("teamSetup.assignPlayersLabel")}</p>
+            {state.rosterPlayerIds.map((id) => {
+              const currentSide = state.sides.A.includes(id) ? "A" : state.sides.B.includes(id) ? "B" : null;
+              return (
+                <div key={id} className="flex items-center justify-between gap-2">
+                  <span className="font-bold text-ink">{nameFor(id)}</span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      fullWidth={false}
+                      active={currentSide === "A"}
+                      disabled={currentSide !== "A" && state.sides.A.length >= 2}
+                      onClick={() => dispatch({ type: "ASSIGN_SIDE", playerId: id, side: "A" })}
+                      className="px-4 text-sm"
+                    >
+                      {t("teamSetup.sideA")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      fullWidth={false}
+                      active={currentSide === "B"}
+                      disabled={currentSide !== "B" && state.sides.B.length >= 2}
+                      onClick={() => dispatch({ type: "ASSIGN_SIDE", playerId: id, side: "B" })}
+                      className="px-4 text-sm"
+                    >
+                      {t("teamSetup.sideB")}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </Card>
+        )}
+
+        {isHost && (
+          <Button
+            variant={bothFull ? "primary" : "ghost"}
+            disabled={!bothFull}
+            onClick={() => dispatch({ type: "START_TEAMS" })}
+            className="max-w-xs"
+          >
+            {t("teamSetup.startButton")}
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   if (!mySide) {
     return <WaitingState label={t("notInMatch")} />;
   }
 
   if (state.phase === "placing") {
+    // M4c: a non-captain teammate never edits — they watch the captain's
+    // fleet appear live via the side channel (`effectiveFleet`, which for
+    // them is `mirroredFleet`), same board rendering as their own board
+    // during firing.
+    if (!isCaptain) {
+      const iAmReady = state.readySides[mySide];
+      return (
+        <div className="flex flex-col items-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
+          <h2 className="font-display text-2xl text-ink text-center">{t("placing.title")}</h2>
+          <WaitingState label={iAmReady ? t("placing.waitingForOpponentReady") : t("placing.watchingCaptainHint")} />
+          <BoardGrid
+            boardSize={state.boardSize}
+            ships={effectiveFleet}
+            cellClassName={(_r, _c, cell) =>
+              shipTypeAt(effectiveFleet, cell) ? "bg-transparent" : "bg-surface-sunken border border-line"
+            }
+          />
+        </div>
+      );
+    }
+
     const placedTypes = new Set(fleet.map((s) => s.type));
     const nextShip = state.fleetSpec.find((spec) => !placedTypes.has(spec.type));
     const fleetReady = isFleetComplete(fleet, state.fleetSpec);
@@ -661,13 +776,13 @@ export function PlayerView({
         </p>
         <BoardGrid
           boardSize={state.boardSize}
-          ships={fleet}
+          ships={effectiveFleet}
           hitCells={Object.entries(shotsIReceived)
             .filter(([, result]) => result === "hit")
             .map(([cell]) => cell)}
           cellClassName={(_r, _c, cell) => {
             const result = shotsIReceived[cell];
-            const hasShip = Boolean(shipTypeAt(fleet, cell));
+            const hasShip = Boolean(shipTypeAt(effectiveFleet, cell));
             const striking = mySide && strikeCell === `${mySide}:${cell}`;
             if (striking && !hasShip) {
               return announcement?.sunk ? "bg-action-danger motion-shake" : "bg-action-danger motion-strike";

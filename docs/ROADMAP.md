@@ -309,9 +309,29 @@ independently playable phases** rather than one PR.
   that weapon the instant its ship sinks, and firing a Double weapon to sink
   a ship in one multi-cell shot with the sunk modal/ghost/compensation-charge
   system all firing correctly.
-- **M4c — Teams.** Two or more players per side sharing a board, via a
-  per-side Realtime channel (ADR-0005 §6 documents why this is meaningfully
-  less airtight than 1 vs 1, and why that is accepted).
+- **M4c — Teams (`TASK-0035`, done).** Fixed 2-vs-2 (4 players total) — team
+  size, host-assigned side placement, and the placement/firing/defense model
+  were all confirmed with the founder before implementation. A 4-player
+  match starts in a new Battleship-only `"teamSetup"` phase (skipped
+  entirely for a 2-player match, which behaves exactly as before) where the
+  host assigns each player to a side via new `ASSIGN_SIDE`/`START_TEAMS`
+  actions; a 2-player match's `sides` stay pre-filled as always. One player
+  per side — the **captain**, `sides[side][0]` — places the fleet while
+  their teammate watches it appear live and read-only; either teammate can
+  fire on their side's turn (this needed zero reducer changes — `FIRE`
+  already only checked the side, never a specific player); only the
+  captain's device ever resolves a defending shot (`answerPendingShot`
+  narrowed from "any player on the defending side" to "that side's captain
+  specifically"). The live-mirror mechanism (`lib/realtime/teamState.ts`'s
+  `useTeamFleetChannel`) implements ADR-0005 §6's already-pre-approved
+  per-side Realtime channel for real, entirely inside Battleship's own view
+  code — the generic `usePrivateState`/`MultiDeviceRoom` mechanism stayed
+  untouched, so the 1-vs-1 path has zero new code paths to regress (every
+  existing M4a/M4b reducer test passed unmodified). Verified live across
+  four real, separately-connected browser tabs: team assignment, the
+  captain's fleet mirroring live to their teammate, either teammate firing,
+  captain-only defense resolution, and privacy (the opposing side's devices
+  show zero ship data, same proof standard as every earlier phase).
 - **M4d — Tournament.** A bracket of sequential 1-vs-1 matches. Deliberately
   built as a **platform** capability above `GameModule`, not inside
   Battleship, because it applies to every future two-side game (Connect 4,

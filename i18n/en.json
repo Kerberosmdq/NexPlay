@@ -180,6 +180,14 @@
       "submarine": "Submarine",
       "patrol": "Patrol Boat"
     },
+    "teamSetup": {
+      "title": "Set up the teams",
+      "waitingForHost": "Waiting for the host to set up the teams...",
+      "sideA": "Side A",
+      "sideB": "Side B",
+      "assignPlayersLabel": "Assign each player",
+      "startButton": "Start!"
+    },
     "placing": {
       "title": "Place your fleet",
       "placingShip": "Placing",
@@ -192,7 +200,8 @@
       "undoButton": "Undo",
       "dragToPlaceHint": "Drag to place it",
       "readyButton": "Ready!",
-      "waitingForOpponentReady": "Waiting for your opponent to finish placing their fleet..."
+      "waitingForOpponentReady": "Waiting for your opponent to finish placing their fleet...",
+      "watchingCaptainHint": "Your teammate is placing the fleet — you'll see it appear here"
     },
     "firing": {
       "title": "Sink the fleet!",

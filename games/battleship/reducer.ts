@@ -3,7 +3,10 @@ import { WEAPON_COST, type WeaponType } from "./weapons";
 
 export type BattleshipSide = "A" | "B";
 
-export type BattleshipPhase = "placing" | "firing" | "resolution";
+// M4c: "teamSetup" only exists when a match starts with 4 players — a
+// 2-player match skips it entirely and starts straight at "placing", so
+// 1-vs-1 has zero new phase transitions to regress.
+export type BattleshipPhase = "teamSetup" | "placing" | "firing" | "resolution";
 
 export type CellResult = "hit" | "miss";
 
@@ -22,9 +25,16 @@ export interface BattleshipState {
 
   // Fixed for the whole match, set at setup — one player per side in M4a
   // (ADR-0002's "sides, not modes" decision means this shape already
-  // supports more than one id per side; M4c is adding to this array, not
-  // reshaping it).
+  // supports more than one id per side; M4c adds to this array, not
+  // reshaping it). Starts empty on both sides for a 4-player team match —
+  // populated by ASSIGN_SIDE during "teamSetup" — and pre-filled for a
+  // 2-player match, same as before M4c.
   sides: Record<BattleshipSide, string[]>;
+
+  // The full roster this match started with, fixed at setup — only needed
+  // to know who's still unassigned during "teamSetup" (a 2-player match
+  // never reads this, since there's nothing to assign).
+  rosterPlayerIds: string[];
 
   readySides: Record<BattleshipSide, boolean>;
 
@@ -64,6 +74,13 @@ export interface BattleshipState {
 
 export type BattleshipAction =
   | { type: "START_GAME"; playerIds: string[]; boardSize: number }
+  // M4c, "teamSetup" phase only: assigns (or re-assigns) one player to a
+  // side, capped at 2. Re-assigning removes them from wherever they
+  // currently are first, so tapping a different side always just works.
+  | { type: "ASSIGN_SIDE"; playerId: string; side: BattleshipSide }
+  // M4c: host-triggered once both sides have exactly 2 — moves from
+  // "teamSetup" into "placing".
+  | { type: "START_TEAMS" }
   // No fleet data here — placement is a purely private change (ADR-0005 §2);
   // the room only ever learns that a side finished placing.
   | { type: "SIDE_READY"; side: BattleshipSide }
@@ -95,9 +112,16 @@ export interface BattleshipPrivate {
 }
 
 /** ADR-0005 §2/§3: answers a pending shot when this device is the one that
- * knows whether it was a hit — i.e. this player is on the defending side.
- * Pure: `privateState` arrives as an argument, never read ambiently, so
- * this is unit-testable with no I/O (same rule as the reducer itself). */
+ * knows whether it was a hit. In a 1-vs-1 match that's simply "this player
+ * is on the defending side"; in a team (M4c), it's narrower — only the
+ * side's *captain* (`sides[side][0]`, whoever was assigned to that side
+ * first) ever holds the real fleet as source of truth. The other teammate
+ * only ever has a live *mirror* of it (ADR-0005 §6's per-side channel), not
+ * something safe to answer shots from, so their device must return `null`
+ * here even though they're on the defending side. For a 2-player match
+ * `sides[side][0]` is just that one player, so this is a no-op change
+ * there. Pure: `privateState` arrives as an argument, never read ambiently,
+ * so this is unit-testable with no I/O (same rule as the reducer itself). */
 export function answerPendingShot(
   state: BattleshipState,
   privateState: BattleshipPrivate,
@@ -106,7 +130,7 @@ export function answerPendingShot(
   if (!state.pendingShot) return null;
 
   const defendingSide = otherSide(state.pendingShot.shooterSide);
-  if (!state.sides[defendingSide].includes(playerId)) return null; // not this device's board to answer for
+  if (state.sides[defendingSide][0] !== playerId) return null; // not this side's captain
 
   const alreadyHit = new Set(
     Object.entries(state.shots[defendingSide])
@@ -142,14 +166,20 @@ function applyPoints(scores: BattleshipState["scores"], pointsAwarded: Record<st
 
 /** The one place a fresh `BattleshipState` is built — shared by the
  * reducer's own `START_GAME` case and `GameModule.setup()`, so there's no
- * second copy of this shape to keep in sync. */
+ * second copy of this shape to keep in sync. Exactly 4 players (M4c)
+ * starts in "teamSetup" with both sides empty, waiting for the host to
+ * `ASSIGN_SIDE` each of them; any other count (2, today's only other
+ * supported size) goes straight to "placing" with sides pre-filled,
+ * unchanged from before M4c. */
 export function createInitialState(playerIds: string[], boardSize: number): BattleshipState {
+  const isTeams = playerIds.length === 4;
   const [p1, p2] = playerIds;
   return {
-    phase: "placing",
+    phase: isTeams ? "teamSetup" : "placing",
     boardSize,
     fleetSpec: fleetSpecFor(boardSize),
-    sides: { A: p1 ? [p1] : [], B: p2 ? [p2] : [] },
+    rosterPlayerIds: playerIds,
+    sides: isTeams ? { A: [], B: [] } : { A: p1 ? [p1] : [], B: p2 ? [p2] : [] },
     readySides: { A: false, B: false },
     shots: { A: {}, B: {} },
     sunkShips: { A: [], B: [] },
@@ -167,6 +197,29 @@ export function battleshipReducer(state: BattleshipState, action: BattleshipActi
   switch (action.type) {
     case "START_GAME":
       return createInitialState(action.playerIds, action.boardSize);
+
+    case "ASSIGN_SIDE": {
+      if (state.phase !== "teamSetup") return state;
+      if (!state.rosterPlayerIds.includes(action.playerId)) return state; // not a player in this match
+      // Remove them from wherever they currently are first, so re-tapping
+      // a different side (or the same one) always just works instead of
+      // needing an explicit "unassign" step.
+      const withoutPlayer: Record<BattleshipSide, string[]> = {
+        A: state.sides.A.filter((id) => id !== action.playerId),
+        B: state.sides.B.filter((id) => id !== action.playerId),
+      };
+      if (withoutPlayer[action.side].length >= 2) return state; // that side is already full
+      return {
+        ...state,
+        sides: { ...withoutPlayer, [action.side]: [...withoutPlayer[action.side], action.playerId] },
+      };
+    }
+
+    case "START_TEAMS": {
+      if (state.phase !== "teamSetup") return state;
+      if (state.sides.A.length !== 2 || state.sides.B.length !== 2) return state;
+      return { ...state, phase: "placing" };
+    }
 
     case "SIDE_READY": {
       if (state.phase !== "placing") return state;

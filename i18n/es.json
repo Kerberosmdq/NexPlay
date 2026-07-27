@@ -180,6 +180,14 @@
       "submarine": "Submarino",
       "patrol": "Lancha"
     },
+    "teamSetup": {
+      "title": "Armá los equipos",
+      "waitingForHost": "Esperando a que el anfitrión arme los equipos...",
+      "sideA": "Bando A",
+      "sideB": "Bando B",
+      "assignPlayersLabel": "Asigná a cada jugador",
+      "startButton": "¡Empezar!"
+    },
     "placing": {
       "title": "Coloca tu flota",
       "placingShip": "Colocando",
@@ -192,7 +200,8 @@
       "undoButton": "Deshacer",
       "dragToPlaceHint": "Arrastrá para colocarlo",
       "readyButton": "¡Listo!",
-      "waitingForOpponentReady": "Esperando a que tu rival termine de colocar su flota..."
+      "waitingForOpponentReady": "Esperando a que tu rival termine de colocar su flota...",
+      "watchingCaptainHint": "Tu compañero de equipo está colocando la flota — la vas a ver aparecer acá"
     },
     "firing": {
       "title": "¡A hundir la flota!",

@@ -22,7 +22,11 @@ export const battleshipGameModule: GameModule<BattleshipConfig, BattleshipState,
   meta: {
     name: "games.battleship.name",
     minPlayers: 2,
-    maxPlayers: 2, // M4c (teams) will raise this once >1 player per side is supported
+    // M4c: 2 is still 1-vs-1 (unchanged), 4 is fixed 2-vs-2 teams. 3 (or 5+)
+    // isn't supported — the reducer's own `createInitialState` only knows
+    // how to build either shape; the "teamSetup" view shows a friendly
+    // message rather than a broken assignment screen for any other count.
+    maxPlayers: 4,
     supportedModes: ["multi-device"], // no single-device: a pass-and-play phone can't hide a board between turns
   },
   configSchema: {
