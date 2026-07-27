@@ -11,7 +11,18 @@ import {
   type BattleshipSide,
   type CellResult,
 } from "../reducer";
-import { shipCells, canPlaceShip, isFleetComplete, randomFleetPlacement, type ShipPlacement, type Orientation } from "../placement";
+import {
+  shipCells,
+  canPlaceShip,
+  isFleetComplete,
+  randomFleetPlacement,
+  shipTypeAt,
+  shipAt,
+  orientationOf,
+  anchorOf,
+  type ShipPlacement,
+  type Orientation,
+} from "../placement";
 import { Button, Card, WaitingState } from "@/components/ui";
 
 type BoardLayout = "stacked" | "side-by-side" | "one-at-a-time";
@@ -36,10 +47,6 @@ interface PlayerProps {
 
 function columnLabel(col: number): string {
   return String.fromCharCode(65 + col);
-}
-
-function shipTypeAt(fleet: ShipPlacement[], cell: string): string | null {
-  return fleet.find((s) => s.cells.includes(cell))?.type ?? null;
 }
 
 /** Renders one ship as a single image spanning its full cell footprint,
@@ -113,18 +120,67 @@ function BoardGrid({
   boardSize,
   cellClassName,
   onCellClick,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
   ships,
   hitCells,
 }: {
   boardSize: number;
   cellClassName: (row: number, col: number, cell: string) => string;
   onCellClick?: (row: number, col: number, cell: string) => void;
+  // Continuous-drag mode (placement): a press anywhere on the grid starts a
+  // drag that tracks the pointer in real time — not a tap-then-tap-again —
+  // matching "quiero ver como si uno lo arrastrara por el tablero" (founder
+  // feedback: the tap/tap/confirm flow didn't read as dragging). Takes over
+  // from `onCellClick` when provided. `onDragStart` fires once, on press
+  // (e.g. to pick an already-placed ship back up); `onDragMove` fires
+  // continuously as the pointer moves, including the initial press position.
+  onDragStart?: (row: number, col: number) => void;
+  onDragMove?: (row: number, col: number) => void;
+  onDragEnd?: () => void;
   ships?: ShipPlacement[];
   hitCells?: string[];
 }) {
   const cellPct = 100 / boardSize;
+  const gridRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+
+  const cellFromPoint = (clientX: number, clientY: number) => {
+    const rect = gridRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    const col = Math.floor(((clientX - rect.left) / rect.width) * boardSize);
+    const row = Math.floor(((clientY - rect.top) / rect.height) * boardSize);
+    if (row < 0 || row >= boardSize || col < 0 || col >= boardSize) return null;
+    return { row, col };
+  };
+
+  useEffect(() => {
+    if (!onDragMove) return;
+    const handleMove = (e: PointerEvent) => {
+      if (!draggingRef.current) return;
+      const cell = cellFromPoint(e.clientX, e.clientY);
+      if (cell) onDragMove(cell.row, cell.col);
+    };
+    const handleUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      onDragEnd?.();
+    };
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onDragMove, onDragEnd, boardSize]);
+
+  const isDraggable = Boolean(onDragMove);
+
   return (
     <div
+      ref={gridRef}
       className="relative grid w-full max-w-xs sm:max-w-sm mx-auto gap-[3px]"
       style={{ gridTemplateColumns: `repeat(${boardSize}, minmax(0, 1fr))` }}
     >
@@ -132,7 +188,7 @@ function BoardGrid({
         Array.from({ length: boardSize }).map((_, col) => {
           const cell = `${row}-${col}`;
           const className = `aspect-square rounded-md ${cellClassName(row, col, cell)}`;
-          if (!onCellClick) {
+          if (!onCellClick && !isDraggable) {
             return <div key={cell} className={className} aria-hidden="true" />;
           }
           return (
@@ -140,8 +196,24 @@ function BoardGrid({
               key={cell}
               type="button"
               aria-label={`${columnLabel(col)}${row + 1}`}
-              onClick={() => onCellClick(row, col, cell)}
-              className={`${className} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}
+              onPointerDown={
+                isDraggable
+                  ? (e) => {
+                      e.preventDefault();
+                      draggingRef.current = true;
+                      // Only `onDragStart` here — it's responsible for the
+                      // drag's *initial* position (which may not be this
+                      // exact cell: picking an already-placed ship back up
+                      // re-anchors to where it already was, not wherever it
+                      // was grabbed, so it doesn't visually jump the instant
+                      // it's pressed). `onDragMove` only fires from actual
+                      // subsequent pointer movement.
+                      onDragStart?.(row, col);
+                    }
+                  : undefined
+              }
+              onClick={!isDraggable && onCellClick ? () => onCellClick(row, col, cell) : undefined}
+              className={`${className} touch-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}
             />
           );
         })
@@ -301,7 +373,31 @@ export function PlayerView({
         : null;
     const ghostValid = Boolean(ghostCells && canPlaceShip(fleet, ghostCells));
 
-    const confirmShip = () => {
+    // Founder feedback: this should feel like actually dragging the ship
+    // across the board, not tap-somewhere / tap-again / press a separate
+    // confirm button. A press starts the drag (picking an already-placed
+    // ship back up if the fleet is complete and the press lands on one —
+    // gated on `!nextShip` so a second ship can never get silently dropped
+    // mid-move), continuous movement updates the ghost in real time
+    // (`onDragTo`, driven by `BoardGrid`'s own pointermove tracking), and
+    // releasing (`onDragEnd`) commits the placement if it's valid there —
+    // a quick tap-and-release with no movement in between still works, as a
+    // (very short) drag onto the cell you tapped.
+    const handleDragStart = (row: number, col: number) => {
+      if (iAmReady || !setPrivateState) return;
+      if (!nextShip) {
+        const existing = shipAt(fleet, `${row}-${col}`);
+        if (existing) {
+          setPrivateState((prev) => ({ fleet: prev.fleet.filter((s) => s.type !== existing.type) }));
+          setOrientation(orientationOf(existing));
+          setPreviewCell(anchorOf(existing)); // resumes exactly where it was, no jump on pickup
+          return;
+        }
+      }
+      setPreviewCell({ row, col });
+    };
+
+    const handleDragEnd = () => {
       if (!nextShip || !ghostCells || !ghostValid || !setPrivateState) return;
       setPrivateState((prev) => ({ fleet: [...prev.fleet, { type: nextShip.type, cells: ghostCells }] }));
       setPreviewCell(null);
@@ -319,16 +415,23 @@ export function PlayerView({
               <p className="text-sm text-ink-muted uppercase tracking-widest font-bold">
                 {nextShip ? t("placing.placingShip") : t("placing.fleetComplete")}
               </p>
-              {nextShip && (
-                <p className="text-xl font-bold text-ink">
-                  {tShips(nextShip.type)} — {t("placing.cellsLong", { count: nextShip.length })}
-                </p>
+              {nextShip ? (
+                <>
+                  <p className="text-xl font-bold text-ink">
+                    {tShips(nextShip.type)} — {t("placing.cellsLong", { count: nextShip.length })}
+                  </p>
+                  <p className="text-xs text-ink-muted">{t("placing.dragToPlaceHint")}</p>
+                </>
+              ) : (
+                <p className="text-sm text-ink-muted">{t("placing.tapToMoveHint")}</p>
               )}
             </Card>
 
             <BoardGrid
               boardSize={state.boardSize}
-              onCellClick={(row, col) => setPreviewCell({ row, col })}
+              onDragStart={handleDragStart}
+              onDragMove={(row, col) => setPreviewCell({ row, col })}
+              onDragEnd={handleDragEnd}
               ships={fleet}
               cellClassName={(_r, _c, cell) => {
                 if (shipTypeAt(fleet, cell)) return "bg-transparent"; // the ship image itself shows
@@ -369,12 +472,6 @@ export function PlayerView({
                 {t("placing.undoButton")}
               </Button>
             </div>
-
-            {nextShip && (
-              <Button variant="primary" onClick={confirmShip} disabled={!ghostValid} className="max-w-xs">
-                {previewCell ? t("placing.confirmShipButton") : t("placing.tapToPreviewHint")}
-              </Button>
-            )}
 
             <Button
               variant={fleetReady ? "primary" : "ghost"}
