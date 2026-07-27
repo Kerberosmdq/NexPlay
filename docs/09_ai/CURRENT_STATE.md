@@ -3,21 +3,22 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 12 - M4a (Battleship core) done; M4b (special weapons) next
-- Status: `TASK-0031` shipped — Battleship's 1 vs 1 core is playable end to
-  end, and `ADR-0005` (private per-player state) is Accepted and real,
-  proven live on two separate browser contexts, not just in tests.
+- Sprint: Sprint 13 - M4a polish done (founder playtest feedback); M4b next
+- Status: `TASK-0031` (Battleship core) and `TASK-0033` (M4a polish — real
+  ship art, placement preview, hit/sink feedback, board layout) both
+  shipped. Battleship is now genuinely presentable, not just functional.
 
 ## Current Objective
 M1 and M2 are complete; M3.5 is complete (see below); M3 is implemented but
 still awaiting the founder's multi-device playtest (Known Issues, unrelated
-to and not blocked by the below). **M4a is now done**: Battleship plays a
-full 1-vs-1 match (place fleets, fire, hit/miss/sink, win, reveal the
-loser's board) with genuine ship-position privacy — a device's fleet never
-leaves it, proven both by a reducer-level test and by inspecting a real
-two-device match live. Next up is **M4b** (special weapons: charges,
-ship-bound weapons, the four shot shapes) on top of the core M4a just laid
-down.
+to and not blocked by the below). **M4a and its polish pass are both done**:
+Battleship plays a full 1-vs-1 match (place fleets with a live movable
+preview, fire, see an explicit hit/miss/sunk announcement with a fire
+animation, win, reveal the loser's board with real ship art throughout) with
+genuine ship-position privacy — a device's fleet never leaves it, proven
+both by a reducer-level test and by inspecting a real two-device match live.
+Next up is **M4b** (special weapons: charges, ship-bound weapons, the four
+shot shapes) on top of the core + polish just laid down.
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -479,6 +480,44 @@ down.
       round-trip (es → en → es) with visible text re-rendering confirmed at
       each step. Manually verified at mobile width (375px, no horizontal
       overflow).
+- [x] **TASK-0033**: Battleship M4a Polish — founder feedback from playing
+      the just-shipped M4a live, addressed before M4b since M4b's
+      multi-cell shots reuse the same feedback/animation system.
+      (1) **Live placement preview**: placing a ship is now tap-to-preview
+      (a semi-transparent ghost follows each tap, movable, shown invalid in
+      red on overlap/out-of-bounds) then an explicit confirm button commits
+      it — replacing the old instant-tap-to-place flow the founder found
+      disorienting.
+      (2) **Real ship artwork**: the founder generated a 5-ship reference
+      sheet via an external image tool (felt-green board-game-token style,
+      matching `BDR-0001`), from a prompt built collaboratively. New
+      `scripts/generate-ship-assets.mjs` (mirrors `scripts/generate-icons.mjs`'s
+      pattern) auto-detects each ship's bounding box by scanning columns/rows
+      for non-background content — no hardcoded coordinates — then removes
+      the background via a smoothly-ramped chroma key (a hard alpha cutoff
+      left a visible halo from the source art's soft drop shadow) into
+      `public/battleship/<type>.png`. Each ship now renders as one image
+      spanning its full cell footprint (rotated 90° for horizontal
+      placements via a center-anchored transform trick) instead of tiled
+      flat-color squares, on the placement grid, a player's own board, and
+      the post-match revealed board.
+      (3) **Hit/sink feedback**: an explicit announcement banner names
+      hit/miss, and — the specific gap reported ("hundí un barco y no me
+      avisa") — names which ship was sunk, using `Battleship.ships.*`'s
+      localized names. Paired with a "falls from the sky" fire animation on
+      the targeted cell.
+      (4) **Motion**: two new named gestures in `app/motion.css`
+      (`nx-strike`, `nx-shake`), following the existing
+      `reveal`/`deal`/`celebrate`/`pulse` pattern with `prefers-reduced-motion`
+      fallbacks — not one-off animations bolted on outside the vocabulary.
+      (5) **Board layout preference**: stacked / side-by-side / one-at-a-time,
+      a per-device `localStorage` UI preference with zero reducer or
+      `GameModule` contract changes (it never needs to sync).
+      Verified live across two real browser contexts: ghost preview moves
+      and confirms correctly; ship art renders correctly-oriented on
+      placement/own/revealed boards while the opponent's board stays
+      genuinely empty (privacy intact); hit markers stay visible layered on
+      top of ship art; all three layouts render and switch correctly.
 
 ## Tasks In Progress
 - [ ] None.
@@ -496,12 +535,13 @@ down.
 ## Next Task
 - **M4b — Special weapons** (charges, the ship-bound weapon table, the four
   shot shapes, the aim → preview → confirm interaction they need). Builds
-  directly on M4a's reducer/state shape; no task spec written yet.
+  directly on M4a's reducer/state shape and reuses `TASK-0033`'s
+  hit/sink-announcement + fire-animation system; no task spec written yet.
 - Still open, independent of the above: founder playtests a real
   multi-device Who Am I match; mark M3 ✅ in `docs/ROADMAP.md` once confirmed.
-- Also independent: the founder should actually playtest Battleship M4a on
-  real phones before M4b builds further on top of it — M4a was verified via
-  two browser contexts, not two real devices.
+- Also independent: the founder should actually playtest Battleship
+  (M4a + its polish pass) on real phones before M4b builds further on top of
+  it — verification so far used two browser contexts, not two real devices.
 
 ## Last Updated
 - 2026-07-26

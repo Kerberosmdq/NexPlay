@@ -243,6 +243,31 @@ independently playable phases** rather than one PR.
   were correct, only the actual rendered size was wrong. 22 new unit tests
   (16 reducer + 6 private-state/privacy) plus an e2e test covering two real
   browser contexts joining, placing, and firing. Playable end to end.
+- **M4a polish (`TASK-0033`, done).** Founder feedback from the first live
+  playtest, built before M4b because M4b's multi-cell shots reuse the same
+  feedback/animation system: (1) a live, movable, semi-transparent
+  placement preview (tap sets a ghost anchor, tap elsewhere moves it,
+  an explicit confirm button commits it — replacing the old
+  instant-tap-to-place flow); (2) real ship artwork — the founder generated
+  a 5-ship reference sheet (felt-green board-game-token style matching
+  `BDR-0001`) via an external image tool, processed by a new
+  `scripts/generate-ship-assets.mjs` (auto-detects each ship's bounding box
+  by scanning for non-background columns/rows rather than hardcoded
+  coordinates, then chroma-keys the background to transparent with a smooth
+  alpha ramp — a hard cutoff left a visible halo from the source art's soft
+  drop shadow) into `public/battleship/<type>.png`; each ship then renders
+  as one image spanning its full cell footprint (rotated 90° for horizontal
+  placements) instead of tiled flat-color squares; (3) an explicit
+  hit/miss/sunk announcement (naming the sunk ship) plus a
+  "falls from above" fire animation on the targeted cell — two new
+  `motion.css` gestures (`nx-strike`, `nx-shake`), both with
+  `prefers-reduced-motion` fallbacks; (4) a per-device board layout
+  preference (stacked / side-by-side / one-at-a-time), pure UI state, no
+  reducer or contract change. Verified live across two real browser
+  contexts: ghost preview moves and confirms correctly, ship art renders
+  oriented correctly on placement/own/revealed boards while the opponent's
+  board stays empty (privacy intact), hit markers stay visible on top of
+  ship art, all three layouts render correctly.
 - **M4b — Special weapons.** Charges, the ship-bound weapon table, the four
   shot shapes (double horizontal, double vertical, triple, cross), and the
   aim → preview → confirm interaction the shapes require.

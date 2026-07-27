@@ -62,6 +62,48 @@
   }
 }
 
+/* A shot landing on its target cell — drops in from above and settles,
+ * like a shell/bomb impact. Runs per-cell, so a multi-cell shot (Battleship
+ * M4b's special weapons) plays it once per affected cell, not once total. */
+@keyframes nx-strike {
+  0% {
+    opacity: 0;
+    transform: translateY(-160%) scale(0.5);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(0) scale(1.15);
+  }
+  85% {
+    transform: translateY(0) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* A ship going down — a sharper, shorter jolt than `nx-celebrate`'s
+ * triumphant bounce, since this announces the *other* side's loss. */
+@keyframes nx-shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  20% {
+    transform: translateX(-4px) rotate(-2deg);
+  }
+  40% {
+    transform: translateX(4px) rotate(2deg);
+  }
+  60% {
+    transform: translateX(-3px) rotate(-1deg);
+  }
+  80% {
+    transform: translateX(3px) rotate(1deg);
+  }
+}
+
 .motion-reveal {
   animation: nx-reveal 320ms var(--ease-bounce) both;
 }
@@ -78,10 +120,20 @@
   animation: nx-pulse 1600ms ease-in-out infinite;
 }
 
+.motion-strike {
+  animation: nx-strike 420ms var(--ease-bounce) both;
+}
+
+.motion-shake {
+  animation: nx-shake 380ms ease-in-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .motion-reveal,
   .motion-deal,
-  .motion-celebrate {
+  .motion-celebrate,
+  .motion-strike,
+  .motion-shake {
     animation: none;
   }
 

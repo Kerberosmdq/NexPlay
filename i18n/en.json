@@ -189,6 +189,8 @@
       "orientationVertical": "Vertical",
       "randomButton": "Place randomly",
       "undoButton": "Undo",
+      "confirmShipButton": "Confirm ship",
+      "tapToPreviewHint": "Tap a cell to preview it there",
       "readyButton": "Ready!",
       "waitingForOpponentReady": "Waiting for your opponent to finish placing their fleet..."
     },
@@ -199,7 +201,13 @@
       "waitingForOpponent": "Waiting for your opponent's answer...",
       "resolvingYourAnswer": "Resolving the shot...",
       "targetBoardLabel": "Your opponent's board",
-      "yourBoardLabel": "Your board"
+      "yourBoardLabel": "Your board",
+      "hitAnnouncement": "Hit!",
+      "missAnnouncement": "Miss...",
+      "sunkAnnouncement": "You sank their {ship}!",
+      "layoutStacked": "Stacked",
+      "layoutSideBySide": "Side by side",
+      "layoutOneAtATime": "One at a time"
     },
     "resolution": {
       "youWon": "YOU WON!",
