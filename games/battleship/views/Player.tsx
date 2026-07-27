@@ -83,7 +83,16 @@ function ShipOverlay({
         src={`/battleship/${type}.png`}
         alt=""
         aria-hidden="true"
-        className="absolute object-contain"
+        // `object-cover` rather than `object-contain`: each source art's own
+        // aspect ratio doesn't exactly match every cell-span it can occupy
+        // (the carrier is 4 cells long on an 8-wide board but 5 on a 10-wide
+        // one, from the same asset) — `contain` letterboxes the *short* axis,
+        // which for a squatter ship (the carrier) left visible empty cells
+        // at its bow/stern instead of filling its full length. `cover` always
+        // fills the ship's full length, at the cost of a small crop on the
+        // narrow axis — invisible in practice, since every crop already
+        // carries transparent padding there.
+        className="absolute object-cover"
         style={
           isHorizontal
             ? {
