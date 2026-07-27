@@ -209,7 +209,17 @@
       "tapToContinue": "Tocá para continuar",
       "layoutStacked": "Uno arriba del otro",
       "layoutSideBySide": "Lado a lado",
-      "layoutOneAtATime": "De a uno"
+      "layoutOneAtATime": "De a uno",
+      "chargesLabel": "Cargas: {count}",
+      "plainShotButton": "Disparo simple",
+      "weapon": {
+        "doubleHorizontal": "Doble horizontal",
+        "doubleVertical": "Doble vertical",
+        "triple": "Triple",
+        "cross": "Cruz"
+      },
+      "aimHint": "Tocá el tablero rival para apuntar",
+      "confirmShotButton": "¡Disparar! ({cost} cargas)"
     },
     "resolution": {
       "youWon": "¡GANASTE!",

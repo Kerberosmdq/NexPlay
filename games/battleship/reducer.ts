@@ -1,10 +1,19 @@
 import { fleetSpecFor, type ShipPlacement, type ShipSpec } from "./placement";
+import { WEAPON_COST, type WeaponType } from "./weapons";
 
 export type BattleshipSide = "A" | "B";
 
 export type BattleshipPhase = "placing" | "firing" | "resolution";
 
 export type CellResult = "hit" | "miss";
+
+// M4b charge economy (`docs/ROADMAP.md` M4b, playtest-tunable): a side gains
+// this many charges the instant its turn begins, and this many bonus
+// "anti-snowball" charges per own ship sunk — landing on the side that just
+// lost the ship, not the attacker, since the attacker already benefits from
+// the sinking itself.
+const TURN_INCOME_CHARGES = 1;
+const SINK_COMPENSATION_CHARGES = 2;
 
 export interface BattleshipState {
   phase: BattleshipPhase;
@@ -31,12 +40,18 @@ export interface BattleshipState {
   // the defending device itself in `answerPendingShot`).
   sunkShipCells: Record<BattleshipSide, ShipPlacement[]>;
 
+  // Per-side charge pool (M4b) — shared across all of a side's weapons; only
+  // *availability* of a given weapon is gated per-ship (whether that ship is
+  // still afloat), never the currency itself.
+  charges: Record<BattleshipSide, number>;
+
   turn: BattleshipSide;
 
   // A shot has been called but not yet resolved — the defending side's
   // device answers this via `answerPending` (ADR-0005 §3). While this is
-  // set, no one may fire again.
-  pendingShot: { shooterSide: BattleshipSide; cell: string } | null;
+  // set, no one may fire again. `cells` is more than one entry for a special
+  // weapon shot (M4b); a plain shot is just the one cell.
+  pendingShot: { shooterSide: BattleshipSide; cells: string[] } | null;
 
   // Filled in only once the match reaches "resolution" — the losing side's
   // own device reveals its board at that point, since it's no longer
@@ -52,14 +67,19 @@ export type BattleshipAction =
   // No fleet data here — placement is a purely private change (ADR-0005 §2);
   // the room only ever learns that a side finished placing.
   | { type: "SIDE_READY"; side: BattleshipSide }
-  | { type: "FIRE"; side: BattleshipSide; cell: string }
+  // `cells` is pre-computed by the firing device from `weapon`'s shape (see
+  // `games/battleship/weapons.ts`) — geometry needs no private information,
+  // so there's nothing to hide by trusting it here, same as ship placement
+  // trusting a private fleet's own `cells` without re-deriving them.
+  // `weapon: null` is a plain, free, always-available single-cell shot.
+  | { type: "FIRE"; side: BattleshipSide; cells: string[]; weapon: WeaponType | null }
   | {
       type: "RESOLVE_SHOT";
       side: BattleshipSide;
-      cell: string;
-      result: CellResult;
-      sunkShipType: string | null;
-      sunkShipCells: string[] | null;
+      results: { cell: string; result: CellResult }[];
+      // Every ship newly confirmed sunk by this shot — usually 0 or 1, but a
+      // multi-cell weapon (esp. Cross) can complete more than one ship at once.
+      sunk: { type: string; cells: string[] }[];
     }
   | { type: "REVEAL_FLEET"; side: BattleshipSide; fleet: ShipPlacement[] }
   | { type: "PLAY_AGAIN" };
@@ -88,26 +108,28 @@ export function answerPendingShot(
   const defendingSide = otherSide(state.pendingShot.shooterSide);
   if (!state.sides[defendingSide].includes(playerId)) return null; // not this device's board to answer for
 
-  const cell = state.pendingShot.cell;
-  const hitShip = privateState.fleet.find((ship) => ship.cells.includes(cell));
-  const result: CellResult = hitShip ? "hit" : "miss";
+  const alreadyHit = new Set(
+    Object.entries(state.shots[defendingSide])
+      .filter(([, r]) => r === "hit")
+      .map(([c]) => c)
+  );
 
-  let sunkShipType: string | null = null;
-  let sunkShipCells: string[] | null = null;
-  if (hitShip) {
-    const alreadyHit = new Set(
-      Object.entries(state.shots[defendingSide])
-        .filter(([, r]) => r === "hit")
-        .map(([c]) => c)
-    );
-    alreadyHit.add(cell);
-    if (hitShip.cells.every((c) => alreadyHit.has(c))) {
-      sunkShipType = hitShip.type;
-      sunkShipCells = hitShip.cells;
-    }
+  const results: { cell: string; result: CellResult }[] = [];
+  for (const cell of state.pendingShot.cells) {
+    const hitShip = privateState.fleet.find((ship) => ship.cells.includes(cell));
+    results.push({ cell, result: hitShip ? "hit" : "miss" });
+    if (hitShip) alreadyHit.add(cell);
   }
 
-  return { type: "RESOLVE_SHOT", side: defendingSide, cell, result, sunkShipType, sunkShipCells };
+  // A ship already reported sunk by an earlier shot must never be reported
+  // again here — every one of its cells still reads "hit" on every later
+  // resolution, which would otherwise re-trigger indefinitely.
+  const alreadySunkTypes = new Set(state.sunkShips[defendingSide]);
+  const sunk = privateState.fleet
+    .filter((ship) => !alreadySunkTypes.has(ship.type) && ship.cells.every((c) => alreadyHit.has(c)))
+    .map((ship) => ({ type: ship.type, cells: ship.cells }));
+
+  return { type: "RESOLVE_SHOT", side: defendingSide, results, sunk };
 }
 
 function applyPoints(scores: BattleshipState["scores"], pointsAwarded: Record<string, number>) {
@@ -132,6 +154,7 @@ export function createInitialState(playerIds: string[], boardSize: number): Batt
     shots: { A: {}, B: {} },
     sunkShips: { A: [], B: [] },
     sunkShipCells: { A: [], B: [] },
+    charges: { A: 0, B: 0 },
     turn: "A",
     pendingShot: null,
     revealedFleets: {},
@@ -156,16 +179,31 @@ export function battleshipReducer(state: BattleshipState, action: BattleshipActi
       if (state.phase !== "firing") return state;
       if (state.turn !== action.side) return state;
       if (state.pendingShot) return state; // a shot is already awaiting resolution
+      if (action.cells.length === 0) return state; // a shape entirely clipped off-board
+
+      const cost = action.weapon ? WEAPON_COST[action.weapon] : 0;
+      if (cost > state.charges[action.side]) return state; // can't afford this weapon
+
       const target = otherSide(action.side);
-      if (state.shots[target][action.cell]) return state; // already fired at this cell
-      return { ...state, pendingShot: { shooterSide: action.side, cell: action.cell } };
+      const entirelyWasted = action.cells.every((c) => state.shots[target][c]);
+      if (entirelyWasted) return state; // every cell already fired at
+
+      return {
+        ...state,
+        charges: { ...state.charges, [action.side]: state.charges[action.side] - cost },
+        pendingShot: { shooterSide: action.side, cells: action.cells },
+      };
     }
 
     case "RESOLVE_SHOT": {
       if (state.phase !== "firing") return state;
       // Guards against a stale/duplicate resolution (e.g. a broadcast echo
       // arriving after the pending marker already cleared).
-      if (!state.pendingShot || state.pendingShot.cell !== action.cell) return state;
+      if (!state.pendingShot) return state;
+      const pendingCells = new Set(state.pendingShot.cells);
+      const matchesPending =
+        action.results.length === state.pendingShot.cells.length && action.results.every((r) => pendingCells.has(r.cell));
+      if (!matchesPending) return state;
       if (otherSide(state.pendingShot.shooterSide) !== action.side) return state;
 
       const shooterSide = state.pendingShot.shooterSide;
@@ -173,21 +211,24 @@ export function battleshipReducer(state: BattleshipState, action: BattleshipActi
 
       const shots = {
         ...state.shots,
-        [defendingSide]: { ...state.shots[defendingSide], [action.cell]: action.result },
+        [defendingSide]: {
+          ...state.shots[defendingSide],
+          ...Object.fromEntries(action.results.map((r) => [r.cell, r.result])),
+        },
       };
-      const sunkShips = action.sunkShipType
-        ? { ...state.sunkShips, [defendingSide]: [...state.sunkShips[defendingSide], action.sunkShipType] }
+      const sunkShips = action.sunk.length
+        ? { ...state.sunkShips, [defendingSide]: [...state.sunkShips[defendingSide], ...action.sunk.map((s) => s.type)] }
         : state.sunkShips;
-      const sunkShipCells =
-        action.sunkShipType && action.sunkShipCells
-          ? {
-              ...state.sunkShipCells,
-              [defendingSide]: [
-                ...state.sunkShipCells[defendingSide],
-                { type: action.sunkShipType, cells: action.sunkShipCells },
-              ],
-            }
-          : state.sunkShipCells;
+      const sunkShipCells = action.sunk.length
+        ? { ...state.sunkShipCells, [defendingSide]: [...state.sunkShipCells[defendingSide], ...action.sunk] }
+        : state.sunkShipCells;
+
+      // Anti-snowball: the side that just lost one or more ships to this
+      // shot gets bonus charges — landing on the loser, not the attacker.
+      const charges = {
+        ...state.charges,
+        [defendingSide]: state.charges[defendingSide] + action.sunk.length * SINK_COMPENSATION_CHARGES,
+      };
 
       const fleetFullySunk = sunkShips[defendingSide].length === state.fleetSpec.length;
 
@@ -200,6 +241,7 @@ export function battleshipReducer(state: BattleshipState, action: BattleshipActi
           shots,
           sunkShips,
           sunkShipCells,
+          charges,
           pendingShot: null,
           winner: shooterSide,
           scores: applyPoints(state.scores, pointsAwarded),
@@ -211,6 +253,9 @@ export function battleshipReducer(state: BattleshipState, action: BattleshipActi
         shots,
         sunkShipCells,
         sunkShips,
+        // The defender gets to fire back next — their turn-start income
+        // lands here, in the same transition that flips `turn` to them.
+        charges: { ...charges, [defendingSide]: charges[defendingSide] + TURN_INCOME_CHARGES },
         pendingShot: null,
         turn: defendingSide, // the side just fired upon gets to fire back
       };
@@ -230,6 +275,7 @@ export function battleshipReducer(state: BattleshipState, action: BattleshipActi
         shots: { A: {}, B: {} },
         sunkShips: { A: [], B: [] },
         sunkShipCells: { A: [], B: [] },
+        charges: { A: 0, B: 0 },
         turn: "A",
         pendingShot: null,
         revealedFleets: {},

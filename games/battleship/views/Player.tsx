@@ -23,6 +23,7 @@ import {
   type ShipPlacement,
   type Orientation,
 } from "../placement";
+import { weaponCells, weaponForShipType, WEAPON_COST, type WeaponType } from "../weapons";
 import { Button, Card, WaitingState } from "@/components/ui";
 
 type BoardLayout = "stacked" | "side-by-side" | "one-at-a-time";
@@ -143,6 +144,7 @@ function BoardGrid({
   hitCells,
   ghost,
   sunkShips,
+  aim,
 }: {
   boardSize: number;
   cellClassName: (row: number, col: number, cell: string) => string;
@@ -167,6 +169,9 @@ function BoardGrid({
   // — only ever populated with ships whose every cell is already known to
   // be a hit, so this never reveals anything not already visible.
   sunkShips?: ShipPlacement[];
+  // M4b weapon-aim preview on the *target* board — a tinted reticle, not a
+  // ship image (there's no ship there to show; you're bombarding an area).
+  aim?: { cells: string[]; valid: boolean } | null;
 }) {
   const cellPct = 100 / boardSize;
   const gridRef = useRef<HTMLDivElement>(null);
@@ -259,6 +264,16 @@ function BoardGrid({
           sunk
         />
       ))}
+      {aim?.cells.map((cell) => {
+        const [row, col] = cell.split("-").map(Number);
+        return (
+          <div
+            key={`aim-${cell}`}
+            className={`absolute pointer-events-none rounded-md ${aim.valid ? "bg-action-primary/40" : "bg-action-danger/40"}`}
+            style={{ left: `${col * cellPct}%`, top: `${row * cellPct}%`, width: `${cellPct}%`, height: `${cellPct}%` }}
+          />
+        );
+      })}
       {/* Drawn above the ship art so a hit on an occupied cell stays visible
        * instead of being hidden underneath the ship image. */}
       {hitCells?.map((cell) => {
@@ -302,6 +317,16 @@ export function PlayerView({
   // off the fleet (i.e. while `nextShip` is standing in for it), and that
   // window used to close itself instantly on release.
   const justPickedUpRef = useRef(false);
+
+  // M4b weapon aiming (firing phase only, but declared unconditionally per
+  // Rules of Hooks): `null` selectedWeapon means the plain, free, always-
+  // available single-cell shot. Picking a weapon just arms aiming mode —
+  // it doesn't fire until `aimCell` is also set and confirmed, so a shape
+  // preview can be shown first (weapons cost charges; a plain shot doesn't
+  // need this two-step confirmation and still fires on a single tap).
+  const [selectedWeapon, setSelectedWeapon] = useState<WeaponType | null>(null);
+  const [weaponOrientation, setWeaponOrientation] = useState<Orientation>("horizontal");
+  const [aimCell, setAimCell] = useState<{ row: number; col: number } | null>(null);
 
   // Per-device display preference (not game state — never touches the
   // reducer or syncs between players). Read lazily on first render rather
@@ -563,6 +588,38 @@ export function PlayerView({
     const pendingIsOpponents = state.pendingShot && !pendingIsMine;
     const shotsIFired = opponentSide ? state.shots[opponentSide] : {};
     const shotsIReceived = state.shots[mySide];
+    const myCharges = state.charges[mySide];
+
+    // M4b: every weapon whose ship is still afloat on my own side — a
+    // weapon disappears the instant its ship is sunk, regardless of
+    // charges (the "ship-bound" half of the founder's design). Affordability
+    // is checked separately per weapon so the selector can show what's
+    // still out of reach rather than hiding it entirely.
+    const myWeapons = state.fleetSpec
+      .map((spec) => ({ shipType: spec.type, weapon: weaponForShipType(spec.type) }))
+      .filter(
+        (w): w is { shipType: string; weapon: WeaponType } => w.weapon !== null && !state.sunkShips[mySide].includes(w.shipType)
+      );
+
+    const aimGhostCells =
+      selectedWeapon && aimCell ? weaponCells(selectedWeapon, aimCell.row, aimCell.col, weaponOrientation, state.boardSize) : null;
+    // A shot is only worth confirming if at least one of its cells is still
+    // unfired-at — same "some risk is on you" rule the plain shot already
+    // has via `shotsIFired[cell]`, just tolerant of a partially-wasted shape.
+    const aimGhostValid = Boolean(aimGhostCells?.length && aimGhostCells.some((c) => !shotsIFired[c]));
+    const aimCost = selectedWeapon ? WEAPON_COST[selectedWeapon] : 0;
+
+    const selectWeapon = (weapon: WeaponType | null) => {
+      setSelectedWeapon(weapon);
+      setAimCell(null);
+    };
+
+    const confirmWeaponShot = () => {
+      if (!selectedWeapon || !aimGhostCells || !aimGhostValid || myCharges < aimCost) return;
+      dispatch({ type: "FIRE", side: mySide, cells: aimGhostCells, weapon: selectedWeapon });
+      setSelectedWeapon(null);
+      setAimCell(null);
+    };
 
     const targetBoard = (
       <div className="w-full space-y-2">
@@ -573,13 +630,18 @@ export function PlayerView({
           boardSize={state.boardSize}
           onCellClick={
             isMyTurn && !state.pendingShot
-              ? (_r, _c, cell) => {
+              ? (row, col, cell) => {
+                  if (selectedWeapon) {
+                    setAimCell({ row, col });
+                    return;
+                  }
                   if (shotsIFired[cell]) return;
-                  dispatch({ type: "FIRE", side: mySide, cell });
+                  dispatch({ type: "FIRE", side: mySide, cells: [cell], weapon: null });
                 }
               : undefined
           }
           sunkShips={opponentSide ? state.sunkShipCells[opponentSide] : []}
+          aim={aimGhostCells ? { cells: aimGhostCells, valid: aimGhostValid } : null}
           cellClassName={(_r, _c, cell) => {
             const result = shotsIFired[cell];
             const striking = opponentSide && strikeCell === `${opponentSide}:${cell}`;
@@ -667,6 +729,62 @@ export function PlayerView({
           <p className={`text-lg font-black ${isMyTurn ? "text-action-secondary motion-pulse" : "text-ink-muted"}`}>
             {isMyTurn ? t("firing.yourTurn") : t("firing.opponentTurn")}
           </p>
+        )}
+
+        {isMyTurn && !state.pendingShot && (
+          <Card className="w-full space-y-3 text-center">
+            <p className="text-xs font-bold uppercase tracking-widest text-ink-muted">
+              {t("firing.chargesLabel", { count: myCharges })}
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button
+                variant="ghost"
+                fullWidth={false}
+                active={selectedWeapon === null}
+                onClick={() => selectWeapon(null)}
+                className="px-4 text-sm"
+              >
+                {t("firing.plainShotButton")}
+              </Button>
+              {myWeapons.map(({ weapon }) => (
+                <Button
+                  key={weapon}
+                  variant="ghost"
+                  fullWidth={false}
+                  active={selectedWeapon === weapon}
+                  disabled={myCharges < WEAPON_COST[weapon]}
+                  onClick={() => selectWeapon(weapon)}
+                  className="px-4 text-sm"
+                >
+                  {t(`firing.weapon.${weapon}`)} ({WEAPON_COST[weapon]})
+                </Button>
+              ))}
+            </div>
+
+            {selectedWeapon === "triple" && (
+              <Button
+                variant="ghost"
+                fullWidth={false}
+                onClick={() => setWeaponOrientation((o) => (o === "horizontal" ? "vertical" : "horizontal"))}
+                className="px-4 text-sm mx-auto"
+              >
+                {weaponOrientation === "horizontal" ? t("placing.orientationHorizontal") : t("placing.orientationVertical")}
+              </Button>
+            )}
+
+            {selectedWeapon && !aimGhostCells && <p className="text-xs text-ink-muted">{t("firing.aimHint")}</p>}
+
+            {selectedWeapon && aimGhostCells && (
+              <Button
+                variant={aimGhostValid ? "primary" : "ghost"}
+                onClick={confirmWeaponShot}
+                disabled={!aimGhostValid}
+                className="max-w-xs mx-auto"
+              >
+                {t("firing.confirmShotButton", { cost: aimCost })}
+              </Button>
+            )}
+          </Card>
         )}
 
         <div className="flex gap-2 flex-wrap justify-center">
