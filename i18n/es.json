@@ -189,6 +189,8 @@
       "orientationVertical": "Vertical",
       "randomButton": "Colocar al azar",
       "undoButton": "Deshacer",
+      "confirmShipButton": "Confirmar barco",
+      "tapToPreviewHint": "Tocá una casilla para ver dónde queda",
       "readyButton": "¡Listo!",
       "waitingForOpponentReady": "Esperando a que tu rival termine de colocar su flota..."
     },
@@ -199,7 +201,13 @@
       "waitingForOpponent": "Esperando la respuesta de tu rival...",
       "resolvingYourAnswer": "Respondiendo el disparo...",
       "targetBoardLabel": "Tablero de tu rival",
-      "yourBoardLabel": "Tu tablero"
+      "yourBoardLabel": "Tu tablero",
+      "hitAnnouncement": "¡Tocado!",
+      "missAnnouncement": "Agua...",
+      "sunkAnnouncement": "¡Hundiste {ship}!",
+      "layoutStacked": "Uno arriba del otro",
+      "layoutSideBySide": "Lado a lado",
+      "layoutOneAtATime": "De a uno"
     },
     "resolution": {
       "youWon": "¡GANASTE!",

@@ -3,210 +3,134 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: TASK-0031
-- **Title**: Battleship — Core 1 vs 1 & Private State (M4a)
+- **Task ID**: TASK-0033
+- **Title**: Battleship M4a Polish — Placement Preview, Ship Art, Hit/Sink Feedback, Fire Animation, Board Layout
 
 ## Current Branch
-- `feat/battleship-core-private-state`, branched off `main` after PR #38
-  (M3.5 code task 3b) merged.
+- `feat/battleship-polish-feedback-and-layout`, branched off `main` after
+  PR #39 (M4a core) merged.
 
 ## What's in this task
 
-M4a — the load-bearing first phase of Battleship. Two platform changes
-(`ADR-0005`'s mechanism made real, plus a small platform gap it exposed)
-and one new game.
+Founder feedback from playing M4a live for the first time, addressed
+*before* M4b (special weapons) rather than after — M4b's multi-cell shots
+need the exact same hit/sink-feedback and fire-animation system this task
+builds, so building it once here avoids retrofitting it under M4b's
+pressure.
 
-### Platform: `ADR-0005` implemented, not just designed
+### 1. Live placement preview
+Placement was tap-to-instantly-place before; the founder found that gave no
+chance to see where a ship would land. Now: tap sets/moves a semi-transparent
+ghost preview (green if valid, red if it would overlap/run off the board),
+tapping elsewhere moves it, and an explicit "Confirmar barco" button commits
+it. `games/battleship/views/Player.tsx`'s placing-phase block was rewritten
+around a new `previewCell` state and `ghostCells`/`ghostValid` derived
+values; the actual commit still goes through `setPrivateState`, unchanged
+from M4a.
 
-`lib/types/room.ts` — `GameModule` gained a fourth type parameter
-(`TPrivate = never`) and two optional members:
-- `setupPrivate?: (playerId, state) => TPrivate` — a device's initial private
-  slice. Note: the drafted signature in `ADR-0005` also took `config`; that
-  was dropped during implementation because the platform never stores a
-  started match's config separately from the `TState` `setup()` produced
-  from it — there was nothing to actually pass. Any config-derived value a
-  private slice needs (Battleship's board size) is already a field on
-  `state`, same as every game already bakes config into `TState`. `ADR-0005`
-  itself was updated to match — read the doc, not just this summary.
-- `answerPending?: (state, privateState, playerId) => TAction | null` — pure,
-  per `ADR-0005` §3's challenge/response flow.
+### 2. Real ship artwork
+The founder generated a 5-ship reference image (all ships side by side, one
+PNG, opaque parchment background — not transparent) via an external image
+tool, from a prompt built collaboratively (felt-green board-game-token
+style, matching `BDR-0001`). Two versions were generated (flat vs. a subtle
+3D/bevel look); the founder chose the 3D/bevel one.
 
-Verified non-breaking: Impostor and Who Am I needed zero changes (`TPrivate`
-defaults to `never`, `views.singleDevice` — also made optional here, see
-below — stayed present on both).
+**`scripts/generate-ship-assets.mjs`** (new, mirrors
+`scripts/generate-icons.mjs`'s pattern — `sharp` imported from its pnpm
+store path) processes it into `public/battleship/<type>.png`:
+- **Auto-detects each ship's bounding box** by scanning columns for
+  non-background content and clustering them into 5 ranges (tolerant of
+  small internal gaps), rather than hardcoding pixel coordinates — this
+  is more robust than the hexagon-logo script's hardcoded `BBOX` and worth
+  reusing as the pattern for any future multi-sprite source image.
+- **Removes the background with a smoothly-ramped chroma key**, not a hard
+  distance cutoff. The source art has a soft drop shadow under each ship (a
+  gradient, not a hard edge); a binary cutoff either left a visible halo
+  (threshold too low) or ate into the ship's own dark outline (threshold too
+  high). Alpha now ramps linearly between two distance thresholds
+  (`CUTOUT_LOW`/`CUTOUT_HIGH`), so the shadow fades out naturally.
 
-`lib/realtime/privateState.ts` (new) — the actual mechanism:
-- `usePrivateState(roomCode, gameId, playerId, initialize)` — device-local
-  React state, mirrored to `localStorage` under
-  `nexplay:private:<roomCode>:<gameId>:<playerId>`, restored on mount,
-  re-initialized only when that key changes (not on every render — a
-  fleet-in-progress must not get wiped by unrelated shared-state churn).
-- `useAnswerPending(state, privateState, playerId, answerPending, dispatch)`
-  — runs a game's `answerPending` whenever shared state changes, dispatching
-  the result at most once per distinct pending request (a `JSON.stringify`
-  signature ref, not just relying on natural convergence). **Guards against
-  `privateState === undefined`** — see the bug below; this guard is why.
+Each ship then renders as **one image spanning its full cell footprint**
+(a new `ShipOverlay` component in `Player.tsx`), not tiled flat-color
+squares. The source art is bow-up (vertically oriented); a horizontal
+placement is achieved by sizing the image to the *transposed* footprint and
+rotating it 90° around its own center — the rotated bounding box then
+exactly matches the horizontal cell span. Used on the placement grid, a
+player's own board during firing, and the post-match revealed board — never
+on the opponent's targeting board, which correctly shows no ship data at
+all.
 
-`components/platform/MultiDeviceRoom.tsx` — wires both in. Critical detail:
-both hooks are called **unconditionally, before any phase-based early
-return** (connectionError/!isConnected/LOBBY/!activeGame all return early
-further down) — calling hooks after those would violate the Rules of Hooks.
-`activeGame?.id ?? "none"` keys the private slice to "no game yet" while
-still in the lobby.
+Hit markers (a small red dot) render as a separate overlay layered *above*
+the ship art, since an opaque ship image would otherwise hide the
+underlying hit/miss cell coloring.
 
-`app/[locale]/page.tsx` — the single-device game picker now filters by
-`meta.supportedModes` instead of listing every registered game
-unconditionally. This is what makes Battleship's "no single-device support"
-design decision (`ROADMAP.md` M4) actually true rather than merely declared;
-without it, Battleship would have appeared in a mode it can't run in.
-`views.singleDevice` is optional in the `GameModule` contract now, to match.
+### 3 & 4. Hit/sink feedback + fire animation
+Two new named gestures in `app/motion.css` — `nx-strike` (drops in from
+above and settles, for a shot landing) and `nx-shake` (a sharper jolt, for a
+ship going down) — following the existing
+`reveal`/`deal`/`celebrate`/`pulse` pattern exactly, including
+`prefers-reduced-motion` fallbacks. Not one-off animations bolted on
+outside the vocabulary.
 
-### The game: `games/battleship/`
+`Player.tsx` diffs the *shared* `state.shots`/`state.sunkShips` against what
+this device last saw (via `useRef`s, in a `useEffect`) to detect a new
+result and show an announcement ("¡Tocado!"/"Agua..."/"¡Hundiste
+{ship}!") plus trigger the strike/shake class on the affected cell — no new
+reducer field needed, and both devices compute this independently from the
+same shared state. **Designed for M4b's reuse**: the diffing loop already
+handles multiple new cells appearing in one update (a single-shot game never
+exercises that today, but a multi-cell weapon will).
 
-- `reducer.ts` — pure. Phases `placing → firing → resolution`. Actions:
-  `START_GAME`, `SIDE_READY` (carries **no fleet data** — placement is a
-  purely private change, the room only learns a side finished), `FIRE`
-  (records a `pendingShot` marker, doesn't resolve it), `RESOLVE_SHOT`
-  (applies a hit/miss/sunk result, flips `turn` to the side just fired
-  upon — official alternating-turn rule, no "go again on hit"), `REVEAL_FLEET`
-  (resolution-only — the losing side's own device reveals its board once
-  it's no longer secret), `PLAY_AGAIN`. Also exports `answerPendingShot`
-  (the actual `answerPending` implementation: hit/miss/sunk computed from
-  the *defending* device's own private fleet, argument-passed, never read
-  from shared state) and `createInitialState` (the one place a fresh
-  `BattleshipState` is built, shared by `START_GAME` and `GameModule.setup`
-  so there's no second copy of the shape to keep in sync).
-- `placement.ts` — pure validation (`shipCells` bounds-checks, `canPlaceShip`
-  overlap-checks, `isFleetComplete`) plus `randomFleetPlacement` (uses
-  `Math.random()`, kept outside the reducer — same rule as
-  `games/who-am-i/pickRound.ts`). `FLEET_8`/`FLEET_10` are the two
-  host-configurable board sizes' ship specs.
-- `module.ts` — `meta.supportedModes: ["multi-device"]` only;
-  `minPlayers`/`maxPlayers: 2` (M4c raises this once >1 player per side is
-  supported); config schema is just `boardSize: "8" | "10"`.
-- `views/Player.tsx` — placement grid (tap-to-place, rotate, random-fill,
-  undo, a disabled-until-complete "ready" button), firing phase (two
-  grids — opponent's targeting board is clickable when it's your turn and
-  no shot is pending, your own board shows received hits/misses plus your
-  own ship layout), and — **the `ADR-0005` §5 requirement made real** — an
-  explicit "waiting for your opponent" state whenever `pendingShot` is
-  yours, never a screen that just stops responding. Resolution reveals the
-  loser's fleet once `REVEAL_FLEET` lands.
-- Ship names live in `i18n/es.json`/`en.json` under `Battleship.ships.*` —
-  deliberately **not** a `LocalizedContentPack` content-pack folder (that
-  pattern is for large randomized word banks; five fixed ship names are
-  ordinary UI strings).
+### 5. Board layout preference
+Stacked (default) / side-by-side / one-at-a-time, a per-device
+`localStorage` preference (`nexplay:battleship-board-layout`) with a
+3-button switcher. Deliberately **not** game state — it never touches the
+reducer, never syncs between players, each device picks independently.
+
+## A lint catch worth remembering
+Initially wrote the layout-preference read as a mount `useEffect` calling
+`setLayout` — `react-hooks/set-state-in-effect` correctly flagged this
+("calling setState synchronously within an effect can trigger cascading
+renders"). Fixed by reading `localStorage` in `useState`'s lazy initializer
+instead (same pattern `usePrivateState` already uses) — no effect needed at
+all for a value that's fully known before first render.
 
 ## Files Modified / Added
-- `lib/types/room.ts`, `lib/realtime/privateState.ts` (new)
-- `components/platform/MultiDeviceRoom.tsx`, `app/[locale]/page.tsx`
-- `lib/realtime/platformReducer.ts` (registry entry)
-- `games/battleship/**` (new: `module.ts`, `reducer.ts`, `placement.ts`,
-  `views/Player.tsx`)
-- `i18n/es.json`, `i18n/en.json`
-- `tests/unit/battleship-game.test.ts`, `tests/unit/private-state.test.ts`
-  (new), `tests/e2e/battleship-multi-device.spec.ts` (new)
-- `docs/00_decisions/architecture/ADR-0005-PRIVATE-GAME-STATE.md`
-  (Proposed → Accepted, v1.1.0)
+- `app/motion.css` (`nx-strike`, `nx-shake` gestures)
+- `games/battleship/views/Player.tsx` (placement preview, ship art overlay,
+  hit/sink feedback, board layout — most of this task's work)
+- `scripts/generate-ship-assets.mjs` (new)
+- `public/Battleship_Ships.png` (founder-provided source, kept for
+  regeneration), `public/battleship/*.png` (5 generated assets)
+- `i18n/es.json`, `i18n/en.json` (new keys: confirm/preview-hint, hit/miss/
+  sunk announcements, 3 layout labels)
+- `docs/09_ai/tasks/TASK-0033-battleship-polish.md` (new)
 - `docs/ROADMAP.md`, `docs/09_ai/CURRENT_STATE.md`, this file
-
-## A second real bug — invisible board, found by the founder watching the live test
-
-After the crash below was fixed and full live verification passed (privacy,
-firing, turn-flip, waiting-state, reconnection — all confirmed via DOM/class
-inspection), the founder — watching the Browser pane live while this was
-being tested — asked why no board seemed visible at all. That question is
-what actually caught it: `BoardGrid`'s container used `inline-grid` with
-`gridTemplateColumns: repeat(N, minmax(0, 1fr))`. An inline-level grid has
-no defined width to distribute among its tracks unless one is set
-explicitly, so every `1fr` column collapsed toward its content minimum —
-the whole board rendered at roughly **2px per cell** (37×37px total for an
-8×8 board). Every DOM/class-based check performed during verification
-looked correct (right classes, right cell count, right colors per class) —
-none of them measured actual rendered size, so all of them missed it.
-
-Fixed by switching the container to a block-level `grid` (fills its
-parent's width by default) with an explicit `max-w-xs`/`max-w-sm` cap,
-centered. Verified via `getBoundingClientRect()`: cells went from ~2px to
-~45px on a typical mobile width.
-
-**Takeaway:** DOM/class/computed-className checks (what most of this task's
-live verification relied on, given the Browser pane wasn't visibly rendering
-screenshots in this session) do not catch layout bugs where the classes are
-correct but produce a degenerate computed size. When verifying anything
-grid/flex-layout-based, check actual `getBoundingClientRect()` dimensions
-at least once, not just class names — this is now the second time in this
-project's history a "className is right but it doesn't look right" bug has
-gotten through class-only checks (see `TASK-0028`'s and `TASK-0029`'s
-`transition-*` bug for the first pattern; this is a different mechanism but
-the same category of blind spot).
-
-## A real bug found by live testing (not by the test suite)
-
-All 117 unit tests and 4 e2e tests passed the whole time this bug was live —
-worth internalizing why. Manually running two real browser contexts through
-a full match, `useAnswerPending`'s effect fired once against a
-**not-yet-initialized** private slice — the exact instant a match starts,
-before `usePrivateState`'s own key-change effect had caught up from `"none"`
-to the real game id — and crashed calling `.fleet` on `undefined`.
-
-No unit test caught this because `tests/unit/battleship-game.test.ts` tests
-`answerPendingShot` (the pure function) directly, always with a well-formed
-`BattleshipPrivate`, and `tests/unit/private-state.test.ts` can't exercise
-`useAnswerPending` at all (this project has no React-hook testing
-environment — no jsdom/`@testing-library/react` dependency; deliberately not
-added in this task, see below). The gap was specifically in the *driver's*
-handling of the transient undefined window between two hooks — a
-timing/wiring bug, not a logic bug in either hook considered alone.
-
-Fixed in `lib/realtime/privateState.ts`'s `useAnswerPending`: skip silently
-when `privateState === undefined`, rather than let a game's `answerPending`
-dereference it. Documented in `ADR-0005`'s changelog (v1.1.0) so the
-reasoning outlives the one-line diff.
-
-**Takeaway for future `GameModule`s using `TPrivate`:** the private slice is
-not guaranteed initialized on the very first render(s) after a game starts.
-Any code reading it (not just `answerPending`) needs the same guard, or
-needs to tolerate `undefined`.
-
-## A deliberate test-infrastructure gap, stated plainly
-
-`usePrivateState`/`useAnswerPending` are verified **live in-browser**, not
-via `renderHook` — this repo has no jsdom/`@testing-library/react`
-dependency, and adding one was out of `TASK-0031`'s scope (not listed in its
-task spec's touchable files). What IS unit-tested is everything
-plain-function-testable that the hooks are built from
-(`storageKeyFor`/`readStored`) and — the part that actually matters for
-`ADR-0005`'s promise — that `battleshipReducer`'s output never contains
-ship-position data (`tests/unit/private-state.test.ts`). If a future task
-adds real hook-testing infrastructure, revisit whether these two hooks
-deserve direct `renderHook` coverage; until then, live verification is the
-check, and the bug above is exactly the kind of thing it's for.
 
 ## External state (not in git, important for the next agent to know)
 - Same as prior handoffs: Supabase live, Vercel auto-deploying `main`, strict
-  branch protection on `main`. Unchanged.
+  branch protection, GitHub Actions secrets `NEXT_PUBLIC_SUPABASE_URL`/
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` now configured (added for PR #39's e2e
+  job, see that PR/HANDOFF history if this ever needs re-explaining).
 
 ## Pending Tasks
 - **M4b — Special weapons.** Charges, the ship-bound weapon table, the four
   shot shapes (double horizontal, double vertical, triple, cross), and the
-  aim → preview → confirm interaction they need. No task spec written yet —
-  write one before starting, following `TASK-0031`'s shape.
-- **Founder playtest of Battleship M4a on real phones**, independent of M4b
-  starting. This task's live verification used two Playwright/browser
-  contexts on one machine, not two real devices over a real network — the
-  privacy and reconnection claims are architecturally sound and
-  browser-verified, but a real two-phone playtest is still the deferred
-  M1-style confidence check, same category as the still-open two-real-phones
-  reconnection test below.
+  aim → preview → confirm interaction they need. Reuses this task's
+  hit/sink-announcement and fire-animation system directly — read
+  `Player.tsx`'s diffing effect before reinventing it. No task spec written
+  yet.
+- **Founder playtest of Battleship (M4a + this polish) on real phones**,
+  independent of M4b starting. Verification so far (both `TASK-0031` and
+  this task) used two Playwright/browser contexts on one machine, not two
+  real devices over a real network.
 - Founder playtest of multi-device Who Am I on real phones (M3's last open
   item, independent of the above).
 - M1's dedicated two-real-phones reconnection test (open since M1,
   independent of the above).
 - Migrating Impostor's and Who Am I's secrets onto `ADR-0005`'s private
-  slice — the latent leak the ADR documents is real but not urgent, and was
-  deliberately kept out of `TASK-0031`'s scope to keep that PR reviewable.
+  slice — the latent leak the ADR documents is real but not urgent.
 
 ## Next Suggested Task
-- Write the M4b task spec, then implement it on top of M4a's reducer/state
-  shape.
+- Write the M4b task spec, then implement it on top of M4a + this polish
+  pass's reducer/view shape.
