@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import type { GuessWhoCharacter, HairColor } from "../content/types";
+import { CHARACTER_IDS_WITH_ART } from "../content/artManifest";
 
 const HAIR_SWATCH: Record<HairColor, string> = {
   negro: "#3a3a3a",
@@ -32,6 +33,7 @@ export function CharacterCard({ character, crossedOut = false, selected = false,
   const isLarge = size === "large";
 
   const facialHairLabel = traits.facialHair === "ninguno" ? null : t(`facialHair.${traits.facialHair}`);
+  const hasArt = CHARACTER_IDS_WITH_ART.has(character.id);
 
   const Wrapper = onClick ? "button" : "div";
 
@@ -44,25 +46,38 @@ export function CharacterCard({ character, crossedOut = false, selected = false,
       } ${crossedOut ? "opacity-30" : "opacity-100"} ${onClick ? "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" : ""}`}
     >
       <div className="relative">
-        <div
-          className={`rounded-full flex items-center justify-center font-display text-on-primary ${
-            isLarge ? "w-24 h-24 text-4xl" : "w-12 h-12 text-lg"
-          }`}
-          style={{ backgroundColor: HAIR_SWATCH[traits.hairColor] }}
-        >
-          {character.name[0]}
-        </div>
-        {traits.glasses && (
+        {hasArt ? (
+          // eslint-disable-next-line @next/next/no-img-element -- a fixed local asset, no next/image optimization needed for a small repeated card portrait
+          <img
+            src={`/guess-who/${character.id}.png`}
+            alt=""
+            aria-hidden="true"
+            className={`rounded-full object-cover bg-surface-raised ${isLarge ? "w-24 h-24" : "w-12 h-12"}`}
+          />
+        ) : (
+          <div
+            className={`rounded-full flex items-center justify-center font-display text-on-primary ${
+              isLarge ? "w-24 h-24 text-4xl" : "w-12 h-12 text-lg"
+            }`}
+            style={{ backgroundColor: HAIR_SWATCH[traits.hairColor] }}
+          >
+            {character.name[0]}
+          </div>
+        )}
+        {/* Real art already depicts these traits directly — the emoji
+            overlays exist only to make the placeholder's plain circle
+            legible, so they'd be redundant clutter once art lands. */}
+        {!hasArt && traits.glasses && (
           <span className={`absolute ${isLarge ? "text-2xl -top-1 -left-1" : "text-sm -top-0.5 -left-0.5"}`} aria-hidden="true">
             👓
           </span>
         )}
-        {traits.hat && (
+        {!hasArt && traits.hat && (
           <span className={`absolute ${isLarge ? "text-3xl -top-4 left-1/2 -translate-x-1/2" : "text-base -top-2 left-1/2 -translate-x-1/2"}`} aria-hidden="true">
             🎩
           </span>
         )}
-        {traits.earrings && (
+        {!hasArt && traits.earrings && (
           <span className={`absolute ${isLarge ? "text-xl -bottom-1 -right-1" : "text-xs -bottom-0.5 -right-0.5"}`} aria-hidden="true">
             💎
           </span>
