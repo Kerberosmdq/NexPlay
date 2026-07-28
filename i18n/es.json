@@ -77,6 +77,10 @@
         "boardSize8": "8x8 (rápido)",
         "boardSize10": "10x10 (clásico)"
       }
+    },
+    "connect4": {
+      "name": "Conecta 4",
+      "description": "Conectá 4 fichas en línea antes que tu rival."
     }
   },
   "Impostor": {
@@ -244,6 +248,23 @@
       "revealedFleetLabel": "La flota de tu rival era",
       "waitingForReveal": "Revelando la flota...",
       "nextRoundButton": "Jugar de nuevo"
+    }
+  },
+  "Connect4": {
+    "title": "Conecta 4",
+    "yourTurn": "Tu turno — elegí una columna",
+    "opponentTurn": "Turno de {name}",
+    "youWon": "¡GANASTE!",
+    "youLost": "Perdiste esta vez",
+    "draw": "¡Empate!",
+    "playAgainButton": "Jugar de nuevo",
+    "waitingForOpponent": "Esperando a tu rival...",
+    "singleDevice": {
+      "playerNamePlaceholder": "Jugador {n}",
+      "startButton": "¡COMENZAR!",
+      "exitButton": "Salir",
+      "passPhoneTo": "Pásale el teléfono a {name}",
+      "wins": "¡Ganó {name}!"
     }
   }
 }

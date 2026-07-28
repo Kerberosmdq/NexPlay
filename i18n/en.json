@@ -77,6 +77,10 @@
         "boardSize8": "8x8 (fast)",
         "boardSize10": "10x10 (classic)"
       }
+    },
+    "connect4": {
+      "name": "Connect 4",
+      "description": "Connect 4 tokens in a row before your opponent does."
     }
   },
   "Impostor": {
@@ -244,6 +248,23 @@
       "revealedFleetLabel": "Your opponent's fleet was",
       "waitingForReveal": "Revealing the fleet...",
       "nextRoundButton": "Play again"
+    }
+  },
+  "Connect4": {
+    "title": "Connect 4",
+    "yourTurn": "Your turn — pick a column",
+    "opponentTurn": "{name}'s turn",
+    "youWon": "YOU WON!",
+    "youLost": "You lost this time",
+    "draw": "It's a draw!",
+    "playAgainButton": "Play again",
+    "waitingForOpponent": "Waiting for your opponent...",
+    "singleDevice": {
+      "playerNamePlaceholder": "Player {n}",
+      "startButton": "START!",
+      "exitButton": "Exit",
+      "passPhoneTo": "Pass the phone to {name}",
+      "wins": "{name} wins!"
     }
   }
 }

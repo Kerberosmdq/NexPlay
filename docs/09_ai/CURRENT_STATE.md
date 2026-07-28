@@ -3,12 +3,18 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 16 - M4 (Battleship) fully complete; picking next milestone
+- Sprint: Sprint 17 - M4 (Battleship) and M5 (Connect 4) both fully complete
 - Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
   playtest follow-up fixes (PRs #41–#44), `TASK-0034` (M4b special weapons),
-  `TASK-0035` (M4c teams), and `TASK-0036` (M4d tournament) all shipped.
-  Battleship — 1-vs-1, fixed 2-vs-2 teams, and now tournament brackets on
-  top of either — is feature-complete.
+  `TASK-0035` (M4c teams), `TASK-0036` (M4d tournament), and `TASK-0037`
+  (M5 Connect 4) all shipped. Battleship — 1-vs-1, fixed 2-vs-2 teams, and
+  tournament brackets on top of either — is feature-complete. Connect 4
+  followed, prioritized ahead of M6's presentable-polish pass per the
+  founder's explicit request (family trip in about a week, more games
+  mattered more than outward polish right now) — hexagonal tokens, a clean
+  board, a weighted-drop/column-preview/dramatic-win animation set, no
+  hidden information at all (simplest game on the platform so far), and it
+  plugs into M4d's tournament bracket for free.
 
 ## Current Objective
 M1, M2, M3, and M3.5 are all complete — M3's last open item (the founder's
@@ -30,8 +36,19 @@ single-elimination **tournament** (M4d) runs any number of sequential
 1-vs-1 matches as a platform capability, not something Battleship-specific
 — automatic random bracket, automatic byes, a live bracket status screen
 for anyone not in the currently-playing match, a champion screen at the
-end. Next up: pick the next milestone (M5 presentable per
-`docs/ROADMAP.md`).
+end. **M5 (Connect 4) is now also complete**: a fourth game, architecturally
+the simplest on the platform since it has no hidden information at all —
+both players see the full board at all times, so `ADR-0005`'s private-state
+mechanism doesn't apply. Hexagonal tokens on a clean board, a weighted-drop/
+column-preview/dramatic-win animation set (reusing the existing
+`nx-strike`/`nx-celebrate` motion vocabulary, zero new keyframes), draws
+handled via an immediate rematch, and single-device support that's a
+genuine shared screen with no reveal gate at all (nothing to hide). Plugs
+into M4d's tournament bracket with zero platform changes — live-verified
+with a real 3-player tournament played to a champion. Next up: pick the
+next milestone — M6 (presentable) per `docs/ROADMAP.md`, or another game
+from `BACKLOG.md`'s prioritized list (Guess Who, Ludo, a dice-and-track
+race game), the founder's call.
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -731,6 +748,40 @@ end. Next up: pick the next milestone (M5 presentable per
       recorded here since it resolves two items `docs/ROADMAP.md` had been
       carrying as explicitly open since M1/M3.
 
+- [x] **TASK-0037**: Connect 4 (M5) — a fourth game, prioritized ahead of
+      M6's presentable-polish pass per the founder's explicit request (a
+      family trip in about a week). Architecturally the simplest game on
+      the platform: no hidden information at all, so `ADR-0005` doesn't
+      apply. Design (hexagonal tokens on a clean board, a weighted-drop/
+      column-preview/dramatic-win animation set) was worked out with the
+      founder in conversation first, exploring three distinct directions
+      per `PROJECT_CONSTITUTION.md` Article 10, then combining two of
+      them. `GameModule` needed zero contract changes — new
+      `games/connect4/winCheck.ts` (pure direction-based win detection
+      through just the last-placed cell, `lowestEmptyRow`, `isBoardFull`),
+      `reducer.ts` (mirrors Battleship's "skip setup when real players
+      already exist" pattern: multi-device starts straight in `"playing"`,
+      single-device starts in a `"config"` phase collecting local names
+      like Impostor/Who Am I already do, since the platform always calls
+      `setup([])` for single-device), `module.ts` (strictly 2 players, both
+      device modes, `getWinner` wired for M4d's tournament for free).
+      Draws are a real possible outcome with human play, handled via an
+      immediate rematch rather than a hang. The B+C visual direction
+      shipped by reusing `app/motion.css`'s existing `nx-strike`/
+      `nx-celebrate` gestures — zero new keyframes needed. One real bug
+      found and fixed live: the board's outer grid had no explicit width,
+      collapsing every column to 0px (the same class of bug M4a's board
+      verification found once before) — fixed with `w-full` plus switching
+      the per-column row-grid to `auto` sizing. 25 new unit tests. Live
+      verified: a full multi-device match to a win, single-device
+      pass-and-play (a genuine shared screen, no reveal gate — the
+      simplest device-mode implementation on the platform, since nothing
+      is secret), and a real 3-player tournament (one bye, two matches)
+      played to a champion with identical bracket history on all three
+      tabs — confirming M4d's tournament capability generalizes to a
+      second game with zero platform changes. Zero console errors
+      throughout.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -738,11 +789,10 @@ end. Next up: pick the next milestone (M5 presentable per
 - None currently open.
 
 ## Next Task
-- **M4 (Battleship) is now fully done (a–d), and both outstanding
-  founder-playtest items (M1 reconnection, M3 Who Am I multi-device) are
-  now confirmed.** The platform's resilience/i18n story is proven under
-  real conditions. Next: pick the next milestone — likely **M5
-  (presentable)** per `docs/ROADMAP.md`.
+- **Pick the next milestone**: M6 (presentable) per `docs/ROADMAP.md`, or
+  another game from `BACKLOG.md`'s prioritized list (Guess Who, Ludo, a
+  dice-and-track race game) — the founder's call, following the same
+  pattern that led to Connect 4 (M5) being picked up ahead of M6.
 - Still worth doing, independent of milestone sequencing: the founder
   playtesting Battleship's full feature set (M4a–M4d — weapons, 2-vs-2
   teams, and a tournament) specifically, since that family session covered

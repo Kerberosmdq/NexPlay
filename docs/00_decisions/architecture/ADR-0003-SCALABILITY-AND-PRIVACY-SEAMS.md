@@ -124,8 +124,10 @@ If NexPlay opens to the public with minors as users, real legal obligations
 apply (e.g. COPPA in the US, GDPR-K in the EU) potentially including
 verifiable parental consent and age-gating. This ADR's strict-by-default
 posture is deliberately chosen because it makes that future review cheap —
-but the review itself is out of scope until M5 ("Presentable") is approached
-with real public rollout in mind. Tracked in `BACKLOG.md`.
+but the review itself is out of scope until M6 ("Presentable") is approached
+with real public rollout in mind. (Renumbered from "M5" when Connect 4 was
+inserted ahead of it in `docs/ROADMAP.md` — 2026-07-28.) Tracked in
+`BACKLOG.md`.
 
 ## Consequences
 - **Positive:** every future ask the founder listed (usage counting,
