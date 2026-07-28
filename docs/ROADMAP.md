@@ -392,11 +392,88 @@ the same `GameModule` contract — with ADR-0005's private-state extension
 being the one contract change it needed, made deliberately through an ADR
 rather than worked around.
 
-## M5 — Presentable
+## M5 — Connect 4 — ✅ Complete (2026-07-28)
+**Explicit scope decision, written here per the rule below** (not silent
+reordering): the founder has a family trip in about a week and wants more
+games to play together now, ahead of M6's outward-facing polish pass —
+the same kind of "insert a milestone out of the original sequence for a
+real, stated reason" call `M3.5` already set a precedent for. First of the
+four games prioritized in `BACKLOG.md`'s "Next games, in priority order"
+list (2026-07-28), picked first specifically because it drops straight
+into the "two sides, one board, a win condition" shape M4 (Battleship)
+already proved out — no new platform capability needed, and it gets M4d's
+tournament bracket for free once it implements `getWinner`. Unlike every
+game shipped so far, Connect 4 has **no hidden information at all** — both
+players see the full board at all times — so `ADR-0005`'s private-state
+mechanism doesn't apply here; this is architecturally the *simplest* game
+on the platform to date.
+
+Design (board/token look and feel) was worked out with the founder in
+conversation before any code, exploring three distinct directions per
+`PROJECT_CONSTITUTION.md` Article 10, then combining elements of two:
+- **Board/token, from "Option B":** hexagonal tokens (echoing the NexPlay
+  hexagon/die identity) rather than plain circles, dropped into a clean
+  board with no heavy wooden frame.
+- **Animation, from "Option C":** a weighted, physics-feeling drop (not a
+  simple linear fall), a column-highlight preview before committing a
+  move, and a dramatic win sequence — the board dims except the four
+  winning tokens, which glow and shake.
+- Explicitly not chosen: "Option A"'s plain-circle/wooden-frame classic
+  look, and "Option C"'s plain (non-hexagonal) token.
+
+**Done when:** two players play a full real-time match to a win (or a
+draw, if the board fills with no four-in-a-row), the tournament bracket
+(M4d) works with Connect 4 as its game, and the combined B+C visual
+direction above is implemented and live-verified across real,
+separately-connected browser tabs.
+
+**Status (`TASK-0037`, done):** built exactly to the "no new platform
+capability" bar this milestone set — `GameModule` gained zero contract
+changes; the only addition anywhere in `lib/` was one registry line. New
+`games/connect4/winCheck.ts` holds pure, direction-based win detection
+(checks only the four lines through the just-placed cell, not a full-board
+scan) plus `lowestEmptyRow`/`isBoardFull`. `reducer.ts` mirrors Battleship's
+"skip the setup phase when real players already exist" pattern: multi-device
+starts straight in `"playing"` (two real players from the room roster);
+single-device starts in a `"config"` phase collecting local names, exactly
+like Impostor/Who Am I already do, since the platform always calls
+`setup([])` for single-device regardless of game. A draw (a real, if rare,
+possible outcome with human — non-optimal — play) ends the match with
+`isDraw: true` and no winner, so `getWinner()` correctly never fires for
+that match and a tournament simply waits for a decisive rematch rather than
+hanging. The combined B+C visual direction shipped as designed: hexagonal
+tokens (`clip-path` on plain divs, no new image assets), a clean board with
+no wooden-frame treatment, a column hover/press ghost-token preview before
+committing a move, and a dramatic win sequence (winning tokens at full
+opacity with `motion-celebrate`, every other filled cell dimmed to 0.35
+opacity) — built entirely by reusing the existing `nx-strike`/`nx-celebrate`
+gestures from `app/motion.css`, adding zero new keyframes, exactly as
+planned. One real bug found and fixed during live verification: the board's
+outer `grid` container had no explicit width, so `grid-template-columns:
+repeat(7, minmax(0, 1fr))` collapsed every column to 0px (the same "a grid
+with 1fr columns has no width to distribute" class of bug M4a's board
+verification already found once) — fixed by adding `w-full` to the grid
+container and switching the per-column row-grid from `1fr` fractions (of an
+undetermined height) to `auto` sizing driven by each cell's own
+`aspect-square`. Single-device is genuinely a shared screen with no reveal
+gate — the simplest device-mode implementation on the platform so far, since
+nothing is ever secret. 25 new unit tests (win detection in all four
+directions plus a verified-by-exhaustive-search draw board, reducer
+normal-play/rejection/draw/rematch-alternation cases). Live-verified: a full
+multi-device match to a real win with correct board sync and win/loss
+banners on both tabs; single-device pass-and-play end to end including a
+win and a rematch; and — since this specifically exercises M4d for a
+*second* game — a real 3-player tournament (one bye, two real matches)
+played to a champion with the identical bracket history confirmed on all
+three separately-connected tabs. Zero console errors throughout.
+
+## M6 — Presentable
 Ready to show people outside the family. Its "visual polish pass" was
 originally scoped here; M3.5 moved the foundational part of that work
 earlier (see above) because it was blocking distinctiveness for M4 and
-beyond, not because M5 itself changed shape. What's left for M5 is the
+beyond, not because this milestone itself changed shape. Renumbered from
+"M5" to "M6" when Connect 4 was inserted ahead of it (see M5 above) —
+same reordering the founder explicitly asked for. What's left here is the
 outward-facing layer built *on* M3.5's system:
 - Landing/marketing surface.
 - Full ES/EN coverage across UI and content (the visible language switcher
@@ -409,9 +486,10 @@ without any explanation from the founder.
 
 ---
 
-## Beyond M5 (directional only — not scheduled)
-- Additional games from `BACKLOG.md`, prioritized once M2–M4 prove the
-  platform holds up.
+## Beyond M6 (directional only — not scheduled)
+- The remaining games from `BACKLOG.md`'s prioritized list (Guess Who,
+  Ludo, a dice-and-track race game), each its own future milestone once
+  picked up.
 - Revisit monetization model (ADR-0003 seam) once there's real usage data
   from the `events` table to inform the decision.
 - Revisit accounts (upgrade anonymous identity) if cross-device history for a
