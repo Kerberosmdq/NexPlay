@@ -782,6 +782,48 @@ race game), the founder's call.
       second game with zero platform changes. Zero console errors
       throughout.
 
+- [x] **Hotfix (unnumbered)**: Platform UX — leave-room warning, mid-game
+      "return to lobby," and an accordion games list. Founder feedback
+      after playing through Connect 4: tapping the top-bar "✕" left the
+      game (and, in multi-device, the whole room) with zero warning, there
+      was no way to switch games without fully exiting, and the games list
+      grew one full-height card per game with no ceiling — already
+      cumbersome at four games, worse as `BACKLOG.md`'s remaining three
+      games ship. Three changes, all platform-level (no game-specific
+      code touched):
+      (1) **Exit confirmation** — new `components/ui/ConfirmDialog.tsx`
+      (a real `role="alertdialog"`, focus-trapped, closes on Escape or a
+      backdrop click same as Cancel). `Screen.tsx` (the shared top-bar
+      primitive every session screen already used) now opens it instead
+      of calling `onExit` directly; the message differs by mode ("vas a
+      salir del juego y de la sala" for multi-device vs. just "del juego"
+      for single-device, since there's no room to leave behind there).
+      `Button` needed `forwardRef` added (a plain function component
+      can't take a ref) so the dialog could focus its Cancel button on
+      open.
+      (2) **"Volver al lobby" while playing** — both
+      `MultiDeviceRoom.tsx` (host-only, since it resets shared state for
+      every connected device) and `SingleDeviceGamePicker` (no host
+      concept there, always available) now show this button above the
+      active game view, dispatching the same `PLATFORM_RETURN_LOBBY`
+      action `TournamentBracket`'s existing button already used — no new
+      platform action needed, just a second place to trigger the one that
+      already existed.
+      (3) **Games list accordion** — `RoomWaitingLobby.tsx`'s game cards
+      were stacked full-height, one per game, unconditionally expanded;
+      reworked into a true accordion (collapsed by default, opening one
+      closes whichever was previously open) after presenting three layout
+      options to the founder and getting this one confirmed. Caught one
+      real regression before it shipped: the Battleship e2e test assumed
+      "Jugar este" was immediately clickable — fixed the test to expand
+      the game's header first, matching the new real interaction.
+      Live-verified across two real browser tabs (multi-device: exit
+      dialog on both messages, Cancel/Escape/confirm all correct,
+      host-only "volver al lobby" mid-game returning both devices to the
+      lobby with the room and roster intact) and locally (single-device:
+      the lighter exit message, "volver al lobby" back to the picker).
+      Zero console errors throughout.
+
 ## Tasks In Progress
 - [ ] None.
 

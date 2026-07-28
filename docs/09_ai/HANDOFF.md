@@ -3,214 +3,132 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: TASK-0037
-- **Title**: Connect 4 (M5)
+- **Task ID**: Hotfix (unnumbered) — no task spec was written; this is
+  founder-requested platform UX polish, not a roadmap milestone.
+- **Title**: Leave-room warning, mid-game "return to lobby," and an
+  accordion games list.
 
 ## Current Branch
-- `feat/connect4`, branched off `main` after PR #47 (M4d tournament) merged.
+- `feat/lobby-exit-and-return-ux`, branched off `main` after PR #50
+  (Connect 4, M5) merged. (Confirm this matches the actual branch name
+  used when this was committed — name it at commit time following
+  `CONVENTIONS.md`'s `feat/<slug>` pattern if a different name was used.)
 
-## What's in this task
+## What's in this change
 
-M5 — a fourth game, prioritized ahead of M6's presentable-polish pass per
-the founder's explicit request (a family trip in about a week meant more
-games mattered more than outward-facing polish right now). Architecturally
-the simplest game on the platform to date: **no hidden information at
-all** — both players see the full board at all times — so `ADR-0005`'s
-private-state mechanism doesn't apply here.
+Founder feedback after playing Connect 4: tapping the top-bar "✕" left the
+game — and, in multi-device, the *entire room* — with no warning at all;
+there was no way to switch games without fully exiting; and the games list
+in the lobby stacked one full-height card per game with no ceiling,
+already awkward at four games and only getting worse as `BACKLOG.md`'s
+remaining three queued games ship. Three platform-level changes, no
+game-specific code touched.
 
-### Design conversation before any code
-Per `PROJECT_CONSTITUTION.md` Article 10 (every significant screen explores
-at least three design directions before implementation), three distinct
-board/token/animation directions were presented and discussed with the
-founder:
-- **Option A** — classic wooden-frame board, plain flat-color discs.
-- **Option B** — hexagonal tokens (echoing the NexPlay hexagon/die
-  identity) on a clean board, a translucent ghost-token preview before
-  committing a move.
-- **Option C** — minimalist plain tokens, all the investment going into a
-  weighted physics-feeling drop and a dramatic win sequence (board dims
-  except the four winning tokens).
+### 1. Exit confirmation dialog
+New `components/ui/ConfirmDialog.tsx` — a real `role="alertdialog"`,
+focus-trapped (Tab cycles between Cancel/Confirm only), closes on Escape
+or a backdrop click (both treated the same as Cancel). Deliberately *not*
+`RevealCard`'s penumbra treatment (dark ground + glow) — that look is
+reserved for the secret-reveal moment per `BDR-0001`; this is a plain
+neutral scrim.
 
-The founder chose **B's board/token + C's animation**, combined. Not
-chosen: A's wooden-frame look, C's plain (non-hexagonal) token.
+`components/ui/Screen.tsx` (the shared top-bar every session screen
+already renders through) now opens this dialog instead of calling its
+`onExit` prop directly — `onExit` only fires once the user actually
+confirms. The message differs by mode: multi-device gets
+`t("exitConfirmMessage")` ("vas a salir del juego y de la sala"),
+single-device gets a new `exitConfirmMessageSingleDevice` prop threaded
+from `app/[locale]/page.tsx` ("vas a salir del juego" — no room to
+mention there). New i18n keys: `exitConfirmTitle`, `exitConfirmMessage`,
+`exitConfirmMessageSingleDevice`, `exitConfirmConfirmButton`,
+`exitConfirmCancelButton`.
 
-### Scope decisions
-- **Strictly 1-vs-1** for this task — team play is an explicit non-goal
-  (Battleship's M4c teams stay Battleship-specific; a future task could add
-  Connect 4 teams if ever asked for).
-- **Board fixed at the canonical 7×6** — no host-facing size config.
-- **Draws are a real, if rare, possible outcome** with human (non-optimal)
-  play — a full board with no four-in-a-row. Resolved via an immediate
-  rematch (`PLAY_AGAIN`), not left as an unhandled edge case. This matters
-  for tournament play specifically: a game's `getWinner()` must never
-  falsely report a winner, or `useTournamentAdvance` would advance the
-  bracket on a match that didn't actually decide anything. A drawn match
-  simply doesn't advance until a decisive rematch produces a real winner —
-  needed no platform change, only the game itself had to get this right.
-- **Motion: reuse the existing vocabulary, add nothing new.** `nx-strike`
-  ("drops in from above and settles, like a shell/bomb impact") already
-  fits a falling disc — Battleship's shots use the exact same gesture for
-  its own falling-impact animation. `nx-celebrate` (a bounce) fits the four
-  winning tokens. Dimming the rest of the board on a win is a plain opacity
-  state, not an animation. Zero new `app/motion.css` keyframes were added.
-- **Single-device is fully supported and unusually simple**: since nothing
-  is ever secret, it's the *same* board render as multi-device, just on one
-  shared screen with a "pass to {name}" indicator instead of a reveal
-  gate — no hold-to-reveal, no hidden phase. First game on the platform
-  where this is true (Battleship can't support single-device at all;
-  Impostor/Who Am I need a real reveal-and-pass loop).
+`components/ui/Button.tsx` needed `forwardRef` added — a plain function
+component can't accept a `ref`, and `ConfirmDialog` needs one to focus the
+Cancel button when it opens (a11y: focus should land somewhere sane
+inside a newly-opened dialog, not stay wherever it was).
 
-### `games/connect4/winCheck.ts` (new, pure)
-`checkWin(cells, lastMoveIndex)` checks only the four directions
-(horizontal, vertical, both diagonals) through the just-placed cell — not a
-full-board scan every move — and returns the winning run's cell indices (or
-`null`). `lowestEmptyRow(cells, column)` / `isBoardFull(cells)` round out
-the pure helpers, mirroring `battleship/placement.ts`'s "pure geometry, zero
-reducer/React dependency" pattern.
+### 2. "Volver al lobby" while a game is active
+This action already existed — `PLATFORM_RETURN_LOBBY`, dispatched by
+`TournamentBracket`'s existing button once a tournament's champion is
+decided. The gap was that it was the *only* place to trigger it; there
+was no way to back out of an ordinary in-progress match. Added a second
+trigger point, same action, no new platform code:
+- `components/platform/MultiDeviceRoom.tsx`: a host-only button (gated on
+  `isHost`, since returning to the lobby resets shared state for every
+  connected device — the same reasoning `PLATFORM_START_GAME`/
+  `PLATFORM_START_TOURNAMENT` are already host-gated for) rendered above
+  the active game's `<View>`.
+- `app/[locale]/page.tsx`'s `SingleDeviceGamePicker`: no host concept in
+  single-device, so always available, rendered above the active
+  `singleDevice` view.
 
-### `games/connect4/reducer.ts`
-- `Connect4Phase = "config" | "playing" | "resolution"`. `"config"` only
-  exists when `setup()` didn't already receive two real player ids — this
-  is the discovery that shaped the whole reducer: **the platform always
-  calls a single-device game's `setup([])` with an empty players array**
-  (confirmed by reading `app/[locale]/page.tsx`'s `SingleDeviceGamePicker`,
-  which dispatches `PLATFORM_START_GAME` with `players: []` unconditionally
-  for every single-device game). Multi-device's two already-connected real
-  players skip `"config"` entirely and start straight in `"playing"` — the
-  same "skip the setup phase when real players already exist" shape
-  Battleship's `"teamSetup"` phase already established (skipped entirely
-  for a 2-player match).
-- `cells` is a **flat 42-length array**, row-major, index 0 = top-left —
-  deliberately not a 2D array, for the same "fewer indexing bugs" reason
-  `tournament.ts`'s flat `rounds` array was already chosen over nesting.
-- `DROP_DISC { column, side }`: rejects (state unchanged) if it's not that
-  side's turn, the phase isn't `"playing"`, or the column is full.
-  Otherwise places the disc, runs `checkWin`, and transitions to
-  `"resolution"` on a win or a draw, or just flips `turn`.
-- `START_MATCH { playerIds }`: only valid from `"config"`, populates
-  `sides` and moves to `"playing"` — dispatched by the single-device view
-  once local names are collected.
-- `PLAY_AGAIN`: resets the board, alternates `firstMoverSide` each rematch
-  so a long session doesn't always favor whoever moved first originally.
+Neither needed its own confirmation dialog — returning to the lobby keeps
+you in the same room with the same roster, unlike the "✕" exit; matches
+`TournamentBracket`'s existing (unconfirmed) button for the same action.
 
-### `games/connect4/module.ts`
-`minPlayers: 2, maxPlayers: 2, supportedModes: ["single-device",
-"multi-device"]`. No `configSchema` entries. No `TPrivate`/`setupPrivate`/
-`answerPending` — defaults to `never`, same as Impostor/Who Am I.
-`getWinner: (state) => (state.phase === "resolution" && state.winnerSide ?
-[state.sides[state.winnerSide]] : null)` — wrapped in an array to match the
-contract's `string[] | null` shape even though a side is always exactly one
-player id here.
+### 3. Games list: accordion instead of N stacked cards
+`components/platform/RoomWaitingLobby.tsx`'s game cards used to render
+fully expanded and stacked — name, description, and buttons for every
+registered game, unconditionally. Presented three layout directions to
+the founder (accordion / a compact selector-row-plus-single-detail-panel /
+a 2-column grid of smaller cards) via `AskUserQuestion`; **accordion** was
+chosen specifically because it's the smallest change from the existing
+per-game card (same content once expanded) while collapsing to just a
+name row by default. One local `expandedGameId: string | null` state
+value; opening one game's header closes whichever was previously open
+(never more than one game's full detail on screen at once). Each header
+is a real `<button aria-expanded aria-controls>`, each panel a `role="region"
+aria-labelledby`.
 
-### Views
-- `games/connect4/views/Board.tsx` (new, shared pure-render component):
-  the 7×6 grid, hexagonal tokens (`clip-path` on plain divs — no new image
-  assets), the column hover/press ghost-token preview, `motion-strike` on
-  the just-placed cell (diffs the previous `cells` prop via a ref to find
-  which index changed, same technique Battleship's `Player.tsx` already
-  uses for shot results), and the win-sequence dim/celebrate treatment.
-  Used identically by both device modes — no knowledge of single- vs
-  multi-device.
-- `games/connect4/views/Player.tsx` (multi-device `host`+`player`, same
-  component for both, matching Impostor/Who Am I precedent): turn
-  indicator, the shared `Board`, win/draw banner, host-only "jugar de
-  nuevo" (matches Battleship/Who Am I's existing host-gating on
-  `PLAY_AGAIN`).
-- `games/connect4/views/SingleDevice.tsx` (new): local name collection in
-  `"config"` (mirrors Who Am I's `makeLocalPlayers` pattern), then the same
-  shared `Board` with a "pásale el teléfono a {name}" indicator. Anyone can
-  trigger "jugar de nuevo" here (no host concept in single-device).
-
-### A real bug found and fixed during live verification
-The board rendered as a single tiny ~2px shape instead of a 7×6 grid on the
-first live check — **the exact same class of bug** M4a's Battleship board
-verification found once before ("`inline-grid` with `1fr` columns has no
-width to distribute"). Root cause: `Board`'s outer `grid` container had no
-explicit width, so `grid-template-columns: repeat(7, minmax(0, 1fr))`
-computed to `0px 0px 0px 0px 0px 0px 0px` — confirmed via
-`getComputedStyle().gridTemplateColumns` in a live `javascript_tool` check.
-Fixed by adding `w-full` to the outer grid, and — a second, related issue —
-switching the per-column row-grid from `gridTemplateRows: repeat(6,
-minmax(0, 1fr))` to `repeat(6, auto)`, since `1fr` tries to distribute an
-*available* height that was never actually defined; each row's real height
-already comes from its own cell's `aspect-square`, so `auto` (content-sized)
-is the correct sizing, not a fraction of an undetermined total.
-
-### Tests
-25 new unit tests: `tests/unit/connect4-winCheck.test.ts` (13 — all four
-win directions, near-misses that must not false-positive, `isBoardFull`/
-`lowestEmptyRow` edge cases) and `tests/unit/connect4-game.test.ts` (12 —
-`createInitialState`'s config-vs-playing branch, `START_MATCH` gating,
-normal `DROP_DISC` play, out-of-turn and full-column rejection, a match
-resolving to a win, a draw detected via a board hand-verified by
-exhaustive backtracking search to contain zero four-in-a-row runs anywhere
-— not hand-eyeballed, since an early attempt at hand-constructing a
-"safe" pattern turned out to have diagonal wins I'd missed — and
-`PLAY_AGAIN` resetting state and alternating `firstMoverSide` across two
-consecutive rematches). 172 unit tests total, all passing.
+### A real regression caught before it shipped
+`tests/e2e/battleship-multi-device.spec.ts` clicked `"Jugar este"`
+directly, assuming it was always visible — broke immediately once the
+accordion collapsed it behind Battleship's own header. Fixed the test to
+click the game's name first (expanding it), then `"Jugar este"` — this is
+the *correct* new interaction, not a workaround; a real user now has to do
+the same extra tap.
 
 ### Live verification
-Three separate checks, all over actual Supabase Realtime / real browser
-sessions:
-1. **Multi-device**: two real, separately-connected browser tabs played a
-   full match to a real win (horizontal four-in-a-row). Board synced
-   correctly on both tabs, win/loss banners correct, winning tokens at
-   full opacity with the other side's tokens dimmed to 0.35, "jugar de
-   nuevo" correctly alternated the first mover to the side that lost.
-2. **Single-device**: local name collection, pass-and-play with the
-   turn indicator (no reveal gate at all, confirmed nothing is hidden at
-   any point), a full match to a win with correct name resolution in the
-   win banner, and a working rematch.
-3. **Tournament** (validates M4d generalizes to a *second* game with zero
-   platform changes): a real 3-player tournament — one bye, two real
-   matches — played to a champion across three separately-connected
-   browser tabs, with identical, correct bracket history confirmed on
-   every tab.
-
-Zero console errors across every check.
+Two real, separately-connected browser tabs (multi-device): exit dialog
+shown for both host and guest, Cancel/Escape/confirm all behave correctly,
+host-only "volver al lobby" mid-game returns *both* devices to the lobby
+with the room code and full player roster intact (not a fresh room).
+Single-device (one tab): the lighter single-device exit message, "volver
+al lobby" back to the game picker. Accordion: only one game's detail ever
+expanded on screen across three real games. Zero console errors in every
+check.
 
 ## Files Modified / Added
-- `games/connect4/winCheck.ts` (new)
-- `games/connect4/reducer.ts` (new)
-- `games/connect4/module.ts` (new)
-- `games/connect4/views/Board.tsx` (new)
-- `games/connect4/views/Player.tsx` (new)
-- `games/connect4/views/SingleDevice.tsx` (new)
-- `lib/realtime/platformReducer.ts` (one registry line, `AVAILABLE_GAMES`)
-- `i18n/es.json`, `i18n/en.json` (`games.connect4.*`, `Connect4.*`)
-- `tests/unit/connect4-winCheck.test.ts` (new)
-- `tests/unit/connect4-game.test.ts` (new)
-- `docs/09_ai/tasks/TASK-0037-connect4.md` (new)
-- `docs/ROADMAP.md` (M5 inserted ahead of the renumbered M6, marked done)
-- `docs/09_ai/CURRENT_STATE.md`, this file
-- `docs/BACKLOG.md` (Connect 4 marked graduated to `ROADMAP.md`'s M5)
-- `docs/00_decisions/architecture/ADR-0003-SCALABILITY-AND-PRIVACY-SEAMS.md`
-  (its "M5" reference renumbered to "M6" alongside the roadmap reorder)
+- `components/ui/ConfirmDialog.tsx` (new)
+- `components/ui/Button.tsx` (`forwardRef` added)
+- `components/ui/Screen.tsx` (opens `ConfirmDialog` instead of calling
+  `onExit` directly; new `exitConfirmMessage` prop)
+- `components/ui/index.ts` (exports `ConfirmDialog`)
+- `components/platform/MultiDeviceRoom.tsx` (host-only "volver al lobby"
+  above the active `<View>`)
+- `components/platform/RoomWaitingLobby.tsx` (accordion rework)
+- `app/[locale]/page.tsx` (`exitConfirmMessage` for single-device; "volver
+  al lobby" above the single-device active view)
+- `i18n/es.json`, `i18n/en.json` (`exitConfirm*` keys under `Lobby`)
+- `tests/e2e/battleship-multi-device.spec.ts` (updated for the accordion
+  interaction)
 
 ## External state (not in git, important for the next agent to know)
 - Same as prior handoffs: Supabase live, Vercel auto-deploying `main`, strict
   branch protection, GitHub Actions secrets `NEXT_PUBLIC_SUPABASE_URL`/
   `NEXT_PUBLIC_SUPABASE_ANON_KEY` configured (added for PR #39's e2e job).
 
-## A testing-methodology note worth remembering (carried forward, reused again)
+## A testing-methodology note worth remembering (carried forward)
 Same-profile multi-tab testing needs a distinct player identity per tab,
 but all tabs share one `localStorage` — navigate the new tab once, then in
 the *same* script call, `localStorage.clear(); location.reload();` before
 doing anything else with it, and re-check every *previously* set-up tab is
-still intact afterward. New this task: element `ref`s returned by
-`read_page` can go stale across a re-render (a game state change after a
-move) even when the underlying DOM node is arguably "the same" button —
-reusing an old `ref` after the page has re-rendered can silently no-op or
-misfire. The reliable pattern is to call `read_page` fresh immediately
-before every click when the page might have changed since the last read,
-and to verify the actual resulting state via `get_page_text` after each
-action rather than assuming a click landed. This also explains an
-apparent-bug false alarm during this task's own verification: a board that
-looked "empty except one ghost token" right after a "start match" button
-click turned out to be the *correct*, fresh board of a newly-started match
-(the tournament had already auto-advanced), not evidence of failed prior
-clicks — always check whether the underlying game/match actually changed
-before treating a confusing screenshot as a bug.
+still intact afterward. New this task: when a UI change collapses or
+hides a control behind user interaction (this task's accordion, e.g.),
+grep `tests/e2e/` for anything that clicks that control directly — it's a
+near-certain break, and the fix is almost always "expand/reveal it first
+in the test," not a test workaround.
 
 ## Pending Tasks
 - A dedicated founder playtest of Battleship's full feature set (M4a–M4d —
@@ -225,12 +143,9 @@ before treating a confusing screenshot as a bug.
   not yet started.
 
 ## Next Suggested Task
-- The founder's call: **M6 (presentable)** per `docs/ROADMAP.md` — landing/
-  marketing surface, full ES/EN content coverage, pre-launch privacy/legal
-  review — or continue with the next game from `BACKLOG.md`'s prioritized
-  list (Guess Who is next: 1-vs-1 deduction over a secret character,
-  reusing Who Am I's/`ADR-0005`'s per-player-secret shape but needing a new
-  character-grid content pack with portraits). Follow the same pattern
-  used for Connect 4: a design conversation with the founder (exploring
-  distinct directions per `PROJECT_CONSTITUTION.md` Article 10 where the
-  task has a real visual/interaction decision to make) before any code.
+- The founder's call: **M6 (presentable)** per `docs/ROADMAP.md`, or the
+  next game from `BACKLOG.md`'s prioritized list (Guess Who is next).
+  Follow the same pattern used for Connect 4 and this hotfix: a design
+  conversation with the founder (exploring distinct directions per
+  `PROJECT_CONSTITUTION.md` Article 10 whenever there's a real visual/UX
+  decision to make) before any code.

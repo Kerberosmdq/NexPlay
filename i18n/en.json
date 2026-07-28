@@ -41,7 +41,12 @@
     "tournamentRoundLabel": "Round {round}",
     "tournamentByeLabel": "advances",
     "tournamentVsLabel": "vs",
-    "returnToLobbyButton": "Return to lobby"
+    "returnToLobbyButton": "Return to lobby",
+    "exitConfirmTitle": "Are you sure you want to exit?",
+    "exitConfirmMessage": "You'll leave the game and the room.",
+    "exitConfirmMessageSingleDevice": "You'll leave the game.",
+    "exitConfirmConfirmButton": "Exit",
+    "exitConfirmCancelButton": "Cancel"
   },
   "games": {
     "impostor": {
