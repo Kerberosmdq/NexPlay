@@ -86,6 +86,10 @@
     "connect4": {
       "name": "Conecta 4",
       "description": "Conectá 4 fichas en línea antes que tu rival."
+    },
+    "guess-who": {
+      "name": "¿Quién es Quién?",
+      "description": "Adiviná el personaje secreto de tu rival haciendo preguntas de sí o no."
     }
   },
   "Impostor": {
@@ -269,6 +273,52 @@
       "startButton": "¡COMENZAR!",
       "exitButton": "Salir",
       "passPhoneTo": "Pásale el teléfono a {name}",
+      "wins": "¡Ganó {name}!"
+    }
+  },
+  "GuessWho": {
+    "title": "¿Quién es Quién?",
+    "askAloudHint": "Hacele preguntas de sí o no a {name} en voz alta",
+    "yourCharacterLabel": "Tu personaje",
+    "opponentCharacterLabel": "El personaje de tu rival",
+    "waitingForOpponent": "Esperando a tu rival...",
+    "startGuessButton": "Adivinar",
+    "cancelGuessButton": "Cancelar",
+    "resolvingGuess": "Comprobando la adivinanza...",
+    "confirmGuessTitle": "¿Estás seguro?",
+    "confirmGuessMessage": "Vas a adivinar que tu rival es {name}. Si te equivocás, perdés la partida en el acto.",
+    "confirmGuessConfirmButton": "Sí, adivinar",
+    "confirmGuessCancelButton": "Todavía no",
+    "youWon": "¡GANASTE!",
+    "youLost": "Perdiste esta vez",
+    "playAgainButton": "Jugar de nuevo",
+    "traits": {
+      "hairSummary": "Pelo {color}, {length}",
+      "hairColor": {
+        "negro": "negro",
+        "castaño": "castaño",
+        "rubio": "rubio",
+        "pelirrojo": "pelirrojo"
+      },
+      "hairLength": {
+        "largo": "largo",
+        "corto": "corto",
+        "calvo": "calvo"
+      },
+      "facialHair": {
+        "barba": "Barba",
+        "bigote": "Bigote"
+      }
+    },
+    "singleDevice": {
+      "playerNamePlaceholder": "Jugador {n}",
+      "startButton": "¡COMENZAR!",
+      "exitButton": "Salir",
+      "revealTitle": "Tu personaje secreto",
+      "holdToReveal": "Mantené presionado para ver",
+      "dontLetOthersLook": "¡Que nadie más mire tu pantalla!",
+      "continueButton": "Continuar",
+      "whoIsGuessing": "¿Quién está adivinando?",
       "wins": "¡Ganó {name}!"
     }
   }

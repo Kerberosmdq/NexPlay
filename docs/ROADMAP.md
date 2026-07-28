@@ -395,7 +395,8 @@ rather than worked around.
 ## M5 — Connect 4 — ✅ Complete (2026-07-28)
 **Explicit scope decision, written here per the rule below** (not silent
 reordering): the founder has a family trip in about a week and wants more
-games to play together now, ahead of M6's outward-facing polish pass —
+games to play together now, ahead of the (then-M6, now-M7) outward-facing
+polish pass —
 the same kind of "insert a milestone out of the original sequence for a
 real, stated reason" call `M3.5` already set a precedent for. First of the
 four games prioritized in `BACKLOG.md`'s "Next games, in priority order"
@@ -467,14 +468,89 @@ win and a rematch; and — since this specifically exercises M4d for a
 played to a champion with the identical bracket history confirmed on all
 three separately-connected tabs. Zero console errors throughout.
 
-## M6 — Presentable
+## M6 — Guess Who (¿Quién es Quién?) — ✅ Complete (2026-07-28)
+**Explicit scope decision, written here per the rule below** — same
+reordering pattern M3.5 and M5 (Connect 4) already established: the
+founder wants to keep adding games ahead of M7's outward-facing polish
+pass. Second of `BACKLOG.md`'s prioritized "next games" list.
+
+Design confirmed with the founder in conversation before any code:
+- **Mechanic**: classic 1-vs-1 deduction over a shared roster of secret
+  characters. Each side privately holds one secret character (the
+  opponent's guessing target); questions are asked **verbally, with no
+  turn enforced by the app** — same "family self-regulates out loud"
+  philosophy as Impostor's discussion phase — and each player crosses out
+  candidates on their own device purely as a personal memory aid (plain
+  local UI state, not synced — it isn't a secret, just scratch paper).
+  Guessing wrong **ends the match immediately in the guesser's favor for
+  the opponent** (the classic board game's real-stakes rule), giving the
+  "pizca de dificultad" the founder asked for through genuine risk, not
+  extra mechanics.
+- **Roster: 32 characters**, each a combination of 6 traits (glasses,
+  hat, hair color, hair length, facial hair, earrings) designed so no
+  single question eliminates more than roughly half the field — the
+  difficulty is tuned through deliberate content design (which characters
+  share which traits), not game logic.
+- **Character art**: sequenced as its own follow-up, matching M4a's
+  precedent (Battleship shipped with plain colored squares, then real ship
+  art landed as `TASK-0033`) — the game ships first with a simple
+  trait-based placeholder representation, then the founder generates real
+  portraits across several smaller reference-sheet batches (not one giant
+  sheet, to keep each AI generation reliable) once the game itself is
+  proven to work.
+- Reuses `ADR-0005`'s private-state mechanism exactly like Battleship's
+  fleet secrecy (a side's own character is never shared state, only a
+  guess's correct/incorrect *result* is) and gets M4d's tournament bracket
+  for free as a second-generation "two sides, `getWinner`" game.
+
+**Done when:** two players play a full real-time match to a correct-guess
+win or a wrong-guess loss, single-device pass-and-play works as a
+reveal-and-pass loop (per-player secret reveal, matching Impostor's
+`RevealCard` precedent), and the tournament bracket works with Guess Who
+as its game — all live-verified across real, separately-connected browser
+tabs.
+
+**Status (`TASK-0038`, done):** built to the "no new platform capability"
+bar M5 set — `GameModule` gained zero contract changes. New
+`games/guess-who/content/{types,characters}.ts` holds the 32-character
+roster (6 traits, distribution deliberately balanced via a seeded-PRNG
+script so no single trait is a giveaway or a wasted question — guarded by
+a dedicated `guess-who-roster.test.ts`). `reducer.ts` follows the now-
+familiar `GUESS`/`RESOLVE_GUESS` shape, reusing `ADR-0005`'s
+`answerPending` pattern exactly like Battleship's shot resolution — the
+guessed-about side's own device is the one that resolves a guess against
+its private `myCharacterId`, never shared state. A wrong guess ends the
+match immediately in the defender's favor (the classic rule, and where the
+"pizca de dificultad" the founder asked for actually comes from). Single-
+device reuses `RevealCard`'s hold-to-reveal precedent for a reveal-and-pass
+setup step, then a shared grid with a "¿quién está adivinando?" selector
+since one screen has no per-device turn concept. Character art ships as a
+placeholder (colored circle avatar + trait glyphs), with real portraits an
+explicit tracked follow-up once the founder generates reference-sheet
+batches, matching M4a → M4a-polish's precedent. 29 new unit tests. Live-
+verified across real, separately-connected browser tabs: a full
+multi-device match ending in a correct-guess win and a separate one ending
+in a wrong-guess loss; single-device reveal-and-pass end to end (both
+players' hold-to-reveal, the guesser selector, resolution); and a real
+3-player tournament played to a champion. That live tournament test caught
+one genuine bug before it shipped: a player's private secret character
+never got re-picked between matches (a `PLAY_AGAIN` rematch or the next
+tournament round), because `usePrivateState`'s storage key is scoped to
+(room, game, player) — not to the individual match — so the same character
+silently carried over, already having been revealed to a previous
+opponent. Fixed in `Player.tsx` by re-picking on every fresh transition
+into the `"playing"` phase (detected via a ref, not just "still null"),
+verified live by replaying the tournament's second round and confirming a
+genuinely new character each time. Zero console errors throughout.
+
+## M7 — Presentable
 Ready to show people outside the family. Its "visual polish pass" was
 originally scoped here; M3.5 moved the foundational part of that work
 earlier (see above) because it was blocking distinctiveness for M4 and
-beyond, not because this milestone itself changed shape. Renumbered from
-"M5" to "M6" when Connect 4 was inserted ahead of it (see M5 above) —
-same reordering the founder explicitly asked for. What's left here is the
-outward-facing layer built *on* M3.5's system:
+beyond, not because this milestone itself changed shape. Renumbered
+"M5" → "M6" → "M7" as later games (Connect 4, then Guess Who) kept
+getting inserted ahead of it — the founder's explicit, repeated call.
+What's left here is the outward-facing layer built *on* M3.5's system:
 - Landing/marketing surface.
 - Full ES/EN coverage across UI and content (the visible language switcher
   ships in M3.5; this is the remaining content-completeness pass).
@@ -486,10 +562,9 @@ without any explanation from the founder.
 
 ---
 
-## Beyond M6 (directional only — not scheduled)
-- The remaining games from `BACKLOG.md`'s prioritized list (Guess Who,
-  Ludo, a dice-and-track race game), each its own future milestone once
-  picked up.
+## Beyond M7 (directional only — not scheduled)
+- The remaining games from `BACKLOG.md`'s prioritized list (Ludo, a
+  dice-and-track race game), each its own future milestone once picked up.
 - Revisit monetization model (ADR-0003 seam) once there's real usage data
   from the `events` table to inform the decision.
 - Revisit accounts (upgrade anonymous identity) if cross-device history for a

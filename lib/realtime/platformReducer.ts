@@ -5,6 +5,7 @@ import { impostorGameModule } from "@/games/impostor/module";
 import { whoAmIGameModule } from "@/games/who-am-i/module";
 import { battleshipGameModule } from "@/games/battleship/module";
 import { connect4GameModule } from "@/games/connect4/module";
+import { guessWhoGameModule } from "@/games/guess-who/module";
 import type { AnyGameModule, GameModule, Player } from "@/lib/types/room";
 import { advanceTournament, buildFirstRound, nextPlayableMatch, type TournamentMatch } from "./tournament";
 
@@ -29,6 +30,7 @@ export const AVAILABLE_GAMES: Record<string, AnyGameModule> = {
   [whoAmIGameModule.id]: toAnyGameModule(whoAmIGameModule),
   [battleshipGameModule.id]: toAnyGameModule(battleshipGameModule),
   [connect4GameModule.id]: toAnyGameModule(connect4GameModule),
+  [guessWhoGameModule.id]: toAnyGameModule(guessWhoGameModule),
 };
 
 /** Derives a game's starting config from its configSchema defaults — the
