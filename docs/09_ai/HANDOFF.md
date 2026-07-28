@@ -212,23 +212,28 @@ much-edited dev session can still be a false positive — the decisive test
 is reproducing (or failing to reproduce) it against a freshly restarted
 dev server, not just a page reload.
 
+## Update (2026-07-27/28, after this task merged)
+The founder's family played an extended real multi-device session (real
+phones, not browser tabs) covering both Who Am I and Battleship, and
+reported reconnection held up with no dropped-room incidents and Who Am I's
+multi-device path working correctly. This closes two items that had been
+open since M1/M3 respectively: **M1's two-real-phones reconnection check**
+and **M3's outstanding multi-device Who Am I playtest**. Both are now
+marked done in `docs/ROADMAP.md`/`docs/09_ai/CURRENT_STATE.md`. No specific
+bugs were reported, so no code changed alongside this update.
+
 ## Pending Tasks
-- **M4 (Battleship) is now fully complete** (M4a–M4d). Founder playtest of
-  the whole thing (weapons, teams, tournament) on real phones is still
-  outstanding — every verification so far has used up to four browser
-  contexts on one machine, never real separate devices over a real
-  network.
-- Founder playtest of multi-device Who Am I on real phones (M3's last open
-  item, independent of the above).
-- M1's dedicated two-real-phones reconnection test (open since M1,
-  independent of the above).
+- A dedicated founder playtest of Battleship's full feature set specifically
+  (M4a–M4d — weapons, 2-vs-2 teams, tournament) is still worth doing —
+  the family session above covered Battleship but wasn't a dedicated pass
+  through every mechanic, and every Battleship verification in this repo's
+  history so far has used up to four browser contexts on one machine, not
+  a dedicated real-device pass.
 - Migrating Impostor's and Who Am I's secrets onto `ADR-0005`'s private
   slice — the latent leak the ADR documents is real but not urgent.
 
 ## Next Suggested Task
-- With M4 fully closed, the next milestone per `docs/ROADMAP.md` is **M5
-  (presentable)** — landing/marketing surface, full ES/EN content
-  coverage, pre-launch privacy/legal review. Consider clearing the
-  outstanding founder-playtest items above first, since M5 is about
-  presenting the platform to strangers and those items verify it actually
-  holds up under real multi-device conditions first.
+- With M4 fully closed and both outstanding founder-playtest items (M1
+  reconnection, M3 Who Am I) now confirmed, the next milestone per
+  `docs/ROADMAP.md` is **M5 (presentable)** — landing/marketing surface,
+  full ES/EN content coverage, pre-launch privacy/legal review.

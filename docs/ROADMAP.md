@@ -40,9 +40,10 @@ no real game yet.
 - Reconnection and host-migration (ADR-0001 §4) implemented in
   `useRoomConnection` (60s grace period, presence-based
   `calculateHostMigration`) and unit-tested (TASK-0023, coverage added in
-  TASK-0024). **Not yet manually verified on two real phones** — that check
-  is still open, tracked as a follow-up rather than blocking M1 on process
-  grounds alone (see `HANDOFF.md`).
+  TASK-0024). **Confirmed on real phones (2026-07-27/28)**: the founder's
+  family played an extended real session across multiple real devices with
+  no reconnection failures reported — closing the manual-verification gap
+  that had been open since M1 first shipped.
 - `game_results` and `events` durable writes wired for the placeholder game
   in both device modes (TASK-0023 added the write helpers; TASK-0024 wired
   the actual call sites — they shipped in TASK-0023 as dead code with no
@@ -50,7 +51,8 @@ no real game yet.
 
 **Done when:** two real phones join the same room by code, see synced state
 live, and a disconnect/reconnect during the session doesn't break the room.
-The two-phone manual check remains outstanding; everything else is done and
+Confirmed via the founder's family playing a real multi-device session with
+no dropped-room incidents; everything else was already done and
 automated-test-covered.
 
 ## M2 — Impostor — ✅ Complete (2026-07-24)
@@ -73,14 +75,14 @@ forever due to a trailing newline in a Vercel env var) was fixed along the
 way; see `HANDOFF.md` for the full story. Word images remain out of scope
 for this milestone (tracked in `BACKLOG.md`).
 
-**M1's two-real-phones reconnection check is still outstanding** — tracked
-separately, not blocking M2, but worth doing before considering the
-platform's resilience story fully proven.
+**M1's two-real-phones reconnection check is now confirmed** (see M1 above,
+2026-07-27/28) — the platform's resilience story is proven, not just
+tested in isolation.
 
 **Done when:** the family plays a full real match, both device modes, on
 actual phones, without a developer present to fix anything mid-game.
 
-## M3 — Who Am I — 🚧 Implemented, pending founder playtest
+## M3 — Who Am I — ✅ Complete (2026-07-28)
 Second game — deliberately chosen to stress-test reuse.
 - Guess-your-own-hidden-word via yes/no questions.
 - Per-player distinct secret word/prompt, kid-safe content pack.
@@ -96,10 +98,10 @@ additive registry line and one lookup-table entry (the game already
 documented as an extension point). Design was worked out with the founder
 in conversation before any code (rotating-turn questions + anytime
 self-reported guessing, shared/per-turn timer, Heads-Up-style
-single-device, own word bank with emoji). 15 unit tests; playtested
-locally end to end in single-device, multi-device only smoke-tested to the
-lobby (no live Supabase in the dev sandbox). **Not yet playtested by the
-founder on real devices** — do that before marking this milestone ✅.
+single-device, own word bank with emoji). 15 unit tests. **Founder-confirmed
+(2026-07-27/28)**: the family played multi-device Who Am I extensively
+during a real session alongside Battleship, with no bugs reported — closing
+the last open item from this milestone.
 
 ## M3.5 — Design System & Visual Identity — ✅ Complete (2026-07-26)
 **Explicit scope decision, written here per the rule below** (not silent
