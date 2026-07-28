@@ -11,10 +11,12 @@ Living status document tracking the current sprint, objectives, completed tasks,
   top of either — is feature-complete.
 
 ## Current Objective
-M1 and M2 are complete; M3.5 is complete (see below); M3 is implemented but
-still awaiting the founder's multi-device playtest (Known Issues, unrelated
-to and not blocked by the below). **M4 (Battleship) is now fully complete,
-all four phases (a–d)**: place fleets with a real continuous-drag preview
+M1, M2, M3, and M3.5 are all complete — M3's last open item (the founder's
+multi-device Who Am I playtest) and M1's last open item (the two-real-
+phones reconnection check) were both confirmed during the founder's
+2026-07-27/28 family playtest session (see Completed Tasks). **M4
+(Battleship) is now fully complete, all four phases (a–d)**: place fleets
+with a real continuous-drag preview
 (in a team, one captain places while their teammate watches live), fire
 plain shots for free or spend charges on one of four special weapons (each
 bound to a specific ship type, lost if that ship sinks; either teammate can
@@ -28,8 +30,8 @@ single-elimination **tournament** (M4d) runs any number of sequential
 1-vs-1 matches as a platform capability, not something Battleship-specific
 — automatic random bracket, automatic byes, a live bracket status screen
 for anyone not in the currently-playing match, a champion screen at the
-end. Next up: pick the next milestone (M5 presentable, or clear the
-outstanding founder-playtest items below first).
+end. Next up: pick the next milestone (M5 presentable per
+`docs/ROADMAP.md`).
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -713,33 +715,43 @@ outstanding founder-playtest items below first).
       replaying the entire tournament flow (start, placement, firing,
       advance, champion) with zero console errors.
 
+- [x] **Founder family playtest, 2026-07-27/28 night**: an extended real
+      multi-device session across real phones, playing both Who Am I and
+      Battleship. The founder reported reconnection held up with no
+      dropped-room incidents and Who Am I's multi-device path "funciona
+      perfecto" — no bugs surfaced during play. This closes two
+      long-standing verification gaps at once: **M1's two-real-phones
+      reconnection check** (open since M1 first shipped — the "remember
+      the room" feature had only confirmed a *single* device dropping and
+      silently rejoining, not the fuller multi-device/host-migration
+      scenario this check was for) and **M3's outstanding multi-device Who
+      Am I playtest** (previously only verified locally to the lobby, no
+      live Supabase in the dev sandbox). No specific bugs were reported
+      from this session, so no code changes accompany this entry —
+      recorded here since it resolves two items `docs/ROADMAP.md` had been
+      carrying as explicitly open since M1/M3.
+
 ## Tasks In Progress
 - [ ] None.
 
 ## Known Issues
-- M1's two-real-phones reconnection check (multiple devices in a room,
-  one drops, others stay connected, host migration if needed) has still
-  never been dedicatedly tested. The "remember the room" feature confirms
-  a single device can drop and silently rejoin, which is reassuring but
-  not the same test. Not blocking, but worth doing for real confidence in
-  the resilience story before relying on it under real family chaos.
-- Who Am I's multi-device path hasn't been playtested by the founder yet
-  (only single-device was, locally). Do this before calling M3 done.
+- None currently open.
 
 ## Next Task
-- **M4 (Battleship) is now fully done (a–d).** Pick the next milestone —
-  likely **M5 (presentable)**, or clear the outstanding founder-playtest
-  items below first, since those verify the platform's resilience/i18n
-  story before adding more outward-facing polish on top.
-- Still open, independent of the above: founder playtests a real
-  multi-device Who Am I match; mark M3 ✅ in `docs/ROADMAP.md` once confirmed.
-- Also independent: the founder should actually playtest Battleship
-  (all of M4a–M4d — weapons, 2-vs-2 teams, and a tournament) on real phones
-  — verification so far across every Battleship task has used up to four
-  browser contexts on one machine, not real separate devices over a real
-  network.
-- M1's two-real-phones reconnection test (Known Issues) remains open,
-  independent of the above.
+- **M4 (Battleship) is now fully done (a–d), and both outstanding
+  founder-playtest items (M1 reconnection, M3 Who Am I multi-device) are
+  now confirmed.** The platform's resilience/i18n story is proven under
+  real conditions. Next: pick the next milestone — likely **M5
+  (presentable)** per `docs/ROADMAP.md`.
+- Still worth doing, independent of milestone sequencing: the founder
+  playtesting Battleship's full feature set (M4a–M4d — weapons, 2-vs-2
+  teams, and a tournament) specifically, since that family session covered
+  Who Am I and Battleship broadly but wasn't a dedicated pass through every
+  Battleship mechanic; every Battleship verification so far in this repo's
+  history has used up to four browser contexts on one machine, not a
+  dedicated real-device pass.
+- Migrating Impostor's and Who Am I's secrets onto `ADR-0005`'s private
+  slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
 - 2026-07-28
