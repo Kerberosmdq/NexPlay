@@ -192,7 +192,7 @@ their own language via a visible switcher, share a room code without
 dictating it letter by letter, and the whole thing passes an accessibility
 pass (✅ 3b) — **M3.5 is complete.**
 
-## M4 — Battleship
+## M4 — Battleship — ✅ Complete (2026-07-27)
 Third game — deliberately chosen to prove the platform isn't just for
 word-guessing games. Built on top of M3.5's system, not the pre-M3.5 UI.
 
@@ -332,10 +332,57 @@ independently playable phases** rather than one PR.
   captain's fleet mirroring live to their teammate, either teammate firing,
   captain-only defense resolution, and privacy (the opposing side's devices
   show zero ship data, same proof standard as every earlier phase).
-- **M4d — Tournament.** A bracket of sequential 1-vs-1 matches. Deliberately
-  built as a **platform** capability above `GameModule`, not inside
-  Battleship, because it applies to every future two-side game (Connect 4,
-  Ludo, ¿Quién es Quién? — all in `BACKLOG.md`).
+- **M4d — Tournament (`TASK-0036`, done).** A bracket of sequential 1-vs-1
+  matches. Deliberately built as a **platform** capability above
+  `GameModule`, not inside Battleship, because it applies to every future
+  two-side game (Connect 4, Ludo, ¿Quién es Quién? — all in `BACKLOG.md`).
+  Design confirmed with the founder before implementation: entrants are
+  individual players only (M4c teams stay a separate, un-combined mode);
+  the bracket is random — the host only confirms the roster and taps
+  "start," shuffling happens automatically, not host-arranged like M4c's
+  side assignment; non-power-of-2 counts get automatic byes; at least 3
+  players to start (2 is just a normal match). `GameModule` gained one
+  optional member, `getWinner?: (state) => string[] | null` (same
+  non-breaking pattern as `ADR-0005`'s `setupPrivate`/`answerPending`) —
+  Battleship implements it, Impostor/Who Am I don't (group-deduction games
+  aren't 1-vs-1 duels and don't offer a tournament). `lib/realtime/tournament.ts`
+  (new) holds pure, unit-testable bracket construction (`buildFirstRound`
+  pads to the next power of 2 with pre-resolved byes, `buildNextRound`
+  pairs winners and returns `null` once only the champion's match remains,
+  `advanceTournament` is the actual advancement bookkeeping — extracted
+  into this dependency-free file specifically so it doesn't need to import
+  the game registry, which transitively pulls in `next-intl`/routing and
+  can't resolve in this project's Node-only Vitest environment).
+  `platformReducer.ts` gained `tournament: TournamentState | null` and two
+  actions (`PLATFORM_START_TOURNAMENT`, `PLATFORM_ADVANCE_TOURNAMENT`) plus
+  a new `"TOURNAMENT_COMPLETE"` status; a new `useTournamentAdvance` hook
+  watches the active match's `getWinner` and advances the bracket
+  automatically. Live testing surfaced one real, serious bug before this
+  shipped: every connected device runs `platformReducer` against every
+  broadcast regardless of what it renders, so all 4 devices independently
+  detected a resolved match and each dispatched the advance action near-
+  simultaneously — the first correctly advanced round 1, but a second,
+  near-simultaneous dispatch then incorrectly resolved round 1's *other*
+  match too using the stale winner, cascading straight into round 2 and
+  declaring a champion after just one real match. Fixed by gating
+  `useTournamentAdvance` to `isHost` only, the same "one authoritative
+  device" rule `PLATFORM_START_GAME`/`PLATFORM_START_TOURNAMENT` already
+  follow. `TournamentBracket` (new platform component) shows any
+  non-participant the bracket status instead of a frozen game view (the
+  same `ADR-0005` §5 "absence must be visible" spirit), and doubles as the
+  champion screen. 13 new unit tests (bracket construction for 3/4/5
+  players, a full 5-player simulation, `advanceTournament`'s within-round/
+  new-round/champion paths, non-mutation). Verified live across four real,
+  separately-connected browser tabs over actual Supabase Realtime: full
+  bracket (round 1 with both matches, round 2 final), a non-participant
+  correctly seeing the bracket instead of a frozen screen, the champion
+  screen rendering correctly with the complete match history on every tab.
+  A dev-only React console warning ("final argument passed to useEffect
+  changed size between renders") observed during that first live run
+  turned out to be a Fast-Refresh/HMR artifact from this session's many
+  live edits, not a real bug — confirmed absent across a clean dev-server
+  restart replaying the same tournament flow start-to-finish with zero
+  console errors.
 
 **Done when:** a structurally different game (board state, two sides, no
 "impostor-style" hidden role, genuinely hidden per-player information) fits

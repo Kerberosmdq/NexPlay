@@ -5,14 +5,28 @@ import { useTranslations } from "next-intl";
 import { useRoomConnection } from "@/lib/realtime/hooks/useRoomConnection";
 import { usePrivateState, useAnswerPending } from "@/lib/realtime/privateState";
 import { RoomWaitingLobby } from "./RoomWaitingLobby";
+import { TournamentBracket } from "./TournamentBracket";
 import {
   platformReducer,
   createInitialPlatformState,
+  useTournamentAdvance,
   AVAILABLE_GAMES,
   type PlatformAction,
 } from "@/lib/realtime/platformReducer";
 import { recordEvent, recordGameResult } from "@/lib/analytics";
 import { Button, WaitingState } from "@/components/ui";
+
+/** Fisher-Yates — `Math.random()` stays out of the reducer, same rule as
+ * `games/battleship/placement.ts`'s `randomFleetPlacement`; the shuffled
+ * roster is what gets passed into `PLATFORM_START_TOURNAMENT`. */
+function shuffled<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
 
 interface MultiDeviceRoomProps {
   roomCode: string;
@@ -68,6 +82,12 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
   useAnswerPending(gameState.gameState, privateState, userId, activeGame?.answerPending, (action: unknown) =>
     dispatchAction({ type: "GAME_ACTION", action } as PlatformAction)
   );
+
+  // M4d: advances the tournament bracket once the active match's game
+  // reports a winner — a no-op whenever `gameState.tournament` is null
+  // (every non-tournament match). Must run unconditionally alongside the
+  // hooks above, before any phase-based early return (Rules of Hooks).
+  useTournamentAdvance(gameState, players, isHost, dispatchAction);
 
   // Only the host records durable analytics, so a multi-device room emits
   // one row per lifecycle event rather than one per connected phone.
@@ -151,12 +171,42 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
             players, // Pass current players to setup the game
           });
         }}
+        onStartTournament={(gameId) => {
+          dispatchAction({
+            type: "PLATFORM_START_TOURNAMENT",
+            gameId,
+            shuffledPlayers: shuffled(players),
+          });
+        }}
+      />
+    );
+  }
+
+  if (gameState.status === "TOURNAMENT_COMPLETE") {
+    return (
+      <TournamentBracket
+        tournament={gameState.tournament}
+        players={players}
+        onReturnToLobby={isHost ? () => dispatchAction({ type: "PLATFORM_RETURN_LOBBY" }) : undefined}
       />
     );
   }
 
   if (!activeGame) {
     return <div className="text-action-danger font-bold">Error: Juego no encontrado.</div>;
+  }
+
+  // M4d: while a tournament is running, a player not in the currently
+  // playing match sees the bracket status instead of a frozen/blank game
+  // view (ADR-0005 §5's "absence must be visible" spirit, applied here to
+  // "you're not in this match either").
+  const currentMatch = gameState.tournament
+    ? gameState.tournament.rounds[gameState.tournament.rounds.length - 1].find((m) => m.winner === null)
+    : null;
+  const isMatchParticipant = !currentMatch || currentMatch.playerA === userId || currentMatch.playerB === userId;
+
+  if (!isMatchParticipant) {
+    return <TournamentBracket tournament={gameState.tournament} players={players} />;
   }
 
   const gameDispatch = (action: unknown) => {

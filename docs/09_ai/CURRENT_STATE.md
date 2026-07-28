@@ -3,28 +3,33 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 15 - M4c (teams) done; M4d (tournament) next
+- Sprint: Sprint 16 - M4 (Battleship) fully complete; picking next milestone
 - Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
   playtest follow-up fixes (PRs #41–#44), `TASK-0034` (M4b special weapons),
-  and `TASK-0035` (M4c teams) all shipped. Battleship's full design
-  (1-vs-1 and fixed 2-vs-2) is now feature-complete.
+  `TASK-0035` (M4c teams), and `TASK-0036` (M4d tournament) all shipped.
+  Battleship — 1-vs-1, fixed 2-vs-2 teams, and now tournament brackets on
+  top of either — is feature-complete.
 
 ## Current Objective
 M1 and M2 are complete; M3.5 is complete (see below); M3 is implemented but
 still awaiting the founder's multi-device playtest (Known Issues, unrelated
-to and not blocked by the below). **M4a through M4c are all done**:
-Battleship plays a full match, 1-vs-1 or fixed 2-vs-2 — place fleets with a
-real continuous-drag preview (in a team, one captain places while their
-teammate watches live), fire plain shots for free or spend charges on one of
-four special weapons (each bound to a specific ship type, lost if that ship
-sinks; either teammate can fire on their side's turn), see an explicit
-hit/sink modal with a sunk-ship silhouette left on the board, win, reveal
-the loser's board — with genuine ship-position privacy throughout (a side's
-fleet only ever reaches its own captain and, over a side-scoped Realtime
-channel, that side's own teammate — never the opposing side — proven both
-by reducer-level tests and by inspecting real two- and four-device matches
-live). Next up is **M4d** (tournament: a bracket of sequential 1-vs-1
-matches, built as a platform capability above `GameModule`).
+to and not blocked by the below). **M4 (Battleship) is now fully complete,
+all four phases (a–d)**: place fleets with a real continuous-drag preview
+(in a team, one captain places while their teammate watches live), fire
+plain shots for free or spend charges on one of four special weapons (each
+bound to a specific ship type, lost if that ship sinks; either teammate can
+fire on their side's turn), see an explicit hit/sink modal with a sunk-ship
+silhouette left on the board, win, reveal the loser's board — with genuine
+ship-position privacy throughout (a side's fleet only ever reaches its own
+captain and, over a side-scoped Realtime channel, that side's own teammate
+— never the opposing side — proven both by reducer-level tests and by
+inspecting real two- and four-device matches live). On top of that, a full
+single-elimination **tournament** (M4d) runs any number of sequential
+1-vs-1 matches as a platform capability, not something Battleship-specific
+— automatic random bracket, automatic byes, a live bracket status screen
+for anyone not in the currently-playing match, a champion screen at the
+end. Next up: pick the next milestone (M5 presentable, or clear the
+outstanding founder-playtest items below first).
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -648,6 +653,66 @@ matches, built as a platform capability above `GameModule`).
       their current side highlighted, reassignable anytime before
       "¡Empezar!".
 
+- [x] **TASK-0036**: Platform Tournament Bracket (M4d) — a single-elimination
+      bracket of sequential 1-vs-1 matches, built as a **platform**
+      capability above `GameModule` rather than inside Battleship, since it
+      applies to any current or future two-side game. Design confirmed with
+      the founder before implementation: entrants are individual players
+      only (M4c teams stay separate, not combined with a bracket); the
+      bracket is random (host only confirms the roster and taps "start,"
+      no host-arranged seeding); automatic byes for a non-power-of-2 count;
+      at least 3 players to start. `GameModule` gained one optional member,
+      `getWinner?: (state) => string[] | null` (same non-breaking pattern
+      as `ADR-0005`'s `setupPrivate`/`answerPending`) — only Battleship
+      implements it. `lib/realtime/tournament.ts` (new): pure bracket
+      construction (`buildFirstRound`, `buildNextRound`,
+      `nextPlayableMatch`, `isRoundComplete`) and `advanceTournament` — the
+      actual per-match advancement logic, deliberately extracted into this
+      dependency-free file rather than left inline in
+      `platformReducer.ts`'s reducer case, because importing
+      `platformReducer.ts` directly in a test pulls in the whole game
+      registry → each game's view components → `next-intl`/`next/navigation`,
+      which don't resolve in this project's Node-only Vitest environment
+      (no jsdom). `platformReducer.ts` gained `tournament: TournamentState
+      | null`, two actions (`PLATFORM_START_TOURNAMENT`,
+      `PLATFORM_ADVANCE_TOURNAMENT`), and a new `"TOURNAMENT_COMPLETE"`
+      status; `useTournamentAdvance` watches the active match's
+      `getWinner()` and advances the bracket automatically. **A serious bug
+      found and fixed during live verification**: every connected device
+      runs `platformReducer` against every broadcast action regardless of
+      what it's currently rendering (a spectating player's device still
+      tracks `gameState.gameState`), so with the hook wired unconditionally,
+      all 4 devices independently detected a resolved match and each
+      dispatched the advance action at nearly the same time — the first
+      dispatch correctly advanced round 1's first match, but a second,
+      near-simultaneous dispatch then incorrectly resolved round 1's
+      *other* match too using the stale winner, completing the round with
+      an invalid result and cascading straight into round 2, declaring a
+      champion after just one real match played. Fixed by gating
+      `useTournamentAdvance` to `isHost` only — the same "one authoritative
+      device, not any device that notices" rule
+      `PLATFORM_START_GAME`/`PLATFORM_START_TOURNAMENT` already follow.
+      `TournamentBracket` (new platform component) shows any
+      non-participant the live bracket status instead of a frozen game
+      view (`ADR-0005` §5's "absence must be visible" spirit, extended to
+      "you're not in this match either"), and doubles as the final
+      champion screen. 13 new unit tests (bracket construction for 3/4/5
+      players including a full 5-player simulation, and `advanceTournament`'s
+      within-round-advance/new-round-build/champion-crowning/non-mutation
+      behavior). 147 unit tests total. Verified live across four real,
+      separately-connected browser tabs over actual Supabase Realtime:
+      full bracket played start to finish (round 1's two matches including
+      one bye, round 2's final), a non-participant correctly seeing the
+      bracket instead of a frozen screen while a match was in progress, and
+      the champion screen rendering correctly with the complete match
+      history identically on every tab. A dev-only React console warning
+      ("the final argument passed to useEffect changed size between
+      renders") observed during that first live run was investigated and
+      traced to this long session's many live Fast-Refresh/HMR reloads,
+      not a real bug — confirmed by restarting the dev server clean and
+      replaying the entire tournament flow (start, placement, firing,
+      advance, champion) with zero console errors.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -662,16 +727,19 @@ matches, built as a platform capability above `GameModule`).
   (only single-device was, locally). Do this before calling M3 done.
 
 ## Next Task
-- **M4d — Tournament** (a bracket of sequential 1-vs-1 matches, built as a
-  platform capability above `GameModule`, not inside Battleship, since it
-  applies to any future two-side game). No task spec written yet.
+- **M4 (Battleship) is now fully done (a–d).** Pick the next milestone —
+  likely **M5 (presentable)**, or clear the outstanding founder-playtest
+  items below first, since those verify the platform's resilience/i18n
+  story before adding more outward-facing polish on top.
 - Still open, independent of the above: founder playtests a real
   multi-device Who Am I match; mark M3 ✅ in `docs/ROADMAP.md` once confirmed.
 - Also independent: the founder should actually playtest Battleship
-  (M4a through M4c — full weapons and 2-vs-2 teams) on real phones before
-  M4d builds a tournament bracket on top of it — verification so far across
-  every Battleship task has used up to four browser contexts on one
-  machine, not real separate devices over a real network.
+  (all of M4a–M4d — weapons, 2-vs-2 teams, and a tournament) on real phones
+  — verification so far across every Battleship task has used up to four
+  browser contexts on one machine, not real separate devices over a real
+  network.
+- M1's two-real-phones reconnection test (Known Issues) remains open,
+  independent of the above.
 
 ## Last Updated
-- 2026-07-27
+- 2026-07-28

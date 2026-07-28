@@ -33,7 +33,15 @@
     "shareMessage": "Únete a mi sala de NexPlay con el código {code}",
     "languageLabel": "Cambiar idioma",
     "languageSpanish": "Español",
-    "languageEnglish": "Inglés"
+    "languageEnglish": "Inglés",
+    "startTournamentButton": "Iniciar torneo",
+    "tournamentBracketTitle": "Torneo",
+    "tournamentChampionLabel": "¡Campeón!",
+    "tournamentWatchingHint": "Esperando tu próxima partida — así va el torneo",
+    "tournamentRoundLabel": "Ronda {round}",
+    "tournamentByeLabel": "pasa de ronda",
+    "tournamentVsLabel": "vs",
+    "returnToLobbyButton": "Volver al lobby"
   },
   "games": {
     "impostor": {

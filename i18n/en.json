@@ -33,7 +33,15 @@
     "shareMessage": "Join my NexPlay room with code {code}",
     "languageLabel": "Change language",
     "languageSpanish": "Spanish",
-    "languageEnglish": "English"
+    "languageEnglish": "English",
+    "startTournamentButton": "Start tournament",
+    "tournamentBracketTitle": "Tournament",
+    "tournamentChampionLabel": "Champion!",
+    "tournamentWatchingHint": "Waiting for your next match — here's how the tournament is going",
+    "tournamentRoundLabel": "Round {round}",
+    "tournamentByeLabel": "advances",
+    "tournamentVsLabel": "vs",
+    "returnToLobbyButton": "Return to lobby"
   },
   "games": {
     "impostor": {

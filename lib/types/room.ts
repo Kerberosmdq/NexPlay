@@ -95,6 +95,15 @@ export interface GameModule<TConfig, TState, TAction, TPrivate = never> {
    * this stays unit-testable with no I/O (CONVENTIONS.md §Game logic). */
   answerPending?: (state: TState, privateState: TPrivate, playerId: string) => TAction | null;
 
+  /** M4d (tournament brackets): returns the player ids of the winning side
+   * once this match has a decided winner, or `null` if it's still
+   * undecided. Lets the platform's tournament orchestration know when to
+   * advance the bracket without knowing this game's concrete `TState`
+   * shape. A game that doesn't implement this simply can't be offered as a
+   * tournament game (Impostor/Who Am I are group deduction games, not
+   * 1-vs-1 duels, and have no natural "the winning side" to report). */
+  getWinner?: (state: TState) => string[] | null;
+
   views: {
     host: ComponentType<{
       state: TState;
