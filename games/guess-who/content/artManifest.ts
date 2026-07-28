@@ -21,4 +21,12 @@ export const CHARACTER_IDS_WITH_ART: ReadonlySet<string> = new Set([
   "c14",
   "c15",
   "c16",
+  "c17",
+  "c18",
+  "c19",
+  "c20",
+  "c21",
+  "c22",
+  "c23",
+  "c24",
 ]);
