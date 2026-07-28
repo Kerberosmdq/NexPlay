@@ -169,7 +169,12 @@ export default function HomePage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-transparent text-ink space-y-4">
-      <Screen displayName={session.displayName} onExit={handleExit} exitLabel={t("exitLabel")}>
+      <Screen
+        displayName={session.displayName}
+        onExit={handleExit}
+        exitLabel={t("exitLabel")}
+        exitConfirmMessage={session.mode === "single-device" ? t("exitConfirmMessageSingleDevice") : undefined}
+      >
         {session.mode === "single-device" && (
           <SingleDeviceGamePicker
             platformState={platformState}
@@ -234,5 +239,19 @@ function SingleDeviceGamePicker({
   const gameDispatch = (action: unknown) => dispatch({ type: "GAME_ACTION", action });
 
   const View = activeGame.views.singleDevice;
-  return <View state={platformState.gameState} players={[]} dispatch={gameDispatch} onExit={onExit} />;
+  return (
+    <div className="w-full flex flex-col items-center gap-2">
+      <div className="w-full max-w-md flex justify-end px-2">
+        <Button
+          variant="ghost"
+          fullWidth={false}
+          className="px-4"
+          onClick={() => dispatch({ type: "PLATFORM_RETURN_LOBBY" })}
+        >
+          {t("returnToLobbyButton")}
+        </Button>
+      </div>
+      <View state={platformState.gameState} players={[]} dispatch={gameDispatch} onExit={onExit} />
+    </div>
+  );
 }

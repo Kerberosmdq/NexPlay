@@ -1,5 +1,6 @@
 "use client";
 
+import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
@@ -27,15 +28,15 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
  * the default, not an opt-in — the audit found a sr-only room-code input
  * mistaken for a visible tap target and a raw 12px "✕" with no minimum
  * size at all; this primitive makes both impossible to reintroduce.
+ *
+ * Forwards its ref (e.g. `ConfirmDialog` focusing the cancel button on
+ * open) — a plain function component would make React reject the ref
+ * with "Function components cannot be given refs".
  */
-export function Button({
-  variant = "primary",
-  active,
-  fullWidth = true,
-  className = "",
-  children,
-  ...rest
-}: ButtonProps) {
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { variant = "primary", active, fullWidth = true, className = "", children, ...rest },
+  ref
+) {
   const activeClasses =
     active === false
       ? "bg-surface-sunken text-ink-muted hover:text-ink"
@@ -43,6 +44,7 @@ export function Button({
 
   return (
     <button
+      ref={ref}
       className={`min-h-14 rounded-2xl px-6 py-3 font-black tracking-wide focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:opacity-40 disabled:pointer-events-none ${activeClasses} ${
         fullWidth ? "w-full" : ""
       } ${className}`}
@@ -52,4 +54,4 @@ export function Button({
       {children}
     </button>
   );
-}
+});

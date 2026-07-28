@@ -216,14 +216,28 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
   const View = isHost ? activeGame.views.host : activeGame.views.player;
 
   return (
-    <View
-      state={gameState.gameState}
-      players={players}
-      playerId={userId}
-      roomCode={roomCode}
-      dispatch={gameDispatch}
-      privateState={privateState}
-      setPrivateState={setPrivateState}
-    />
+    <div className="w-full flex flex-col items-center gap-2">
+      {isHost && (
+        <div className="w-full max-w-md flex justify-end px-2">
+          <Button
+            variant="ghost"
+            fullWidth={false}
+            className="px-4"
+            onClick={() => dispatchAction({ type: "PLATFORM_RETURN_LOBBY" })}
+          >
+            {t("returnToLobbyButton")}
+          </Button>
+        </div>
+      )}
+      <View
+        state={gameState.gameState}
+        players={players}
+        playerId={userId}
+        roomCode={roomCode}
+        dispatch={gameDispatch}
+        privateState={privateState}
+        setPrivateState={setPrivateState}
+      />
+    </div>
   );
 }

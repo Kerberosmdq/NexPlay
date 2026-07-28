@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import { AVAILABLE_GAMES } from "@/lib/realtime/platformReducer";
@@ -23,6 +24,12 @@ export function RoomWaitingLobby({ roomCode, players, isHost, onStartGame, onSta
   // meta.name is an i18n key (ADR-0002 §3); a game's description follows the
   // sibling convention `games.<id>.description` in the same catalog.
   const tGame = useTranslations();
+
+  // Accordion, not N stacked full cards: with a 4th game (and more queued in
+  // BACKLOG.md) the old layout grew one full card per game indefinitely.
+  // Collapsed by default; opening one closes whichever was open — never more
+  // than one game's description/buttons on screen at a time.
+  const [expandedGameId, setExpandedGameId] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col items-center justify-center space-y-12 w-full max-w-4xl px-4">
@@ -61,37 +68,58 @@ export function RoomWaitingLobby({ roomCode, players, isHost, onStartGame, onSta
         <Card className="flex flex-col">
           <h3 className="font-display text-2xl text-ink mb-4">{t("gamesLabel")}</h3>
 
-          <div className="flex-1 space-y-4 overflow-y-auto pr-2">
-            {Object.values(AVAILABLE_GAMES).map((game) => (
-              <div
-                key={game.id}
-                className="bg-surface-sunken border border-line p-4 rounded-2xl flex flex-col"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-display text-xl text-ink">{tGame(game.meta.name)}</h4>
-                </div>
-                <p className="text-sm text-ink-muted mb-4 flex-1">
-                  {tGame(`games.${game.id}.description`)}
-                </p>
+          <div className="flex-1 space-y-2 overflow-y-auto pr-2 max-h-[28rem]">
+            {Object.values(AVAILABLE_GAMES).map((game) => {
+              const isExpanded = expandedGameId === game.id;
+              const headerId = `game-accordion-header-${game.id}`;
+              const panelId = `game-accordion-panel-${game.id}`;
 
-                {isHost ? (
-                  <div className="flex flex-col gap-2">
-                    <Button variant="primary" onClick={() => onStartGame(game.id)}>
-                      {t("playThisButton")}
-                    </Button>
-                    {game.getWinner && players.length >= MIN_TOURNAMENT_PLAYERS && (
-                      <Button variant="ghost" onClick={() => onStartTournament(game.id)}>
-                        {t("startTournamentButton")}
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="w-full bg-surface-well text-ink-muted text-center font-bold py-3 rounded-xl">
-                    {t("hostOnlyHint")}
-                  </div>
-                )}
-              </div>
-            ))}
+              return (
+                <div key={game.id} className="bg-surface-sunken border border-line rounded-2xl overflow-hidden">
+                  <button
+                    id={headerId}
+                    type="button"
+                    aria-expanded={isExpanded}
+                    aria-controls={panelId}
+                    onClick={() => setExpandedGameId(isExpanded ? null : game.id)}
+                    className="w-full min-h-14 flex items-center justify-between px-4 py-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                  >
+                    <h4 className="font-display text-xl text-ink">{tGame(game.meta.name)}</h4>
+                    <span className="text-ink-muted text-sm shrink-0 pl-2" aria-hidden="true">
+                      {isExpanded ? "▾" : "▸"}
+                    </span>
+                  </button>
+
+                  {isExpanded && (
+                    <div
+                      id={panelId}
+                      role="region"
+                      aria-labelledby={headerId}
+                      className="motion-deal px-4 pb-4 flex flex-col"
+                    >
+                      <p className="text-sm text-ink-muted mb-4">{tGame(`games.${game.id}.description`)}</p>
+
+                      {isHost ? (
+                        <div className="flex flex-col gap-2">
+                          <Button variant="primary" onClick={() => onStartGame(game.id)}>
+                            {t("playThisButton")}
+                          </Button>
+                          {game.getWinner && players.length >= MIN_TOURNAMENT_PLAYERS && (
+                            <Button variant="ghost" onClick={() => onStartTournament(game.id)}>
+                              {t("startTournamentButton")}
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="w-full bg-surface-well text-ink-muted text-center font-bold py-3 rounded-xl">
+                          {t("hostOnlyHint")}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </Card>
       </div>

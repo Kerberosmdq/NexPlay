@@ -32,9 +32,11 @@ test("two players join a room, place fleets, and fire a shot in Battleship", asy
 
     await expect(hostPage.getByText("Guest")).toBeVisible({ timeout: 15_000 });
 
-    // Third game card in the lobby is Battleship (Impostor, Who Am I, then
-    // Battleship — see AVAILABLE_GAMES registration order).
-    await hostPage.getByRole("button", { name: "Jugar este" }).nth(2).click();
+    // The games list is an accordion (collapsed by default, one open at a
+    // time) so it stays compact as more games are registered — the game's
+    // own name is the header that expands it, revealing "Jugar este".
+    await hostPage.getByRole("button", { name: "Batalla Naval" }).click();
+    await hostPage.getByRole("button", { name: "Jugar este" }).click();
 
     await expect(hostPage.getByText("Coloca tu flota")).toBeVisible({ timeout: 15_000 });
     await expect(guestPage.getByText("Coloca tu flota")).toBeVisible({ timeout: 15_000 });
