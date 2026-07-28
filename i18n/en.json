@@ -86,6 +86,10 @@
     "connect4": {
       "name": "Connect 4",
       "description": "Connect 4 tokens in a row before your opponent does."
+    },
+    "guess-who": {
+      "name": "Guess Who?",
+      "description": "Guess your opponent's secret character by asking yes/no questions."
     }
   },
   "Impostor": {
@@ -269,6 +273,52 @@
       "startButton": "START!",
       "exitButton": "Exit",
       "passPhoneTo": "Pass the phone to {name}",
+      "wins": "{name} wins!"
+    }
+  },
+  "GuessWho": {
+    "title": "Guess Who?",
+    "askAloudHint": "Ask {name} yes/no questions out loud",
+    "yourCharacterLabel": "Your character",
+    "opponentCharacterLabel": "Your opponent's character",
+    "waitingForOpponent": "Waiting for your opponent...",
+    "startGuessButton": "Guess",
+    "cancelGuessButton": "Cancel",
+    "resolvingGuess": "Checking the guess...",
+    "confirmGuessTitle": "Are you sure?",
+    "confirmGuessMessage": "You're guessing your opponent is {name}. If you're wrong, you lose the match right away.",
+    "confirmGuessConfirmButton": "Yes, guess",
+    "confirmGuessCancelButton": "Not yet",
+    "youWon": "YOU WON!",
+    "youLost": "You lost this time",
+    "playAgainButton": "Play again",
+    "traits": {
+      "hairSummary": "{color} hair, {length}",
+      "hairColor": {
+        "negro": "black",
+        "castaño": "brown",
+        "rubio": "blonde",
+        "pelirrojo": "red"
+      },
+      "hairLength": {
+        "largo": "long",
+        "corto": "short",
+        "calvo": "bald"
+      },
+      "facialHair": {
+        "barba": "Beard",
+        "bigote": "Mustache"
+      }
+    },
+    "singleDevice": {
+      "playerNamePlaceholder": "Player {n}",
+      "startButton": "START!",
+      "exitButton": "Exit",
+      "revealTitle": "Your secret character",
+      "holdToReveal": "Hold to reveal",
+      "dontLetOthersLook": "Don't let anyone else see your screen!",
+      "continueButton": "Continue",
+      "whoIsGuessing": "Who's guessing?",
       "wins": "{name} wins!"
     }
   }

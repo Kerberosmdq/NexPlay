@@ -3,134 +3,178 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: Hotfix (unnumbered) — no task spec was written; this is
-  founder-requested platform UX polish, not a roadmap milestone.
-- **Title**: Leave-room warning, mid-game "return to lobby," and an
-  accordion games list.
+- **Task ID**: `TASK-0038`
+- **Title**: Guess Who / ¿Quién es Quién? (M6)
 
 ## Current Branch
-- `feat/lobby-exit-and-return-ux`, branched off `main` after PR #50
-  (Connect 4, M5) merged. (Confirm this matches the actual branch name
-  used when this was committed — name it at commit time following
-  `CONVENTIONS.md`'s `feat/<slug>` pattern if a different name was used.)
+- `feat/guess-who`, branched off `main` after PR #51 (the platform UX
+  hotfix) merged.
 
 ## What's in this change
 
-Founder feedback after playing Connect 4: tapping the top-bar "✕" left the
-game — and, in multi-device, the *entire room* — with no warning at all;
-there was no way to switch games without fully exiting; and the games list
-in the lobby stacked one full-height card per game with no ceiling,
-already awkward at four games and only getting worse as `BACKLOG.md`'s
-remaining three queued games ship. Three platform-level changes, no
-game-specific code touched.
+A fifth game, prioritized ahead of M7's presentable-polish pass per the
+founder's explicit, repeated request (same pattern M3.5/M5 already
+established). Design confirmed with the founder in conversation before any
+code, via a round of `AskUserQuestion` decisions: verbal question mechanic
+(no enforced turns — same self-regulated philosophy as Impostor's
+discussion phase), a 32-character roster, and shipping character art in
+several small reference-sheet batches later rather than all at once.
 
-### 1. Exit confirmation dialog
-New `components/ui/ConfirmDialog.tsx` — a real `role="alertdialog"`,
-focus-trapped (Tab cycles between Cancel/Confirm only), closes on Escape
-or a backdrop click (both treated the same as Cancel). Deliberately *not*
-`RevealCard`'s penumbra treatment (dark ground + glow) — that look is
-reserved for the secret-reveal moment per `BDR-0001`; this is a plain
-neutral scrim.
+### Mechanic
+Classic 1-vs-1 deduction. Each side privately holds one secret character;
+questions are asked out loud, never enforced by the app. Players cross out
+candidates on their own device as a personal memory aid — plain local UI
+state, never synced (it isn't a secret, just scratch paper). A wrong guess
+ends the match **immediately in the defender's favor** — the classic board
+game's real rule, and deliberately where the founder's requested "pizca de
+dificultad" comes from, through genuine stakes rather than extra mechanics.
 
-`components/ui/Screen.tsx` (the shared top-bar every session screen
-already renders through) now opens this dialog instead of calling its
-`onExit` prop directly — `onExit` only fires once the user actually
-confirms. The message differs by mode: multi-device gets
-`t("exitConfirmMessage")` ("vas a salir del juego y de la sala"),
-single-device gets a new `exitConfirmMessageSingleDevice` prop threaded
-from `app/[locale]/page.tsx` ("vas a salir del juego" — no room to
-mention there). New i18n keys: `exitConfirmTitle`, `exitConfirmMessage`,
-`exitConfirmMessageSingleDevice`, `exitConfirmConfirmButton`,
-`exitConfirmCancelButton`.
+### Roster
+`games/guess-who/content/{types,characters}.ts`: 32 hand-assigned names,
+each a combination of 6 traits (`glasses`, `hat`, `hairColor` [4 values],
+`hairLength` [3 values], `facialHair` [3 values], `earrings`). Distribution
+was deliberately balanced (not hand-eyeballed) via a seeded-PRNG Node
+script run once in the scratchpad directory, then hand-assigned names.
+`tests/unit/guess-who-roster.test.ts` guards this permanently: exactly 32
+characters, unique ids/names, no single trait value covering less than 10%
+or more than 65% of the roster (a giveaway or a wasted question), and no
+more than ~20% exact-duplicate trait combinations.
 
-`components/ui/Button.tsx` needed `forwardRef` added — a plain function
-component can't accept a `ref`, and `ConfirmDialog` needs one to focus the
-Cancel button when it opens (a11y: focus should land somewhere sane
-inside a newly-opened dialog, not stay wherever it was).
+### Reducer and privacy
+`games/guess-who/reducer.ts`: `GUESS` sets a shared `pendingGuess`;
+`RESOLVE_GUESS` crowns a winner; `REVEAL_CHARACTER` lets both sides reveal
+their own character once resolved (more generous than Battleship's
+loser-only reveal, since revealing both leaks nothing once the match is
+already decided); `PLAY_AGAIN` resets for a rematch. `answerPendingGuess`
+is the second real user of `ADR-0005`'s `answerPending` pattern — the
+guessed-about side's own device resolves a guess against its private
+`myCharacterId`, never shared state, exactly mirroring Battleship's shot
+resolution. `setupPrivate` returns `{ myCharacterId: null }`; each device
+independently picks a random character on mount — deliberately no
+cross-device coordination (a documented, accepted 1-in-32 collision risk).
 
-### 2. "Volver al lobby" while a game is active
-This action already existed — `PLATFORM_RETURN_LOBBY`, dispatched by
-`TournamentBracket`'s existing button once a tournament's champion is
-decided. The gap was that it was the *only* place to trigger it; there
-was no way to back out of an ordinary in-progress match. Added a second
-trigger point, same action, no new platform code:
-- `components/platform/MultiDeviceRoom.tsx`: a host-only button (gated on
-  `isHost`, since returning to the lobby resets shared state for every
-  connected device — the same reasoning `PLATFORM_START_GAME`/
-  `PLATFORM_START_TOURNAMENT` are already host-gated for) rendered above
-  the active game's `<View>`.
-- `app/[locale]/page.tsx`'s `SingleDeviceGamePicker`: no host concept in
-  single-device, so always available, rendered above the active
-  `singleDevice` view.
+### Views
+- `CharacterCard.tsx`: placeholder representation — a colored circle
+  avatar tinted by hair color, an initial letter, and emoji trait glyphs
+  (👓 glasses, 🎩 hat, 💎 earrings). Real portraits are an explicit
+  tracked follow-up (four reference-sheet batches of 8 characters,
+  processed the same way `scripts/generate-ship-assets.mjs` already
+  processes Battleship's), matching M4a → M4a-polish's "plain first, real
+  art later" precedent — **not started, no source art exists yet.**
+- `Player.tsx` (multi-device): picks/reveals the private character (see
+  the bug below), a guessing-mode toggle, `ConfirmDialog` reuse for the
+  high-stakes guess confirmation.
+- `SingleDeviceView.tsx`: local `assignments: Record<Side,string>` (the
+  platform's `views.singleDevice` contract has no `privateState` at all,
+  so this can't go through `usePrivateState`), a `RevealCard`
+  hold-to-reveal step per player (mirrors Impostor's role-reveal
+  precedent) before a shared grid, and a "¿quién está adivinando?"
+  two-button selector before the guess-confirmation flow, since one shared
+  screen has no per-device turn concept.
 
-Neither needed its own confirmation dialog — returning to the lobby keeps
-you in the same room with the same roster, unlike the "✕" exit; matches
-`TournamentBracket`'s existing (unconfirmed) button for the same action.
+`module.ts` needed zero `GameModule` contract changes; `getWinner` is
+wired for M4d's tournament bracket for free.
 
-### 3. Games list: accordion instead of N stacked cards
-`components/platform/RoomWaitingLobby.tsx`'s game cards used to render
-fully expanded and stacked — name, description, and buttons for every
-registered game, unconditionally. Presented three layout directions to
-the founder (accordion / a compact selector-row-plus-single-detail-panel /
-a 2-column grid of smaller cards) via `AskUserQuestion`; **accordion** was
-chosen specifically because it's the smallest change from the existing
-per-game card (same content once expanded) while collapsing to just a
-name row by default. One local `expandedGameId: string | null` state
-value; opening one game's header closes whichever was previously open
-(never more than one game's full detail on screen at once). Each header
-is a real `<button aria-expanded aria-controls>`, each panel a `role="region"
-aria-labelledby`.
-
-### A real regression caught before it shipped
-`tests/e2e/battleship-multi-device.spec.ts` clicked `"Jugar este"`
-directly, assuming it was always visible — broke immediately once the
-accordion collapsed it behind Battleship's own header. Fixed the test to
-click the game's name first (expanding it), then `"Jugar este"` — this is
-the *correct* new interaction, not a workaround; a real user now has to do
-the same extra tap.
+### A real bug found during live tournament verification
+Playing a real 3-player tournament (round 1: bye + a match, round 2: the
+final) surfaced that the winner of round 1 kept the **exact same** secret
+character into round 2, against a brand-new opponent — even though the
+opponent had already seen that character revealed at round 1's resolution
+screen. Root cause: `usePrivateState`'s storage key is scoped to
+`(roomCode, gameId, playerId)`, not to the individual match, and the game's
+own effect only re-picked a character when `myCharacterId === null` —
+which it never was again, once first assigned for that room. Fixed in
+`Player.tsx` by tracking phase transitions via a `useRef` and re-picking on
+every fresh entry into `"playing"` (not just "still unset"), which covers
+both `PLAY_AGAIN` rematches and tournament rounds uniformly. Documented in
+`ADR-0005`'s changelog (v1.4.0) since this is a real gap in the shared
+`usePrivateState` hook's semantics, not something specific to Guess Who —
+any future private-state game whose secret must reset every match needs
+the same transition-detection pattern in its own view.
 
 ### Live verification
-Two real, separately-connected browser tabs (multi-device): exit dialog
-shown for both host and guest, Cancel/Escape/confirm all behave correctly,
-host-only "volver al lobby" mid-game returns *both* devices to the lobby
-with the room code and full player roster intact (not a fresh room).
-Single-device (one tab): the lighter single-device exit message, "volver
-al lobby" back to the game picker. Accordion: only one game's detail ever
-expanded on screen across three real games. Zero console errors in every
-check.
+Across real, separately-connected browser tabs:
+- Multi-device: a full match ending in a correct-guess win, and a
+  **separate** match ending in a wrong-guess loss — both revealed
+  correctly on both tabs, host-only "jugar de nuevo" present only for the
+  host.
+- Single-device: name entry → reveal-and-pass (hold-to-reveal for both
+  players) → shared grid → "¿quién está adivinando?" selector → guess
+  confirmation → resolution, all correct.
+- A real 3-player tournament (one bye, two matches) played to a champion,
+  which is what surfaced the bug above — re-verified clean after the fix.
+
+Zero console errors throughout every check. One stale-console-buffer false
+alarm during setup (`MISSING_MESSAGE` for two i18n keys that genuinely
+existed, from a long-running dev session's many Fast-Refresh cycles) —
+confirmed clean on a fresh dev server restart, no code change needed; same
+class of false positive already documented in earlier handoffs.
 
 ## Files Modified / Added
-- `components/ui/ConfirmDialog.tsx` (new)
-- `components/ui/Button.tsx` (`forwardRef` added)
-- `components/ui/Screen.tsx` (opens `ConfirmDialog` instead of calling
-  `onExit` directly; new `exitConfirmMessage` prop)
-- `components/ui/index.ts` (exports `ConfirmDialog`)
-- `components/platform/MultiDeviceRoom.tsx` (host-only "volver al lobby"
-  above the active `<View>`)
-- `components/platform/RoomWaitingLobby.tsx` (accordion rework)
-- `app/[locale]/page.tsx` (`exitConfirmMessage` for single-device; "volver
-  al lobby" above the single-device active view)
-- `i18n/es.json`, `i18n/en.json` (`exitConfirm*` keys under `Lobby`)
-- `tests/e2e/battleship-multi-device.spec.ts` (updated for the accordion
-  interaction)
+- `games/guess-who/` (new): `reducer.ts`, `module.ts`,
+  `content/{types,characters,index}.ts`,
+  `views/{CharacterCard,Player,SingleDevice}.tsx`
+- `lib/realtime/platformReducer.ts` (registered `guessWhoGameModule` in
+  `AVAILABLE_GAMES`)
+- `i18n/es.json`, `i18n/en.json` (`games.guess-who.*`, full `GuessWho`
+  section)
+- `tests/unit/guess-who-game.test.ts`, `tests/unit/guess-who-roster.test.ts`
+  (new, 29 tests total)
+- `docs/ROADMAP.md` (M6 marked done; M7 renumbering already in place from
+  the planning pass)
+- `docs/00_decisions/architecture/ADR-0005-PRIVATE-GAME-STATE.md`
+  (changelog v1.4.0)
+- `docs/09_ai/CURRENT_STATE.md`, `docs/09_ai/tasks/TASK-0038-guess-who.md`
 
 ## External state (not in git, important for the next agent to know)
-- Same as prior handoffs: Supabase live, Vercel auto-deploying `main`, strict
-  branch protection, GitHub Actions secrets `NEXT_PUBLIC_SUPABASE_URL`/
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY` configured (added for PR #39's e2e job).
+- Same as prior handoffs: Supabase live, Vercel auto-deploying `main`,
+  strict branch protection, GitHub Actions secrets configured.
+- No real character portrait art exists yet — `CharacterCard.tsx` is
+  entirely the placeholder representation. The founder generating
+  reference-sheet batches is an explicit, not-yet-scheduled follow-up.
 
-## A testing-methodology note worth remembering (carried forward)
-Same-profile multi-tab testing needs a distinct player identity per tab,
-but all tabs share one `localStorage` — navigate the new tab once, then in
-the *same* script call, `localStorage.clear(); location.reload();` before
-doing anything else with it, and re-check every *previously* set-up tab is
-still intact afterward. New this task: when a UI change collapses or
-hides a control behind user interaction (this task's accordion, e.g.),
-grep `tests/e2e/` for anything that clicks that control directly — it's a
-near-certain break, and the fix is almost always "expand/reveal it first
-in the test," not a test workaround.
+## A testing-methodology note worth remembering (carried forward, extended)
+Same-profile multi-tab testing shares **all** of `localStorage` across
+tabs, including two keys that matter here: `LAST_IDENTITY_KEY`
+(`lib/realtime/session.ts`, used by `getRememberedUserId`/`rememberIdentity`
+so the *same* device can rejoin a room with the same id) and the full
+`RoomSession` (`saveRoomSession`/`loadRoomSession`, used to silently
+rejoin on page load). Both are written by **every** tab that creates or
+joins a room, since they aren't scoped per tab — only per browser. Two
+concrete failure modes hit this session, worth avoiding next time:
+1. Setting up two new tabs' identities in the same parallel batch (clear
+   localStorage + fill the join form + click join, for two tabs at once)
+   can race: both tabs' `getRememberedUserId(code)` calls read the *same*
+   shared key, and whichever write lands last wins for both — producing
+   two tabs presenting as the same underlying player and colliding in
+   Supabase's presence sync (one just overwrites the other; the room ends
+   up with fewer distinct players than tabs). Fix: set up tabs **one at a
+   time, fully sequentially** — clear + reload + fill + join + verify one
+   tab completely before touching the next.
+2. **Never call a bare `location.reload()` on an already-joined,
+   already-verified tab** once other tabs have since joined the same
+   room. Since `RoomSession`/`LAST_IDENTITY_KEY` are shared, a reload makes
+   that tab re-read localStorage from scratch — which by then reflects
+   whichever *other* tab joined most recently, not its own original
+   identity, corrupting that tab's session (it will render as the wrong
+   player, sometimes stealing the HOST badge). If a tab's displayed roster
+   looks stale, that's expected until the next live broadcast — it is not
+   a reason to reload; just wait or re-fetch page text.
+
+Also encountered this session: the Browser pane's `computer` click
+sometimes silently misses its target after a `resize_window`/viewport
+change or a tool timeout (the click coordinate resolves against a stale
+layout) — when a click via `ref` doesn't produce the expected page change
+and there's no console error to explain it, verify with a screenshot
+before assuming the app is broken; a plain `element.click()` via
+`javascript_tool` is a reliable fallback for driving the UI once the
+right element is confirmed to exist (debugging/inspection tool being used
+to actually click is a deliberate exception here, not a habit — prefer the
+real `computer` click when it's working).
 
 ## Pending Tasks
+- Real character portrait art for Guess Who (four reference-sheet
+  batches of 8 characters each, founder-generated) — not started.
 - A dedicated founder playtest of Battleship's full feature set (M4a–M4d —
   weapons, 2-vs-2 teams, tournament) on real phones specifically is still
   worth doing — every verification in this repo's history so far has used
@@ -138,14 +182,14 @@ in the test," not a test workaround.
   pass.
 - Migrating Impostor's and Who Am I's secrets onto `ADR-0005`'s private
   slice — the latent leak the ADR documents is real but not urgent.
-- The three remaining games from `BACKLOG.md`'s prioritized list (Guess
-  Who, Ludo, a dice-and-track race game) — each its own future milestone,
-  not yet started.
+- The two remaining games from `BACKLOG.md`'s prioritized list (Ludo, a
+  dice-and-track race game) — each its own future milestone, not yet
+  started.
 
 ## Next Suggested Task
-- The founder's call: **M6 (presentable)** per `docs/ROADMAP.md`, or the
-  next game from `BACKLOG.md`'s prioritized list (Guess Who is next).
-  Follow the same pattern used for Connect 4 and this hotfix: a design
-  conversation with the founder (exploring distinct directions per
-  `PROJECT_CONSTITUTION.md` Article 10 whenever there's a real visual/UX
-  decision to make) before any code.
+- The founder's call: **M7 (presentable)** per `docs/ROADMAP.md`, or the
+  next game from `BACKLOG.md`'s prioritized list (Ludo is next). Follow
+  the same pattern used for every game so far: a design conversation with
+  the founder (exploring distinct directions per `PROJECT_CONSTITUTION.md`
+  Article 10 whenever there's a real visual/UX decision to make) before
+  any code.

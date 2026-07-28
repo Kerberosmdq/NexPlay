@@ -3,18 +3,17 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 17 - M4 (Battleship) and M5 (Connect 4) both fully complete
+- Sprint: Sprint 18 - M5 (Connect 4) and M6 (Guess Who) shipped, plus a
+  platform UX hotfix
 - Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
   playtest follow-up fixes (PRs #41–#44), `TASK-0034` (M4b special weapons),
-  `TASK-0035` (M4c teams), `TASK-0036` (M4d tournament), and `TASK-0037`
-  (M5 Connect 4) all shipped. Battleship — 1-vs-1, fixed 2-vs-2 teams, and
-  tournament brackets on top of either — is feature-complete. Connect 4
-  followed, prioritized ahead of M6's presentable-polish pass per the
-  founder's explicit request (family trip in about a week, more games
-  mattered more than outward polish right now) — hexagonal tokens, a clean
-  board, a weighted-drop/column-preview/dramatic-win animation set, no
-  hidden information at all (simplest game on the platform so far), and it
-  plugs into M4d's tournament bracket for free.
+  `TASK-0035` (M4c teams), `TASK-0036` (M4d tournament), `TASK-0037` (M5
+  Connect 4), a platform UX hotfix (exit confirmation, mid-game "return
+  to lobby," an accordion games list), and `TASK-0038` (M6 Guess Who) all
+  shipped. Battleship, Connect 4, and Guess Who are all feature-complete —
+  five real games on the platform. M7 (presentable) is next up, with two
+  more games (Ludo and a dice-and-track race game) still waiting in
+  `BACKLOG.md` if the founder wants to keep prioritizing games ahead of it.
 
 ## Current Objective
 M1, M2, M3, and M3.5 are all complete — M3's last open item (the founder's
@@ -45,10 +44,29 @@ column-preview/dramatic-win animation set (reusing the existing
 handled via an immediate rematch, and single-device support that's a
 genuine shared screen with no reveal gate at all (nothing to hide). Plugs
 into M4d's tournament bracket with zero platform changes — live-verified
-with a real 3-player tournament played to a champion. Next up: pick the
-next milestone — M6 (presentable) per `docs/ROADMAP.md`, or another game
-from `BACKLOG.md`'s prioritized list (Guess Who, Ludo, a dice-and-track
-race game), the founder's call.
+with a real 3-player tournament played to a champion. A **platform UX
+hotfix** followed (founder feedback, not a milestone): the top-bar "✕" now
+opens a confirm dialog instead of exiting immediately, "volver al lobby" is
+usable mid-game (not just after a tournament ends), and the lobby's games
+list is a true accordion instead of N stacked full-height cards. **M6
+(Guess Who / ¿Quién es Quién?) is now also complete**: a fifth game, a
+classic 1-vs-1 deduction match over a shared 32-character roster (6
+combinable traits), asked verbally with no enforced turns (same
+self-regulated philosophy as Impostor's discussion phase), a wrong guess
+ending the match immediately in the defender's favor. Reuses `ADR-0005`'s
+private-state mechanism exactly like Battleship's fleet secrecy — a side's
+own secret character never becomes shared state, only a guess's
+correct/incorrect result does — and plugs into M4d's tournament bracket
+for free. Ships with a placeholder character representation (colored
+avatar + trait glyphs); real portraits are an explicit tracked follow-up.
+Live tournament testing caught and fixed one real bug: a player's private
+character wasn't re-picked between matches (a rematch or the next
+tournament round), since the private-state storage key is scoped to
+(room, game, player) rather than to the individual match — fixed by
+re-picking on every fresh entry into the "playing" phase. Next up: **M7 —
+Presentable**, or, if the founder wants to keep prioritizing games first,
+the two remaining entries in `BACKLOG.md`'s list (Ludo, a dice-and-track
+race game).
 
 ## Completed Tasks
 - [x] **TASK-0001**: Bootstrap Documentation Structure
@@ -749,7 +767,7 @@ race game), the founder's call.
       carrying as explicitly open since M1/M3.
 
 - [x] **TASK-0037**: Connect 4 (M5) — a fourth game, prioritized ahead of
-      M6's presentable-polish pass per the founder's explicit request (a
+      the presentable-polish pass per the founder's explicit request (a
       family trip in about a week). Architecturally the simplest game on
       the platform: no hidden information at all, so `ADR-0005` doesn't
       apply. Design (hexagonal tokens on a clean board, a weighted-drop/
@@ -824,6 +842,52 @@ race game), the founder's call.
       the lighter exit message, "volver al lobby" back to the picker).
       Zero console errors throughout.
 
+- [x] **TASK-0038**: Guess Who / ¿Quién es Quién? (M6) — a fifth game,
+      prioritized ahead of M7's presentable-polish pass per the founder's
+      explicit, repeated request. Design confirmed with the founder before
+      any code: a classic 1-vs-1 deduction match over a shared 32-character
+      roster (6 combinable traits: glasses, hat, hair color, hair length,
+      facial hair, earrings — distribution deliberately balanced via a
+      seeded-PRNG script so no trait is a giveaway or a wasted question),
+      asked verbally with no enforced turns (same self-regulated philosophy
+      as Impostor's discussion phase — players cross out candidates on
+      their own device purely as a personal memory aid, plain local UI
+      state, not synced), and a wrong guess ends the match immediately in
+      the defender's favor (the classic board game's real rule, and where
+      the founder's requested "pizca de dificultad" actually comes from).
+      `GameModule` needed zero contract changes. New
+      `games/guess-who/content/{types,characters}.ts` (the 32-character
+      roster, guarded by a dedicated `guess-who-roster.test.ts` checking
+      trait balance and duplicate-combination limits), `reducer.ts`
+      (`GUESS`/`RESOLVE_GUESS`/`REVEAL_CHARACTER`/`PLAY_AGAIN`, reusing
+      `ADR-0005`'s `answerPending` pattern exactly like Battleship's shot
+      resolution — the guessed-about side's own device resolves a guess
+      against its private `myCharacterId`, never shared state), `module.ts`
+      (`getWinner` wired for M4d's tournament for free), and three views
+      (`CharacterCard.tsx` placeholder — colored avatar tinted by hair
+      color + trait emoji glyphs, real portraits an explicit tracked
+      follow-up matching M4a → M4a-polish's "plain first, real art later"
+      precedent; `Player.tsx` for multi-device; `SingleDeviceView.tsx`
+      reusing `RevealCard`'s hold-to-reveal precedent for a reveal-and-pass
+      setup step, then a shared grid with a "¿quién está adivinando?"
+      selector since one screen has no per-device turn concept). 29 new
+      unit tests. Live-verified across real, separately-connected browser
+      tabs: a full multi-device match ending in a correct-guess win and a
+      separate one ending in a wrong-guess loss; single-device
+      reveal-and-pass end to end; and a real 3-player tournament played to
+      a champion. **That live tournament test caught one genuine bug before
+      it shipped**: a player's private secret character never got re-picked
+      between matches (a `PLAY_AGAIN` rematch, or the next round of a
+      tournament) — `usePrivateState`'s storage key is scoped to (room,
+      game, player), not to the individual match, so the same character
+      silently carried over, already having been revealed to a previous
+      opponent at that earlier match's resolution screen. Fixed in
+      `Player.tsx` by re-picking on every fresh transition into the
+      `"playing"` phase (tracked via a ref, not just "still null"),
+      verified live by replaying the tournament's second round and
+      confirming a genuinely new character each time. Zero console errors
+      throughout.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -831,10 +895,11 @@ race game), the founder's call.
 - None currently open.
 
 ## Next Task
-- **Pick the next milestone**: M6 (presentable) per `docs/ROADMAP.md`, or
-  another game from `BACKLOG.md`'s prioritized list (Guess Who, Ludo, a
-  dice-and-track race game) — the founder's call, following the same
-  pattern that led to Connect 4 (M5) being picked up ahead of M6.
+- **M7 — Presentable**, or — if the founder wants to keep prioritizing
+  games first, the same pattern M3.5/M5/M6 already followed — the two
+  remaining entries in `BACKLOG.md`'s prioritized games list (Ludo, a
+  dice-and-track race game). Neither has been discussed with the founder
+  yet as of this entry.
 - Still worth doing, independent of milestone sequencing: the founder
   playtesting Battleship's full feature set (M4a–M4d — weapons, 2-vs-2
   teams, and a tournament) specifically, since that family session covered
@@ -846,4 +911,4 @@ race game), the founder's call.
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-07-28
+- 2026-07-28 (TASK-0038 / M6 Guess Who shipped)

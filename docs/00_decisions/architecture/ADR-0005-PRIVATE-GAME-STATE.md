@@ -225,6 +225,33 @@ same room or the same family, which is what it is for.
 - `docs/09_ai/tasks/TASK-0031-battleship-core.md`
 
 ## Changelog
+### Version 1.4.0
+- Second real user of the `answerPending` challenge/response pattern
+  (`TASK-0038`, M6 — Guess Who): a `GUESS` sets a shared `pendingGuess`,
+  and the *guessed-about* side's own device resolves it against its
+  private `myCharacterId`, exactly mirroring Battleship's shot resolution
+  — confirms the pattern generalizes to a second, structurally different
+  game rather than being Battleship-specific.
+- **A real gap in `usePrivateState` found via live tournament testing,
+  documented here so the next private-state game doesn't repeat it**: the
+  hook's storage key (`storageKeyFor(roomCode, gameId, playerId)`) is
+  scoped to the room/game/player triple, not to the individual match. A
+  game whose private slice should reset at the start of *every* match —
+  not just the first one for that room — cannot rely on `setupPrivate()`'s
+  return value alone, because `usePrivateState` only re-initializes when
+  its own `key` changes, and the key never changes between a `PLAY_AGAIN`
+  rematch or a tournament's next round in the same room. Guess Who hit
+  this for real: a player's secret character silently carried over between
+  tournament rounds, already having been revealed to a previous opponent
+  at the prior match's resolution screen. The fix lives entirely in the
+  game's own view (`games/guess-who/views/Player.tsx` tracks phase
+  transitions via a ref and re-picks on every fresh entry into `"playing"`,
+  not just "still unset") — `usePrivateState` itself was left unchanged,
+  since Battleship's placement-phase UI happens to force a fresh fleet
+  each match regardless and wasn't affected. Any future game whose private
+  state must be genuinely per-match, not per-room, needs this same
+  transition-detection pattern in its own view.
+
 ### Version 1.3.0
 - Implements §6's already-approved team-play mitigation for real
   (`TASK-0035`, M4c — Battleship teams): a per-side Realtime **broadcast**

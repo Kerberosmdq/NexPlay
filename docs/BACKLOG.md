@@ -18,7 +18,7 @@
 ### Next games, in priority order (confirmed with the founder, 2026-07-28)
 The founder has a family trip in about a week and wants more games to play
 together, not a public-facing polish pass — this ordering is optimized for
-that, not for M6 (presentable). Each of these is a real milestone once
+that, not for M7 (presentable). Each of these is a real milestone once
 picked up (design conversation with the founder before any code, same as
 every prior game), not yet scoped as a task spec.
 
@@ -27,11 +27,10 @@ every prior game), not yet scoped as a task spec.
    already confirmed with the founder (hexagonal tokens, weighted-drop/
    preview/dramatic-win animation); see `ROADMAP.md`'s M5 section for the
    full rationale and `HANDOFF.md` for implementation status.
-2. **¿Quién es Quién? (Guess Who).** 1-vs-1 deduction: each player has a
-   secret character the opponent tries to identify via yes/no questions.
-   Reuses the "per-player secret" shape from Who Am I (M3) and `ADR-0005`'s
-   private-state mechanism, but needs a new character-grid content pack
-   with portraits — the real new work here is content, not architecture.
+2. ~~**¿Quién es Quién? (Guess Who).**~~ **Graduated to `docs/ROADMAP.md`'s
+   M6** (2026-07-28) — mechanic, roster size, and difficulty approach
+   already confirmed with the founder; see `ROADMAP.md`'s M6 section for
+   the full rationale and `HANDOFF.md` for implementation status.
 3. **Ludo.** The first genuinely new platform shape: 2–4 players racing
    tokens around a shared board with dice turns and captures — not a
    "two sides" game like every game shipped so far. Expect this to need a
@@ -81,7 +80,7 @@ every prior game), not yet scoped as a task spec.
   needs to happen before M1 is called done.
 - **Pre-public-launch privacy/legal review** (COPPA/GDPR-K style
   considerations for minors) — flagged in ADR-0003, scheduled for review
-  approaching M6 ("Presentable"), not before.
+  approaching M7 ("Presentable"), not before.
 
 ## Explicitly deferred (from ADR-0003, do not build early)
 - User accounts (upgrade from anonymous auth) — only if cross-device history
