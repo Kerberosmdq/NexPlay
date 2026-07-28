@@ -10,9 +10,15 @@ interface RoomWaitingLobbyProps {
   players: Player[];
   isHost: boolean;
   onStartGame: (gameId: string) => void;
+  // M4d: only offered for a game whose module implements `getWinner` (a
+  // 1-vs-1 bracket needs a way to know who won each match) and only once
+  // there are enough players for a real bracket, not just a normal match.
+  onStartTournament: (gameId: string) => void;
 }
 
-export function RoomWaitingLobby({ roomCode, players, isHost, onStartGame }: RoomWaitingLobbyProps) {
+const MIN_TOURNAMENT_PLAYERS = 3;
+
+export function RoomWaitingLobby({ roomCode, players, isHost, onStartGame, onStartTournament }: RoomWaitingLobbyProps) {
   const t = useTranslations("Lobby");
   // meta.name is an i18n key (ADR-0002 §3); a game's description follows the
   // sibling convention `games.<id>.description` in the same catalog.
@@ -69,9 +75,16 @@ export function RoomWaitingLobby({ roomCode, players, isHost, onStartGame }: Roo
                 </p>
 
                 {isHost ? (
-                  <Button variant="primary" onClick={() => onStartGame(game.id)}>
-                    {t("playThisButton")}
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button variant="primary" onClick={() => onStartGame(game.id)}>
+                      {t("playThisButton")}
+                    </Button>
+                    {game.getWinner && players.length >= MIN_TOURNAMENT_PLAYERS && (
+                      <Button variant="ghost" onClick={() => onStartTournament(game.id)}>
+                        {t("startTournamentButton")}
+                      </Button>
+                    )}
+                  </div>
                 ) : (
                   <div className="w-full bg-surface-well text-ink-muted text-center font-bold py-3 rounded-xl">
                     {t("hostOnlyHint")}

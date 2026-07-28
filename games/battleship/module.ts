@@ -53,6 +53,10 @@ export const battleshipGameModule: GameModule<BattleshipConfig, BattleshipState,
 
   answerPending: answerPendingShot,
 
+  // M4d: the platform's tournament orchestration reads this to know when
+  // to advance the bracket, without knowing Battleship's own state shape.
+  getWinner: (state) => (state.phase === "resolution" && state.winner ? state.sides[state.winner] : null),
+
   views: {
     host: PlayerView,
     player: PlayerView,
