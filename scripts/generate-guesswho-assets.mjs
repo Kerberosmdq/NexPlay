@@ -95,10 +95,43 @@ function findVerticalBounds(data, width, height, channels, bg, xStart, xEnd) {
   return { top, bottom };
 }
 
+/** Some generated sheets have two or more characters touching with zero
+ * background gap between them (found live in batch 2: a cap brim, a beret,
+ * and a beanie all touched at the shoulders) — there's no color-distance
+ * signal left to split on, so `--split <rangeIndex>:<parts>` lets the
+ * caller say "the range at this index is actually N characters, divide it
+ * into N equal-width slices." Index is into the *raw* detected ranges
+ * array, before this replacement. */
+function applyManualSplits(ranges, splitArgs) {
+  let result = ranges;
+  for (const arg of splitArgs) {
+    const [indexStr, partsStr] = arg.split(":");
+    const index = Number(indexStr);
+    const parts = Number(partsStr);
+    const [xStart, xEnd] = result[index];
+    const width = xEnd - xStart + 1;
+    const sliceWidth = Math.floor(width / parts);
+    const slices = [];
+    for (let p = 0; p < parts; p++) {
+      const sliceStart = xStart + p * sliceWidth;
+      const sliceEnd = p === parts - 1 ? xEnd : sliceStart + sliceWidth - 1;
+      slices.push([sliceStart, sliceEnd]);
+    }
+    result = [...result.slice(0, index), ...slices, ...result.slice(index + 1)];
+  }
+  return result;
+}
+
 async function main() {
-  const [, , src, ...characterIds] = process.argv;
+  const [, , src, ...rest] = process.argv;
+  const splitArgs = [];
+  const characterIds = [];
+  for (const arg of rest) {
+    if (arg.startsWith("--split=")) splitArgs.push(arg.slice("--split=".length));
+    else characterIds.push(arg);
+  }
   if (!src || characterIds.length === 0) {
-    console.error("Usage: node scripts/generate-guesswho-assets.mjs <sheetPath> <id1> <id2> ...");
+    console.error("Usage: node scripts/generate-guesswho-assets.mjs <sheetPath> [--split=<rangeIndex>:<parts>] <id1> <id2> ...");
     process.exit(1);
   }
 
@@ -108,11 +141,12 @@ async function main() {
   const bg = colorAt(data, width, channels, 2, 2); // sample a corner pixel as the background reference
   console.log(`Background sampled as rgb(${bg.r}, ${bg.g}, ${bg.b})`);
 
-  const ranges = findColumnRanges(data, width, height, channels, bg);
+  const rawRanges = findColumnRanges(data, width, height, channels, bg);
+  const ranges = applyManualSplits(rawRanges, splitArgs);
   if (ranges.length !== characterIds.length) {
     throw new Error(
-      `Expected ${characterIds.length} character column ranges, found ${ranges.length}: ${JSON.stringify(ranges)}. ` +
-        `Adjust BG_DISTANCE_THRESHOLD/COLUMN_GAP_TOLERANCE, or the source image's layout doesn't match the id list given.`
+      `Expected ${characterIds.length} character column ranges, found ${ranges.length} (${rawRanges.length} raw): ${JSON.stringify(ranges)}. ` +
+        `Adjust BG_DISTANCE_THRESHOLD/COLUMN_GAP_TOLERANCE, add --split, or the source image's layout doesn't match the id list given.`
     );
   }
 
