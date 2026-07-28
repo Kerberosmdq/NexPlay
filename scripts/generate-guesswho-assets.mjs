@@ -42,13 +42,18 @@ function distance(a, b) {
 }
 
 /** Finds the horizontal ranges containing non-background content, merging
- * across small gaps (anti-aliased edges, a character's own internal negative
- * space) so each character is one contiguous range instead of several. */
-function findColumnRanges(data, width, height, channels, bg) {
+ * across gaps up to `gapTolerance` px (anti-aliased edges, a character's own
+ * internal negative space) so each character is one contiguous range instead
+ * of several. `xStart`/`xEnd` restrict the scan to a sub-region (used to
+ * re-scan inside an already-merged blob at zero tolerance — see
+ * `findTrueSubBoundaries`). `rowStep` trades precision for speed: 2 is
+ * enough for the initial full-sheet pass, but re-scanning a narrow merged
+ * blob to find the *exact* touch point needs every row (step 1), since a
+ * gap that's only real for a couple of rows is exactly what's being hunted. */
+function findColumnRanges(data, width, height, channels, bg, gapTolerance, xStart = 0, xEnd = width - 1, rowStep = 2) {
   const columnHasContent = new Array(width).fill(false);
-  for (let x = 0; x < width; x++) {
-    for (let y = 0; y < height; y += 2) {
-      // every other row is enough to detect content, and much faster
+  for (let x = xStart; x <= xEnd; x++) {
+    for (let y = 0; y < height; y += rowStep) {
       if (distance(colorAt(data, width, channels, x, y), bg) > BG_DISTANCE_THRESHOLD) {
         columnHasContent[x] = true;
         break;
@@ -59,20 +64,20 @@ function findColumnRanges(data, width, height, channels, bg) {
   const ranges = [];
   let start = null;
   let gap = 0;
-  for (let x = 0; x < width; x++) {
+  for (let x = xStart; x <= xEnd; x++) {
     if (columnHasContent[x]) {
       if (start === null) start = x;
       gap = 0;
     } else if (start !== null) {
       gap++;
-      if (gap > COLUMN_GAP_TOLERANCE) {
+      if (gap > gapTolerance) {
         ranges.push([start, x - gap]);
         start = null;
         gap = 0;
       }
     }
   }
-  if (start !== null) ranges.push([start, width - 1]);
+  if (start !== null) ranges.push([start, xEnd]);
   return ranges;
 }
 
@@ -95,28 +100,43 @@ function findVerticalBounds(data, width, height, channels, bg, xStart, xEnd) {
   return { top, bottom };
 }
 
-/** Some generated sheets have two or more characters touching with zero
- * background gap between them (found live in batch 2: a cap brim, a beret,
- * and a beanie all touched at the shoulders) — there's no color-distance
- * signal left to split on, so `--split <rangeIndex>:<parts>` lets the
- * caller say "the range at this index is actually N characters, divide it
- * into N equal-width slices." Index is into the *raw* detected ranges
- * array, before this replacement. */
-function applyManualSplits(ranges, splitArgs) {
+/** Some generated sheets have two or more characters touching with only a
+ * whisker-thin background gap at the tolerance-scanned rows (found live in
+ * batch 2: a cap brim, a beret, and a beanie all touched at the shoulders;
+ * batch 3: a real ~6px gap existed but was swallowed by COLUMN_GAP_TOLERANCE,
+ * and only showed up at a handful of rows near the collar, not near the
+ * head). Re-scanning that merged blob's own x-range at zero gap tolerance
+ * and *every* row (not every-other) usually reveals the true touch points —
+ * blindly dividing into N equal-width slices instead (an earlier version of
+ * this script did) cut into a neighbor's hair on both edges. Falls back to
+ * equal-width division only if the precise re-scan doesn't find exactly
+ * `parts` sub-ranges, with a loud warning — that fallback needs the same
+ * manual visual check the imprecise version always needed. */
+function findTrueSubBoundaries(data, width, height, channels, bg, xStart, xEnd, parts) {
+  const subRanges = findColumnRanges(data, width, height, channels, bg, 0, xStart, xEnd, 1);
+  if (subRanges.length === parts) return subRanges;
+  console.warn(
+    `  Precise re-scan of [${xStart},${xEnd}] found ${subRanges.length} sub-ranges, not the expected ${parts} — ` +
+      `falling back to equal-width division. Inspect the resulting crops closely.`
+  );
+  const sliceWidth = Math.floor((xEnd - xStart + 1) / parts);
+  const slices = [];
+  for (let p = 0; p < parts; p++) {
+    const sliceStart = xStart + p * sliceWidth;
+    const sliceEnd = p === parts - 1 ? xEnd : sliceStart + sliceWidth - 1;
+    slices.push([sliceStart, sliceEnd]);
+  }
+  return slices;
+}
+
+function applyManualSplits(ranges, splitArgs, data, width, height, channels, bg) {
   let result = ranges;
   for (const arg of splitArgs) {
     const [indexStr, partsStr] = arg.split(":");
     const index = Number(indexStr);
     const parts = Number(partsStr);
     const [xStart, xEnd] = result[index];
-    const width = xEnd - xStart + 1;
-    const sliceWidth = Math.floor(width / parts);
-    const slices = [];
-    for (let p = 0; p < parts; p++) {
-      const sliceStart = xStart + p * sliceWidth;
-      const sliceEnd = p === parts - 1 ? xEnd : sliceStart + sliceWidth - 1;
-      slices.push([sliceStart, sliceEnd]);
-    }
+    const slices = findTrueSubBoundaries(data, width, height, channels, bg, xStart, xEnd, parts);
     result = [...result.slice(0, index), ...slices, ...result.slice(index + 1)];
   }
   return result;
@@ -141,8 +161,8 @@ async function main() {
   const bg = colorAt(data, width, channels, 2, 2); // sample a corner pixel as the background reference
   console.log(`Background sampled as rgb(${bg.r}, ${bg.g}, ${bg.b})`);
 
-  const rawRanges = findColumnRanges(data, width, height, channels, bg);
-  const ranges = applyManualSplits(rawRanges, splitArgs);
+  const rawRanges = findColumnRanges(data, width, height, channels, bg, COLUMN_GAP_TOLERANCE, 0, width - 1, 2);
+  const ranges = applyManualSplits(rawRanges, splitArgs, data, width, height, channels, bg);
   if (ranges.length !== characterIds.length) {
     throw new Error(
       `Expected ${characterIds.length} character column ranges, found ${ranges.length} (${rawRanges.length} raw): ${JSON.stringify(ranges)}. ` +
