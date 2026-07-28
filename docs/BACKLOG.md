@@ -14,9 +14,45 @@
 ---
 
 ## Game ideas
-- **Pictionary-style drawing/guessing game.** Fits the shared platform well
-  (rooms, turns, reveal); suggested as a strong candidate for a 4th/5th game
-  given it's a natural fit for the target ages. Not yet scoped as a milestone.
+
+### Next games, in priority order (confirmed with the founder, 2026-07-28)
+The founder has a family trip in about a week and wants more games to play
+together, not a public-facing polish pass — this ordering is optimized for
+that, not for M5. Each of these is a real milestone once picked up (design
+conversation with the founder before any code, same as every prior game),
+not yet scoped as a task spec.
+
+1. **Conecta 4 (Connect 4).** By far the simplest of the four — it drops
+   straight into the "two sides, one board, a win condition" shape M4
+   (Battleship) already proved out, with no new platform capability needed.
+   Gets M4d's tournament bracket for free once it implements `getWinner`.
+2. **¿Quién es Quién? (Guess Who).** 1-vs-1 deduction: each player has a
+   secret character the opponent tries to identify via yes/no questions.
+   Reuses the "per-player secret" shape from Who Am I (M3) and `ADR-0005`'s
+   private-state mechanism, but needs a new character-grid content pack
+   with portraits — the real new work here is content, not architecture.
+3. **Ludo.** The first genuinely new platform shape: 2–4 players racing
+   tokens around a shared board with dice turns and captures — not a
+   "two sides" game like every game shipped so far. Expect this to need a
+   platform-level design conversation (does `GameModule`'s contract need a
+   >2-participant turn-order primitive, or does each game keep inventing
+   its own?) before implementation, flagged the same way M4's team-play
+   gap led to `ADR-0005`.
+4. **Juego de la oca, or a similar dice-and-track race game (open to a
+   different theme, doesn't have to literally be La Oca).** A classic
+   Spanish/European board game: players roll dice and race tokens around a
+   spiral of numbered squares, with special squares (a bridge that
+   teleports you forward, a well/prison that traps you, a goose square
+   that grants another roll or doubles your move, a skull that sends you
+   back to start). Pure luck, no strategy — good for younger kids. Ordered
+   last specifically because it should be near-free once Ludo (#3) has
+   already solved "multi-player dice-driven turns on a shared track" at the
+   platform level; this one mostly reuses that shape with a different
+   board layout and special-square table.
+
+- **Pictionary-style drawing/guessing game.** Previously the top game
+  candidate; deprioritized below the four above per the founder (2026-07-28)
+  — still worth building eventually, just not next.
 - **More Impostor categories/word packs.** Ongoing — new packs are additions
   via PR (ADR-0003 §Seam 4), not a milestone; add packs here as ideas come up
   before someone writes them:
