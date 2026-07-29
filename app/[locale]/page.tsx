@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { RoomLobby } from "@/components/platform/RoomLobby";
 import { MultiDeviceRoom } from "@/components/platform/MultiDeviceRoom";
+import { MatchResolvedModal } from "@/components/platform/MatchResolvedModal";
 import {
   platformReducer,
   createInitialPlatformState,
+  getActiveMatchWinners,
   AVAILABLE_GAMES,
   type PlatformAction,
 } from "@/lib/realtime/platformReducer";
@@ -251,6 +253,12 @@ function SingleDeviceGamePicker({
           {t("returnToLobbyButton")}
         </Button>
       </div>
+      <MatchResolvedModal
+        gameState={platformState.gameState}
+        winners={getActiveMatchWinners(platformState)}
+        canContinue={true}
+        onContinue={() => dispatch({ type: "PLATFORM_RETURN_LOBBY" })}
+      />
       <View state={platformState.gameState} players={[]} dispatch={gameDispatch} onExit={onExit} />
     </div>
   );

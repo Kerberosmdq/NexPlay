@@ -46,7 +46,12 @@
     "exitConfirmMessage": "You'll leave the game and the room.",
     "exitConfirmMessageSingleDevice": "You'll leave the game.",
     "exitConfirmConfirmButton": "Exit",
-    "exitConfirmCancelButton": "Cancel"
+    "exitConfirmCancelButton": "Cancel",
+    "matchResolvedTitle": "Match over!",
+    "matchResolvedMessage": "Do you want to keep looking at the board, or continue?",
+    "matchResolvedViewButton": "View board",
+    "matchResolvedContinueButton": "Leave the match",
+    "matchResolvedWaitingHint": "Waiting for the host to continue"
   },
   "games": {
     "impostor": {
@@ -282,6 +287,10 @@
     "yourCharacterLabel": "Your character",
     "opponentCharacterLabel": "Your opponent's character",
     "waitingForOpponent": "Waiting for your opponent...",
+    "waitingForOpponentToChoose": "Waiting for your opponent to choose their character...",
+    "selectingTitle": "Choose your secret character",
+    "selectingHint": "This is the character your opponent has to guess.",
+    "confirmCharacterButton": "Confirm",
     "startGuessButton": "Guess",
     "cancelGuessButton": "Cancel",
     "resolvingGuess": "Checking the guess...",
@@ -314,10 +323,9 @@
       "playerNamePlaceholder": "Player {n}",
       "startButton": "START!",
       "exitButton": "Exit",
-      "revealTitle": "Your secret character",
-      "holdToReveal": "Hold to reveal",
+      "selectingGateTitle": "Choose your secret character",
+      "selectingGateButton": "It's me, choose my character",
       "dontLetOthersLook": "Don't let anyone else see your screen!",
-      "continueButton": "Continue",
       "whoIsGuessing": "Who's guessing?",
       "wins": "{name} wins!"
     }

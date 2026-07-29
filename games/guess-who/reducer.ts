@@ -1,14 +1,24 @@
 export type Side = "A" | "B";
 // "config" only exists when `setup()` didn't already receive two real
 // player ids — single-device always starts here (the platform calls
-// `setup([])`, same as every other game with a single-device mode);
-// multi-device's two already-connected players skip straight to
-// "playing", same pattern as Connect 4/Battleship.
-export type GuessWhoPhase = "config" | "playing" | "resolution";
+// `setup([])`, same as every other game with a single-device mode).
+// Multi-device's two already-connected players skip straight to
+// "selecting" — each side privately picks *which* character they'll be
+// (founder feedback, 2026-07-28: this used to be auto-assigned at random,
+// but the real game is choosing your own character, not being handed one).
+// Single-device handles its own equivalent pick-and-pass loop entirely in
+// its own view, outside the reducer, so it never visits "selecting" —
+// it dispatches START_MATCH only once both local players have chosen.
+export type GuessWhoPhase = "config" | "selecting" | "playing" | "resolution";
 
 export interface GuessWhoState {
   phase: GuessWhoPhase;
   sides: Record<Side, string>;
+  // "selecting" only: which sides have confirmed their character choice.
+  // Never carries the character itself — same ADR-0005 shape as
+  // Battleship's `readySides` during "placing" (a side's own pick stays in
+  // its private slice; the room only ever learns "this side is ready").
+  readySides: Record<Side, boolean>;
   // A guess has been made but not yet resolved — the guessed-about side's
   // own device answers this via `answerPending` (ADR-0005 §3), comparing
   // against its own private secret character. While set, no new guess may
@@ -30,6 +40,9 @@ export interface GuessWhoPrivate {
 
 export type GuessWhoAction =
   | { type: "START_MATCH"; playerIds: [string, string] }
+  // No character id here — choosing is a purely private act (ADR-0005 §2);
+  // the room only ever learns that a side has locked in *a* choice.
+  | { type: "CONFIRM_CHARACTER"; side: Side }
   | { type: "GUESS"; guesserSide: Side; characterId: string }
   | { type: "RESOLVE_GUESS"; correct: boolean }
   | { type: "REVEAL_CHARACTER"; side: Side; characterId: string }
@@ -43,8 +56,9 @@ export function createInitialState(playerIds: string[]): GuessWhoState {
   const [playerA, playerB] = playerIds;
   const readyToPlay = playerIds.length === 2;
   return {
-    phase: readyToPlay ? "playing" : "config",
+    phase: readyToPlay ? "selecting" : "config",
     sides: { A: playerA ?? "", B: playerB ?? "" },
+    readySides: { A: false, B: false },
     pendingGuess: null,
     winnerSide: null,
     revealedCharacters: {},
@@ -77,7 +91,14 @@ export function guessWhoReducer(state: GuessWhoState, action: GuessWhoAction): G
     case "START_MATCH": {
       if (state.phase !== "config") return state;
       const [playerA, playerB] = action.playerIds;
-      return { ...state, phase: "playing", sides: { A: playerA, B: playerB } };
+      return { ...state, phase: "selecting", sides: { A: playerA, B: playerB }, readySides: { A: false, B: false } };
+    }
+
+    case "CONFIRM_CHARACTER": {
+      if (state.phase !== "selecting") return state;
+      const readySides = { ...state.readySides, [action.side]: true };
+      const bothReady = readySides.A && readySides.B;
+      return { ...state, readySides, phase: bothReady ? "playing" : "selecting" };
     }
 
     case "GUESS": {
@@ -99,7 +120,18 @@ export function guessWhoReducer(state: GuessWhoState, action: GuessWhoAction): G
 
     case "PLAY_AGAIN": {
       if (state.phase !== "resolution") return state;
-      return { ...state, phase: "playing", pendingGuess: null, winnerSide: null, revealedCharacters: {} };
+      // Back to "selecting", not straight to "playing" — a rematch means
+      // choosing again, same as the first match; also naturally closes the
+      // stale-character bug ADR-0005 v1.4.0 documented (a device's own view
+      // clears its private slice on re-entering "selecting").
+      return {
+        ...state,
+        phase: "selecting",
+        readySides: { A: false, B: false },
+        pendingGuess: null,
+        winnerSide: null,
+        revealedCharacters: {},
+      };
     }
 
     default:

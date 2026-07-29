@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { impostorGameModule } from "@/games/impostor/module";
 import { whoAmIGameModule } from "@/games/who-am-i/module";
 import { battleshipGameModule } from "@/games/battleship/module";
@@ -202,41 +201,14 @@ export function platformReducer(state: PlatformState, action: PlatformAction): P
   }
 }
 
-/** M4d: watches the currently active tournament match via its game's
- * `getWinner`, and dispatches `PLATFORM_ADVANCE_TOURNAMENT` exactly once
- * per resolved match. Every connected device runs `platformReducer` against
- * every broadcast action regardless of what it's currently rendering (a
- * spectating player's device still tracks `gameState.gameState` even while
- * showing the bracket instead of the game view) — so if this dispatched
- * from *every* device, all of them would independently detect the same
- * resolved match and each fire their own advance, cascading the bracket
- * forward by several matches in one burst instead of one. Gated to
- * `isHost` for exactly the same reason `PLATFORM_START_GAME`/
- * `PLATFORM_START_TOURNAMENT` are already host-only actions — one
- * authoritative device, not "any device that notices." */
-export function useTournamentAdvance(
-  platformState: PlatformState,
-  players: Player[],
-  isHost: boolean,
-  dispatch: (action: PlatformAction) => void
-): void {
-  const lastAdvancedGameStateRef = useRef<unknown>(null);
-
-  useEffect(() => {
-    if (!isHost) return;
-    if (!platformState.tournament || platformState.status !== "PLAYING" || !platformState.activeGameId) return;
-    if (platformState.gameState === lastAdvancedGameStateRef.current) return;
-
-    const gameModule = AVAILABLE_GAMES[platformState.activeGameId];
-    const winners = gameModule?.getWinner?.(platformState.gameState);
-    if (!winners || winners.length === 0) return;
-
-    lastAdvancedGameStateRef.current = platformState.gameState;
-    dispatch({ type: "PLATFORM_ADVANCE_TOURNAMENT", winnerId: winners[0], players });
-    // `players`/`dispatch` are stable enough in practice (new closures each
-    // render, but the ref guard above makes this effect a no-op once it has
-    // fired for a given `gameState`) — depending on their identity would
-    // refire on every unrelated re-render without ever changing the outcome.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [platformState, isHost]);
+/** The active game's decisive winner(s) for the current match, or `null` if
+ * the game doesn't implement `getWinner` or the match isn't decided yet.
+ * Used both to drive `MatchResolvedModal` (any game, tournament or not) and,
+ * within a tournament, to know who to advance once the host confirms —
+ * founder feedback (2026-07-28) removed the previous auto-advance-on-
+ * detection behavior here, since it left no time to see the final board. */
+export function getActiveMatchWinners(platformState: PlatformState): string[] | null {
+  if (platformState.status !== "PLAYING" || !platformState.activeGameId) return null;
+  const gameModule = AVAILABLE_GAMES[platformState.activeGameId];
+  return gameModule?.getWinner?.(platformState.gameState) ?? null;
 }

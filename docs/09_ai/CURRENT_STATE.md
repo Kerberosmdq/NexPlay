@@ -887,6 +887,65 @@ race game).
       verified live by replaying the tournament's second round and
       confirming a genuinely new character each time. Zero console errors
       throughout.
+- [x] **TASK-0038 art batches 1–4**: all 32 Guess Who characters now have
+      real founder-generated portrait art (`games/guess-who/content/artManifest.ts`
+      tracks which ids have it; `CharacterCard.tsx` falls back to the
+      original trait-glyph placeholder for any id not yet in the manifest,
+      so the game stayed fully playable throughout). `scripts/generate-guesswho-assets.mjs`
+      (new, mirrors `generate-ship-assets.mjs`'s column-detection + chroma-key
+      approach) slices each founder-provided reference sheet into individual
+      transparent PNGs. Two real layout problems surfaced across the four
+      batches and were fixed in the script itself, not worked around by hand:
+      neighboring characters with zero background gap (a `--split` flag divides
+      a wrongly-merged blob), and a subtler case where a real ~6px gap existed
+      only at some rows and fell under the detection tolerance (fixed by
+      re-scanning the merged blob's own x-range at zero tolerance to find the
+      true touch point, falling back to equal-width division with a loud
+      warning only when no such gap exists at all). One crop-level bleed issue
+      (a sliver of a neighboring hat) was confirmed harmless by simulating the
+      actual 96px circular avatar crop the game applies — the square-then-circle
+      treatment trims exactly the margin the sliver sat in.
+- [x] **Hotfix (unnumbered)**: founder feedback (2026-07-28) — two related
+      fixes, both platform-level or Guess-Who-specific, landed together:
+      (1) **Guess Who: choose your own character.** The secret character
+      was auto-assigned at random; the founder wanted the real "you pick who
+      you are" mechanic. Added a `"selecting"` phase to `games/guess-who/reducer.ts`
+      (`readySides: Record<Side, boolean>` + a `CONFIRM_CHARACTER` action
+      carrying only the side, never the character id — same shape as
+      Battleship's `SIDE_READY` during "placing") between `"config"`/`"playing"`;
+      multi-device's `Player.tsx` now renders the full grid for the player to
+      tap + confirm instead of auto-picking, and single-device's
+      `SingleDeviceView.tsx` replaced its `RevealCard` hold-to-reveal step
+      (incompatible with sustained grid interaction) with a "pass the phone,
+      say it's you, then pick" gate per player, driving the same
+      `CONFIRM_CHARACTER` action sequence locally for both sides. `PLAY_AGAIN`
+      now returns to `"selecting"` too (a rematch means choosing again), which
+      also subsumes the earlier ADR-0005 v1.4.0 stale-character fix.
+      (2) **A "match resolved" modal, gating what used to be automatic, for
+      every game with `getWinner` (Connect 4, Battleship, Guess Who), in both
+      device modes.** The real bug: a tournament match auto-advanced to the
+      next round (or crowned a champion) the instant a winner was detected,
+      with no pause — nobody got to see the final board or how the match was
+      won. New `components/platform/MatchResolvedModal.tsx` shows "¡Partida
+      terminada! / Ver tablero / Salir de la partida" the moment `getWinner()`
+      resolves, for every match (tournament or standalone) in both device
+      modes; `useTournamentAdvance`'s automatic effect-driven dispatch was
+      deleted from `lib/realtime/platformReducer.ts` and replaced with a plain
+      `getActiveMatchWinners()` helper — the advance (or, for a standalone
+      match, `PLATFORM_RETURN_LOBBY`) now only fires from the modal's
+      host-gated "Salir de la partida" button. **Live testing caught a real
+      gap before it shipped**: a host with a tournament bye is a spectator in
+      the currently-playing match, so the modal (originally only rendered on
+      the match-participant view) never appeared for them — the one device
+      allowed to advance had no way to ever do so, leaving the bracket stuck
+      forever on a bye'd host's turn. Fixed by also rendering the modal
+      alongside `TournamentBracket`'s spectator view, sharing the same
+      continue handler. Verified live across three real, separately-connected
+      browser tabs: multi-device character selection (each device
+      independently choosing and confirming), a full 3-player tournament
+      where the bye'd host correctly gated round advancement via the modal,
+      a correct-guess win, a wrong-guess loss, and the champion screen — all
+      showing the modal, none auto-advancing. Zero console errors throughout.
 
 ## Tasks In Progress
 - [ ] None.
@@ -911,4 +970,4 @@ race game).
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-07-28 (TASK-0038 / M6 Guess Who shipped)
+- 2026-07-29 (Guess Who art complete; character-selection + match-resolved-modal hotfix shipped)
