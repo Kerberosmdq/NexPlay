@@ -3,178 +3,151 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: `TASK-0038`
-- **Title**: Guess Who / ¿Quién es Quién? (M6)
+- **Task ID**: Hotfix (unnumbered) — founder feedback, not a roadmap milestone;
+  plus the tail end of `TASK-0038`'s tracked follow-up (all 4 Guess Who art
+  batches landed in this same session, see their own PRs #54–#57).
+- **Title**: Guess Who — choose your own character; a "match resolved" modal
+  gating tournament auto-advance across every game.
 
 ## Current Branch
-- `feat/guess-who`, branched off `main` after PR #51 (the platform UX
-  hotfix) merged.
+- `feat/match-resolved-modal-and-character-selection`, branched off `main`
+  after PR #57 (Guess Who's fourth art batch) merged.
 
 ## What's in this change
 
-A fifth game, prioritized ahead of M7's presentable-polish pass per the
-founder's explicit, repeated request (same pattern M3.5/M5 already
-established). Design confirmed with the founder in conversation before any
-code, via a round of `AskUserQuestion` decisions: verbal question mechanic
-(no enforced turns — same self-regulated philosophy as Impostor's
-discussion phase), a 32-character roster, and shipping character art in
-several small reference-sheet batches later rather than all at once.
+Two related pieces of founder feedback, both touching the platform level:
 
-### Mechanic
-Classic 1-vs-1 deduction. Each side privately holds one secret character;
-questions are asked out loud, never enforced by the app. Players cross out
-candidates on their own device as a personal memory aid — plain local UI
-state, never synced (it isn't a secret, just scratch paper). A wrong guess
-ends the match **immediately in the defender's favor** — the classic board
-game's real rule, and deliberately where the founder's requested "pizca de
-dificultad" comes from, through genuine stakes rather than extra mechanics.
+### 1. Guess Who: choose your own character
+The secret character used to be auto-assigned at random the instant a device
+had a real private slice — the founder's actual complaint: "the game itself
+shouldn't hand you a character, you should pick who you are."
 
-### Roster
-`games/guess-who/content/{types,characters}.ts`: 32 hand-assigned names,
-each a combination of 6 traits (`glasses`, `hat`, `hairColor` [4 values],
-`hairLength` [3 values], `facialHair` [3 values], `earrings`). Distribution
-was deliberately balanced (not hand-eyeballed) via a seeded-PRNG Node
-script run once in the scratchpad directory, then hand-assigned names.
-`tests/unit/guess-who-roster.test.ts` guards this permanently: exactly 32
-characters, unique ids/names, no single trait value covering less than 10%
-or more than 65% of the roster (a giveaway or a wasted question), and no
-more than ~20% exact-duplicate trait combinations.
+`games/guess-who/reducer.ts` gained a `"selecting"` phase between `"config"`
+and `"playing"`: `readySides: Record<Side, boolean>` and a `CONFIRM_CHARACTER`
+action carrying only the side (never the character id — the room only ever
+learns "this side is ready," exactly Battleship's `SIDE_READY`/`"placing"`
+shape). `createInitialState` (multi-device) and `START_MATCH` (single-device)
+both now land in `"selecting"`; `CONFIRM_CHARACTER` flips to `"playing"` once
+both sides have confirmed. `PLAY_AGAIN` now returns to `"selecting"` too — a
+rematch means choosing again — which also subsumes the earlier ADR-0005
+v1.4.0 stale-character fix from `TASK-0038` (that ref-based "re-pick on
+entering playing" hack is gone; picking is just a real phase now).
 
-### Reducer and privacy
-`games/guess-who/reducer.ts`: `GUESS` sets a shared `pendingGuess`;
-`RESOLVE_GUESS` crowns a winner; `REVEAL_CHARACTER` lets both sides reveal
-their own character once resolved (more generous than Battleship's
-loser-only reveal, since revealing both leaks nothing once the match is
-already decided); `PLAY_AGAIN` resets for a rematch. `answerPendingGuess`
-is the second real user of `ADR-0005`'s `answerPending` pattern — the
-guessed-about side's own device resolves a guess against its private
-`myCharacterId`, never shared state, exactly mirroring Battleship's shot
-resolution. `setupPrivate` returns `{ myCharacterId: null }`; each device
-independently picks a random character on mount — deliberately no
-cross-device coordination (a documented, accepted 1-in-32 collision risk).
+- **Multi-device (`Player.tsx`)**: the old auto-pick `useEffect` is deleted.
+  In `"selecting"`, the device renders the full grid; tapping a card sets
+  `privateState.myCharacterId` (freely changeable), and a "Confirmar" button
+  dispatches `CONFIRM_CHARACTER` once something's picked. After confirming,
+  the device shows `WaitingState` until the shared phase flips. A ref-based
+  phase-transition check clears the private slice on every fresh entry into
+  `"selecting"` (not just when it's null) — without it, a rematch's grid
+  would start pre-filled with the previous match's choice.
+- **Single-device (`SingleDeviceView.tsx`)**: `RevealCard`'s hold-to-reveal
+  gesture doesn't fit "hold to see the grid, then tap several cards, then
+  confirm" — releasing to tap would hide it again. Replaced with a plain
+  pass-the-phone gate ("Soy yo, elegir mi personaje") that, once tapped,
+  shows the grid for that player only; confirming records the pick into
+  local `assignments` state (single-device has no private-state channel at
+  all) and dispatches `CONFIRM_CHARACTER` for that side, then resets the gate
+  for the next player. Both players' confirms drive the exact same reducer
+  action sequence multi-device uses — single-device is just one screen
+  playing both roles.
 
-### Views
-- `CharacterCard.tsx`: placeholder representation — a colored circle
-  avatar tinted by hair color, an initial letter, and emoji trait glyphs
-  (👓 glasses, 🎩 hat, 💎 earrings). Real portraits are an explicit
-  tracked follow-up (four reference-sheet batches of 8 characters,
-  processed the same way `scripts/generate-ship-assets.mjs` already
-  processes Battleship's), matching M4a → M4a-polish's "plain first, real
-  art later" precedent — **not started, no source art exists yet.**
-- `Player.tsx` (multi-device): picks/reveals the private character (see
-  the bug below), a guessing-mode toggle, `ConfirmDialog` reuse for the
-  high-stakes guess confirmation.
-- `SingleDeviceView.tsx`: local `assignments: Record<Side,string>` (the
-  platform's `views.singleDevice` contract has no `privateState` at all,
-  so this can't go through `usePrivateState`), a `RevealCard`
-  hold-to-reveal step per player (mirrors Impostor's role-reveal
-  precedent) before a shared grid, and a "¿quién está adivinando?"
-  two-button selector before the guess-confirmation flow, since one shared
-  screen has no per-device turn concept.
+### 2. A "match resolved" modal, for every game with `getWinner`, both device modes
+The real bug, found by re-reading the tournament-advance code rather than
+guessing: `useTournamentAdvance` (in `lib/realtime/platformReducer.ts`) fired
+`PLATFORM_ADVANCE_TOURNAMENT` in a `useEffect` the instant `getWinner()`
+returned a winner — no pause, no confirmation. The resolution screen would
+render for a fraction of a render cycle and then get replaced by the next
+match (or the champion screen) before anyone could see the final board or
+how the match was won. This affected Connect 4, Battleship, and Guess Who
+identically, since it's a shared platform mechanism, not a per-game bug.
 
-`module.ts` needed zero `GameModule` contract changes; `getWinner` is
-wired for M4d's tournament bracket for free.
+New `components/platform/MatchResolvedModal.tsx`: shows "¡Partida
+terminada! / Ver tablero / Salir de la partida" the moment the active game's
+`getWinner()` resolves, for **every** match — tournament or standalone, in
+both device modes (per the founder's explicit answer: not tournament-only).
+"Ver tablero" just dismisses the modal locally (a ref tracks which resolved
+`gameState` it was shown for, so it doesn't reappear until a genuinely new
+match resolves). "Salir de la partida" is host-gated in multi-device (always
+available in single-device, no host concept there) and does whatever used to
+happen automatically: `PLATFORM_ADVANCE_TOURNAMENT` if there's a tournament
+in progress, `PLATFORM_RETURN_LOBBY` otherwise.
 
-### A real bug found during live tournament verification
-Playing a real 3-player tournament (round 1: bye + a match, round 2: the
-final) surfaced that the winner of round 1 kept the **exact same** secret
-character into round 2, against a brand-new opponent — even though the
-opponent had already seen that character revealed at round 1's resolution
-screen. Root cause: `usePrivateState`'s storage key is scoped to
-`(roomCode, gameId, playerId)`, not to the individual match, and the game's
-own effect only re-picked a character when `myCharacterId === null` —
-which it never was again, once first assigned for that room. Fixed in
-`Player.tsx` by tracking phase transitions via a `useRef` and re-picking on
-every fresh entry into `"playing"` (not just "still unset"), which covers
-both `PLAY_AGAIN` rematches and tournament rounds uniformly. Documented in
-`ADR-0005`'s changelog (v1.4.0) since this is a real gap in the shared
-`usePrivateState` hook's semantics, not something specific to Guess Who —
-any future private-state game whose secret must reset every match needs
-the same transition-detection pattern in its own view.
+`useTournamentAdvance`'s automatic effect was deleted entirely from
+`platformReducer.ts`, replaced by a plain `getActiveMatchWinners(platformState)`
+helper (no dispatch, no `useEffect`, no `useRef`) that both `MultiDeviceRoom.tsx`
+and the single-device picker (`app/[locale]/page.tsx`) call directly.
+
+**A real gap found during live testing, fixed before this shipped**: a host
+with a tournament bye is a *spectator* in the currently-playing match
+(`MultiDeviceRoom.tsx`'s existing `!isMatchParticipant` early return shows
+them `TournamentBracket` instead of the game view). The modal was originally
+only rendered on the match-participant branch — so a bye'd host, the *only*
+device allowed to dispatch the advance action, never saw the modal at all,
+and the bracket sat stuck on the just-resolved match forever with no way for
+anyone to continue. Fixed by rendering `MatchResolvedModal` alongside
+`TournamentBracket` too, sharing the same `handleContinueAfterMatch` callback
+extracted above both branches.
 
 ### Live verification
-Across real, separately-connected browser tabs:
-- Multi-device: a full match ending in a correct-guess win, and a
-  **separate** match ending in a wrong-guess loss — both revealed
-  correctly on both tabs, host-only "jugar de nuevo" present only for the
-  host.
-- Single-device: name entry → reveal-and-pass (hold-to-reveal for both
-  players) → shared grid → "¿quién está adivinando?" selector → guess
-  confirmation → resolution, all correct.
-- A real 3-player tournament (one bye, two matches) played to a champion,
-  which is what surfaced the bug above — re-verified clean after the fix.
-
-Zero console errors throughout every check. One stale-console-buffer false
-alarm during setup (`MISSING_MESSAGE` for two i18n keys that genuinely
-existed, from a long-running dev session's many Fast-Refresh cycles) —
-confirmed clean on a fresh dev server restart, no code change needed; same
-class of false positive already documented in earlier handoffs.
+Across three real, separately-connected browser tabs, a full 3-player
+tournament: multi-device character selection (each device independently
+choosing and confirming, no coordination, matching ADR-0005's accepted
+1-in-32 collision risk); round 1 resolving to a correct-guess win, both
+match participants seeing the modal (the non-host with "esperando a que el
+anfitrión continúe" instead of a continue button); the bye'd host correctly
+gated on their own modal instance and able to advance; round 2 resolving to
+a wrong-guess loss; the champion screen only appearing after the host
+explicitly clicked "Salir de la partida." Also verified standalone
+single-device: selection phase (pass-the-phone gate for both players), a
+full match to a correct-guess win, the modal appearing and correctly
+dismissing to reveal the board underneath, and a rematch correctly
+restarting the selection loop. Zero console errors throughout every check.
 
 ## Files Modified / Added
-- `games/guess-who/` (new): `reducer.ts`, `module.ts`,
-  `content/{types,characters,index}.ts`,
-  `views/{CharacterCard,Player,SingleDevice}.tsx`
-- `lib/realtime/platformReducer.ts` (registered `guessWhoGameModule` in
-  `AVAILABLE_GAMES`)
-- `i18n/es.json`, `i18n/en.json` (`games.guess-who.*`, full `GuessWho`
-  section)
-- `tests/unit/guess-who-game.test.ts`, `tests/unit/guess-who-roster.test.ts`
-  (new, 29 tests total)
-- `docs/ROADMAP.md` (M6 marked done; M7 renumbering already in place from
-  the planning pass)
-- `docs/00_decisions/architecture/ADR-0005-PRIVATE-GAME-STATE.md`
-  (changelog v1.4.0)
-- `docs/09_ai/CURRENT_STATE.md`, `docs/09_ai/tasks/TASK-0038-guess-who.md`
+- `games/guess-who/reducer.ts` (`"selecting"` phase, `readySides`,
+  `CONFIRM_CHARACTER`)
+- `games/guess-who/views/Player.tsx` (selecting-phase grid + confirm,
+  removed auto-pick)
+- `games/guess-who/views/SingleDevice.tsx` (pass-the-phone selection gate,
+  removed `pickTwoDistinctCharacterIds`)
+- `components/platform/MatchResolvedModal.tsx` (new)
+- `components/platform/MultiDeviceRoom.tsx` (modal wired into both the
+  match-participant view and the bye'd-host spectator view; shared
+  `handleContinueAfterMatch`)
+- `app/[locale]/page.tsx` (modal wired into the single-device picker)
+- `lib/realtime/platformReducer.ts` (`useTournamentAdvance` deleted,
+  replaced by `getActiveMatchWinners`)
+- `i18n/es.json`, `i18n/en.json` (`Lobby.matchResolved*` keys; `GuessWho`
+  selecting-phase keys; removed now-unused `singleDevice.revealTitle`/
+  `holdToReveal`/`continueButton`)
+- `tests/unit/guess-who-game.test.ts` (rewritten: a `startPlaying()` helper
+  drives state through the new selecting phase; new `CONFIRM_CHARACTER`
+  test block; `PLAY_AGAIN` now asserts a return to `"selecting"`)
+
+Also landed in this same session (separate PRs, already merged): Guess
+Who's remaining 3 art batches (#55, #56, #57) — see their own PR
+descriptions and the `ADR-0005` v1.4-adjacent script fixes for
+`generate-guesswho-assets.mjs`'s `--split` precision improvements.
 
 ## External state (not in git, important for the next agent to know)
-- Same as prior handoffs: Supabase live, Vercel auto-deploying `main`,
-  strict branch protection, GitHub Actions secrets configured.
-- No real character portrait art exists yet — `CharacterCard.tsx` is
-  entirely the placeholder representation. The founder generating
-  reference-sheet batches is an explicit, not-yet-scheduled follow-up.
+- Same as prior handoffs: Supabase live, Vercel auto-deploying `main`, strict
+  branch protection, GitHub Actions secrets configured.
+- All 32 Guess Who characters now have real portrait art — the placeholder
+  path in `CharacterCard.tsx` has no live callers for the current roster,
+  but is kept in place for any future roster growth.
 
-## A testing-methodology note worth remembering (carried forward, extended)
-Same-profile multi-tab testing shares **all** of `localStorage` across
-tabs, including two keys that matter here: `LAST_IDENTITY_KEY`
-(`lib/realtime/session.ts`, used by `getRememberedUserId`/`rememberIdentity`
-so the *same* device can rejoin a room with the same id) and the full
-`RoomSession` (`saveRoomSession`/`loadRoomSession`, used to silently
-rejoin on page load). Both are written by **every** tab that creates or
-joins a room, since they aren't scoped per tab — only per browser. Two
-concrete failure modes hit this session, worth avoiding next time:
-1. Setting up two new tabs' identities in the same parallel batch (clear
-   localStorage + fill the join form + click join, for two tabs at once)
-   can race: both tabs' `getRememberedUserId(code)` calls read the *same*
-   shared key, and whichever write lands last wins for both — producing
-   two tabs presenting as the same underlying player and colliding in
-   Supabase's presence sync (one just overwrites the other; the room ends
-   up with fewer distinct players than tabs). Fix: set up tabs **one at a
-   time, fully sequentially** — clear + reload + fill + join + verify one
-   tab completely before touching the next.
-2. **Never call a bare `location.reload()` on an already-joined,
-   already-verified tab** once other tabs have since joined the same
-   room. Since `RoomSession`/`LAST_IDENTITY_KEY` are shared, a reload makes
-   that tab re-read localStorage from scratch — which by then reflects
-   whichever *other* tab joined most recently, not its own original
-   identity, corrupting that tab's session (it will render as the wrong
-   player, sometimes stealing the HOST badge). If a tab's displayed roster
-   looks stale, that's expected until the next live broadcast — it is not
-   a reason to reload; just wait or re-fetch page text.
-
-Also encountered this session: the Browser pane's `computer` click
-sometimes silently misses its target after a `resize_window`/viewport
-change or a tool timeout (the click coordinate resolves against a stale
-layout) — when a click via `ref` doesn't produce the expected page change
-and there's no console error to explain it, verify with a screenshot
-before assuming the app is broken; a plain `element.click()` via
-`javascript_tool` is a reliable fallback for driving the UI once the
-right element is confirmed to exist (debugging/inspection tool being used
-to actually click is a deliberate exception here, not a habit — prefer the
-real `computer` click when it's working).
+## A testing-methodology note worth remembering (carried forward)
+Console log dumps can exceed the tool's token limit on a long-running dev
+session (`read_console_messages` without a filter overflowed at ~63K
+characters this session) — use the `pattern` parameter (e.g.
+`"Error|error"`) to search instead of dumping everything. Also reconfirmed:
+restarting the dev server clean after a batch of hot-reloads is worth doing
+before trusting a scary-looking console error — this session saw a stale
+`useTournamentAdvance doesn't exist in target module` error that was already
+fixed in the source, left over from a mid-edit HMR pass.
 
 ## Pending Tasks
-- Real character portrait art for Guess Who (four reference-sheet
-  batches of 8 characters each, founder-generated) — not started.
 - A dedicated founder playtest of Battleship's full feature set (M4a–M4d —
   weapons, 2-vs-2 teams, tournament) on real phones specifically is still
   worth doing — every verification in this repo's history so far has used

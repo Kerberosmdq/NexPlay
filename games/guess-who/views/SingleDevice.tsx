@@ -7,7 +7,7 @@ import type { GuessWhoState, GuessWhoAction, Side } from "../reducer";
 import { otherSide } from "../reducer";
 import { GUESS_WHO_CHARACTERS } from "../content/characters";
 import { CharacterCard } from "./CharacterCard";
-import { Button, Card, RevealCard, WaitingState, ConfirmDialog } from "@/components/ui";
+import { Button, Card, WaitingState, ConfirmDialog } from "@/components/ui";
 
 export interface GuessWhoSingleDeviceProps {
   state: GuessWhoState;
@@ -26,11 +26,6 @@ function makeLocalPlayers(names: string[]): Player[] {
   }));
 }
 
-function pickTwoDistinctCharacterIds(): [string, string] {
-  const shuffled = [...GUESS_WHO_CHARACTERS].sort(() => Math.random() - 0.5);
-  return [shuffled[0].id, shuffled[1].id];
-}
-
 function characterById(id: string) {
   return GUESS_WHO_CHARACTERS.find((c) => c.id === id);
 }
@@ -42,11 +37,15 @@ export function SingleDeviceView({ state, dispatch, onExit }: GuessWhoSingleDevi
   const [localPlayers, setLocalPlayers] = useState<Player[]>([]);
   // Unlike multi-device, single-device has no per-device private slice at
   // all (the platform's singleDevice view contract never passes one) — one
-  // shared screen sees everything, so both sides' assignments simply live
-  // here as plain local state. The reveal-and-pass step below is what
+  // shared screen sees everything, so both sides' picks simply live here as
+  // plain local state. The privacy-gate + pick-then-pass step below is what
   // keeps them actually secret from each other, not data separation.
   const [assignments, setAssignments] = useState<Record<Side, string> | null>(null);
-  const [revealStep, setRevealStep] = useState<"A" | "B" | "done">("A");
+  // "selecting" phase only: whether the *current* picker has confirmed
+  // "yes, it's my turn" and can see the grid — reset every time the active
+  // side changes, so the next player gets their own privacy gate too.
+  const [unlockedForPick, setUnlockedForPick] = useState(false);
+  const [pendingPick, setPendingPick] = useState<string | null>(null);
   const [crossedOut, setCrossedOut] = useState<Set<string>>(new Set());
   const [guessing, setGuessing] = useState(false);
   const [guesserSide, setGuesserSide] = useState<Side | null>(null);
@@ -104,9 +103,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: GuessWhoSingleDevi
           disabled={!canStart}
           onClick={() => {
             const players = makeLocalPlayers(validNames);
-            const [charA, charB] = pickTwoDistinctCharacterIds();
             setLocalPlayers(players);
-            setAssignments({ A: charA, B: charB });
             dispatch({ type: "START_MATCH", playerIds: [players[0].id, players[1].id] });
           }}
           className="text-xl py-5"
@@ -125,28 +122,59 @@ export function SingleDeviceView({ state, dispatch, onExit }: GuessWhoSingleDevi
 
   const nameOf = (side: Side): string => localPlayers.find((p) => p.id === state.sides[side])?.displayName ?? "";
 
-  if (revealStep !== "done" && assignments) {
-    const side = revealStep;
-    const character = characterById(assignments[side])!;
+  // Founder feedback (2026-07-28): each player now actively chooses their
+  // own character instead of being handed a random one. Since single-device
+  // has no per-device private slice, the same privacy this game needs comes
+  // from a pass-the-phone gate (matching the reveal-and-pass precedent
+  // elsewhere in the app) rather than data separation: whoever hasn't
+  // confirmed yet must first say "it's me" before the grid appears, so the
+  // other player isn't watching them pick.
+  if (state.phase === "selecting") {
+    const side: Side | null = !state.readySides.A ? "A" : !state.readySides.B ? "B" : null;
+    if (!side) return <WaitingState label="..." />; // both confirmed; reducer is about to flip to "playing"
+
+    if (!unlockedForPick) {
+      return (
+        <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-4">
+          <p className="text-ink-muted font-bold uppercase tracking-widest text-sm">{nameOf(side)}</p>
+          <h2 className="font-display text-2xl text-ink text-center">{t("singleDevice.selectingGateTitle")}</h2>
+          <p className="text-xs text-ink-muted text-center">{t("singleDevice.dontLetOthersLook")}</p>
+          <Button variant="primary" onClick={() => setUnlockedForPick(true)} className="max-w-xs">
+            {t("singleDevice.selectingGateButton")}
+          </Button>
+        </div>
+      );
+    }
 
     return (
-      <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-4">
+      <div className="flex flex-col items-center space-y-6 w-full max-w-2xl mx-auto mt-4 px-4">
         <p className="text-ink-muted font-bold uppercase tracking-widest text-sm">{nameOf(side)}</p>
-        <h2 className="font-display text-2xl text-ink text-center">{t("singleDevice.revealTitle")}</h2>
+        <h2 className="font-display text-2xl text-ink text-center">{t("selectingTitle")}</h2>
+        <p className="text-sm text-ink-muted text-center">{t("selectingHint")}</p>
 
-        <RevealCard
-          hidden={
-            <div className="text-center space-y-4">
-              <div className="text-6xl">👁️</div>
-              <p className="text-ink-muted font-bold">{t("singleDevice.holdToReveal")}</p>
-              <p className="text-xs text-ink-muted">{t("singleDevice.dontLetOthersLook")}</p>
-            </div>
-          }
-          revealed={<CharacterCard character={character} size="large" />}
-        />
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 w-full">
+          {GUESS_WHO_CHARACTERS.map((character) => (
+            <CharacterCard
+              key={character.id}
+              character={character}
+              selected={pendingPick === character.id}
+              onClick={() => setPendingPick(character.id)}
+            />
+          ))}
+        </div>
 
-        <Button variant="ghost" onClick={() => setRevealStep(side === "A" ? "B" : "done")}>
-          {side === "A" ? `➔ ${nameOf("B")}` : t("singleDevice.continueButton")}
+        <Button
+          variant="primary"
+          disabled={!pendingPick}
+          onClick={() => {
+            setAssignments((prev) => ({ ...(prev ?? { A: "", B: "" }), [side]: pendingPick! }));
+            dispatch({ type: "CONFIRM_CHARACTER", side });
+            setPendingPick(null);
+            setUnlockedForPick(false);
+          }}
+          className="max-w-xs"
+        >
+          {t("confirmCharacterButton")}
         </Button>
       </div>
     );
@@ -176,12 +204,9 @@ export function SingleDeviceView({ state, dispatch, onExit }: GuessWhoSingleDevi
         <Button
           variant="ghost"
           onClick={() => {
-            setAssignments((prev) => {
-              if (!prev) return prev;
-              const [charA, charB] = pickTwoDistinctCharacterIds();
-              return { A: charA, B: charB };
-            });
-            setRevealStep("A");
+            setAssignments(null);
+            setUnlockedForPick(false);
+            setPendingPick(null);
             setCrossedOut(new Set());
             setGuesserSide(null);
             dispatch({ type: "PLAY_AGAIN" });

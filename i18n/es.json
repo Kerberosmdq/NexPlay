@@ -46,7 +46,12 @@
     "exitConfirmMessage": "Vas a salir del juego y de la sala.",
     "exitConfirmMessageSingleDevice": "Vas a salir del juego.",
     "exitConfirmConfirmButton": "Salir",
-    "exitConfirmCancelButton": "Cancelar"
+    "exitConfirmCancelButton": "Cancelar",
+    "matchResolvedTitle": "¡Partida terminada!",
+    "matchResolvedMessage": "¿Querés seguir mirando el tablero o continuar?",
+    "matchResolvedViewButton": "Ver tablero",
+    "matchResolvedContinueButton": "Salir de la partida",
+    "matchResolvedWaitingHint": "Esperando a que el anfitrión continúe"
   },
   "games": {
     "impostor": {
@@ -282,6 +287,10 @@
     "yourCharacterLabel": "Tu personaje",
     "opponentCharacterLabel": "El personaje de tu rival",
     "waitingForOpponent": "Esperando a tu rival...",
+    "waitingForOpponentToChoose": "Esperando a que tu rival elija su personaje...",
+    "selectingTitle": "Elegí tu personaje secreto",
+    "selectingHint": "Este va a ser el personaje que tu rival tiene que adivinar.",
+    "confirmCharacterButton": "Confirmar",
     "startGuessButton": "Adivinar",
     "cancelGuessButton": "Cancelar",
     "resolvingGuess": "Comprobando la adivinanza...",
@@ -314,10 +323,9 @@
       "playerNamePlaceholder": "Jugador {n}",
       "startButton": "¡COMENZAR!",
       "exitButton": "Salir",
-      "revealTitle": "Tu personaje secreto",
-      "holdToReveal": "Mantené presionado para ver",
+      "selectingGateTitle": "Elegí tu personaje secreto",
+      "selectingGateButton": "Soy yo, elegir mi personaje",
       "dontLetOthersLook": "¡Que nadie más mire tu pantalla!",
-      "continueButton": "Continuar",
       "whoIsGuessing": "¿Quién está adivinando?",
       "wins": "¡Ganó {name}!"
     }

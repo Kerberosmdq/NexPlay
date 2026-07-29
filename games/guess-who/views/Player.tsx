@@ -22,10 +22,6 @@ function nameFor(players: Player[], id: string): string {
   return players.find((p) => p.id === id)?.displayName ?? id;
 }
 
-function pickRandomCharacterId(): string {
-  return GUESS_WHO_CHARACTERS[Math.floor(Math.random() * GUESS_WHO_CHARACTERS.length)].id;
-}
-
 function characterById(id: string) {
   return GUESS_WHO_CHARACTERS.find((c) => c.id === id);
 }
@@ -42,25 +38,27 @@ export function PlayerView({ state, players, playerId, dispatch, privateState, s
   const [guessing, setGuessing] = useState(false);
   const [guessCandidateId, setGuessCandidateId] = useState<string | null>(null);
 
-  // Each device privately, independently picks its own secret character
-  // the instant it has a real slice to write into — never coordinated
-  // with the opponent's device (ADR-0005: this never becomes shared
-  // state at all, so there's nothing to coordinate without leaking it).
+  // Founder feedback (2026-07-28): the secret character used to be
+  // auto-assigned at random the instant a device got a real private slice —
+  // the actual game is *choosing* who you are, not being handed a random
+  // identity. Picking now happens in the "selecting" render branch below,
+  // driven by the player's own tap + a "Confirmar" button dispatching
+  // `CONFIRM_CHARACTER`.
   //
-  // Re-picks on every fresh entry into "playing" (not just when
-  // myCharacterId is still null), because usePrivateState's storage key is
-  // scoped to (room, game, player) — not to the individual match. Without
-  // this, a PLAY_AGAIN rematch or the next round of a tournament would
-  // silently keep the previous match's character, which the opponent (or,
-  // in a tournament, a past opponent) already saw revealed at resolution.
-  const lastPlayingEntryRef = useRef<boolean>(false);
+  // This still clears the private slice on every fresh entry into
+  // "selecting" (not just when it's already null), because
+  // `usePrivateState`'s storage key is scoped to (room, game, player) — not
+  // to the individual match. Without this, a `PLAY_AGAIN` rematch would
+  // silently keep the previous match's grid selection pre-filled with a
+  // character the opponent already saw revealed at the last resolution.
+  const lastSelectingEntryRef = useRef<boolean>(false);
   useEffect(() => {
-    if (!privateState || !setPrivateState) return;
-    const enteringPlaying = state.phase === "playing" && !lastPlayingEntryRef.current;
-    lastPlayingEntryRef.current = state.phase === "playing";
-    if (!enteringPlaying) return;
-    setPrivateState({ myCharacterId: pickRandomCharacterId() });
-  }, [state.phase, privateState, setPrivateState]);
+    if (!setPrivateState) return;
+    const enteringSelecting = state.phase === "selecting" && !lastSelectingEntryRef.current;
+    lastSelectingEntryRef.current = state.phase === "selecting";
+    if (!enteringSelecting) return;
+    setPrivateState({ myCharacterId: null });
+  }, [state.phase, setPrivateState]);
 
   // Once resolved, this device's own character is no longer secret —
   // reveal it, same ADR-0005 §3 exception Battleship's REVEAL_FLEET uses.
@@ -73,6 +71,41 @@ export function PlayerView({ state, players, playerId, dispatch, privateState, s
 
   if (state.phase === "config") {
     return <WaitingState label={t("waitingForOpponent")} />;
+  }
+
+  if (state.phase === "selecting") {
+    const iAmReady = mySide ? state.readySides[mySide] : false;
+
+    if (iAmReady) {
+      return <WaitingState label={t("waitingForOpponentToChoose")} />;
+    }
+
+    return (
+      <div className="flex flex-col items-center space-y-6 w-full max-w-2xl mx-auto mt-4 px-4">
+        <h2 className="font-display text-2xl text-ink text-center">{t("selectingTitle")}</h2>
+        <p className="text-sm text-ink-muted text-center">{t("selectingHint")}</p>
+
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 w-full">
+          {GUESS_WHO_CHARACTERS.map((character) => (
+            <CharacterCard
+              key={character.id}
+              character={character}
+              selected={privateState?.myCharacterId === character.id}
+              onClick={() => setPrivateState?.({ myCharacterId: character.id })}
+            />
+          ))}
+        </div>
+
+        <Button
+          variant="primary"
+          disabled={!privateState?.myCharacterId}
+          onClick={() => mySide && dispatch({ type: "CONFIRM_CHARACTER", side: mySide })}
+          className="max-w-xs"
+        >
+          {t("confirmCharacterButton")}
+        </Button>
+      </div>
+    );
   }
 
   if (state.phase === "resolution") {

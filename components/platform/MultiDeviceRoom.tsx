@@ -6,10 +6,11 @@ import { useRoomConnection } from "@/lib/realtime/hooks/useRoomConnection";
 import { usePrivateState, useAnswerPending } from "@/lib/realtime/privateState";
 import { RoomWaitingLobby } from "./RoomWaitingLobby";
 import { TournamentBracket } from "./TournamentBracket";
+import { MatchResolvedModal } from "./MatchResolvedModal";
 import {
   platformReducer,
   createInitialPlatformState,
-  useTournamentAdvance,
+  getActiveMatchWinners,
   AVAILABLE_GAMES,
   type PlatformAction,
 } from "@/lib/realtime/platformReducer";
@@ -83,11 +84,12 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
     dispatchAction({ type: "GAME_ACTION", action } as PlatformAction)
   );
 
-  // M4d: advances the tournament bracket once the active match's game
-  // reports a winner — a no-op whenever `gameState.tournament` is null
-  // (every non-tournament match). Must run unconditionally alongside the
-  // hooks above, before any phase-based early return (Rules of Hooks).
-  useTournamentAdvance(gameState, players, isHost, dispatchAction);
+  // Founder feedback (2026-07-28): a match used to advance the tournament
+  // (or return to lobby) the instant it resolved, with no pause — nobody
+  // got to see the final board or how the match was won. `MatchResolvedModal`
+  // below now gates that same action behind an explicit host confirmation,
+  // for both tournament and standalone matches.
+  const activeMatchWinners = getActiveMatchWinners(gameState);
 
   // Only the host records durable analytics, so a multi-device room emits
   // one row per lifecycle event rather than one per connected phone.
@@ -205,8 +207,32 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
     : null;
   const isMatchParticipant = !currentMatch || currentMatch.playerA === userId || currentMatch.playerB === userId;
 
+  const handleContinueAfterMatch = () => {
+    if (gameState.tournament) {
+      dispatchAction({ type: "PLATFORM_ADVANCE_TOURNAMENT", winnerId: activeMatchWinners![0], players });
+    } else {
+      dispatchAction({ type: "PLATFORM_RETURN_LOBBY" });
+    }
+  };
+
   if (!isMatchParticipant) {
-    return <TournamentBracket tournament={gameState.tournament} players={players} />;
+    // The host might have a bye and never be a participant in the
+    // currently-playing match — they're still the only device allowed to
+    // advance the tournament, so they need the modal here too, not just on
+    // the match-participant view below (found live: without this, a
+    // bye'd host had no way to ever click through, and the bracket sat
+    // stuck on the just-resolved match forever).
+    return (
+      <>
+        <MatchResolvedModal
+          gameState={gameState.gameState}
+          winners={activeMatchWinners}
+          canContinue={isHost}
+          onContinue={handleContinueAfterMatch}
+        />
+        <TournamentBracket tournament={gameState.tournament} players={players} />
+      </>
+    );
   }
 
   const gameDispatch = (action: unknown) => {
@@ -229,6 +255,12 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
           </Button>
         </div>
       )}
+      <MatchResolvedModal
+        gameState={gameState.gameState}
+        winners={activeMatchWinners}
+        canContinue={isHost}
+        onContinue={handleContinueAfterMatch}
+      />
       <View
         state={gameState.gameState}
         players={players}
