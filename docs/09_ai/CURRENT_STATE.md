@@ -1007,6 +1007,68 @@ race game).
       renamed characters render their new labels against the correct art.
       `lint`, `typecheck`, and all 206 unit tests pass.
 
+- [x] **Hotfix (unnumbered)**: Battleship playability — founder feedback
+      (2026-08-15) after a real session. Four defects, all found by reading
+      the code and each reproduced live before fixing.
+      (1) **The screen moved on every shot.** Two separate layout shifters,
+      both above the boards in the same flex column: the hit/miss banner
+      mounted and unmounted (pushing everything down for 2.2s, then back
+      up), and — the larger one — the weapon card is gated on
+      `isMyTurn && !pendingShot`, so it vanished the instant you fired and
+      returned when your turn came back, moving both boards by its full
+      height every turn. The banner and turn-status blocks now sit in
+      fixed-height slots; the boards moved **above** the controls, since
+      reserving space for a card whose height varies with weapon count would
+      have left a permanent blank gap. Measured live: board top constant at
+      0px drift across a full fire → announce → clear cycle (it also puts
+      the controls in thumb reach on a phone).
+      (2) **Everything rendered red.** The strike branch returned
+      `bg-action-danger` regardless of the result, and a miss settled to
+      `bg-surface-well` (#ded0b4) — nearly identical to an unfired cell's
+      `bg-surface-sunken` (#e7d9c0). So a miss flashed red and then went
+      invisible. Colour now always follows the result, with the strike only
+      adding motion on top. Needed the palette's first blue (`--color-water`,
+      ADR-0004 forbids raw hex outside `tokens.css`); the first draft was a
+      navy that paired beautifully with white but sat at 1.11:1 against the
+      wine red — caught by a new test asserting the board's three cell
+      states separate by *lightness*, not just hue, since hue alone is what
+      fails in sunlight or with red-green colour blindness. Final
+      `#2d7ab8`: 4.58:1 with white, 2.09:1 vs a hit, 3.29:1 vs an unfired cell.
+      (3) **A special shot coloured one square, not its shape.** `strikeCell`
+      was a single `string | null` while the diff loop called its setter once
+      per new cell, so the last cell won. Now a `Set`, with the whole diff
+      collected before touching state. Compounded by (2): the shape's missed
+      cells were invisible anyway. Verified live — a Cross animated all 5
+      cells at once, a Double both. The announcement had the same
+      last-cell-wins flaw and now summarizes (`multiAnnouncement`, new i18n
+      key in ES+EN).
+      (4) **Secrets leaked across tournament matches.** `usePrivateState`
+      keys a device's private slice by (room, game, player) with **no match
+      identity**, so a tournament's next match silently inherited the
+      previous one's secret. Reproduced live: the winner of round 1 arrived
+      at the final already showing "¡FLOTA LISTA!", still holding the exact
+      layout their previous opponent had just spent a whole match mapping.
+      This is the same bug class `TASK-0038` fixed for Guess Who *in that
+      game's own view*; the platform-level cause was never addressed, so
+      Battleship still had it. Fixed generically: `PlatformState` gained
+      `matchNumber` (a plain counter, not a random id — every device must
+      derive the same key from the same shared state, and `Math.random()`
+      stays out of the reducer), incremented on every match the platform
+      starts, and included in the private-state key. Battleship's own
+      "Jugar de nuevo" rematch reuses the same match number, so its view
+      also clears the fleet on entering `placing` — keyed on the phase
+      *transition*, because `PLAY_AGAIN` resets shots and readySides to
+      exactly their start-of-match values and any snapshot of those is
+      identical between a first placement and a rematch.
+      **Not reproduced**: the founder also reported the tournament freezing
+      after the first match. A full 3-player tournament (round 1 played to a
+      win, host advance, final placed and firing) advanced correctly both
+      before and after these fixes, so the freeze has a cause not yet
+      identified — see `HANDOFF.md`. The stale-fleet defect is the leading
+      candidate but was not observed to hang anything.
+      Verified across three real, separately-connected browser tabs over
+      actual Supabase Realtime. `lint`, `typecheck` and 210 unit tests pass.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -1014,6 +1076,19 @@ race game).
 - None currently open.
 
 ## Next Task
+- **Simultaneous tournament matches** — founder request (2026-08-15),
+  confirmed as the next piece of work after the Battleship playability
+  hotfix above. Today a bracket is strictly sequential *by construction*:
+  `PlatformState` holds exactly one `gameState` ("the match being played"),
+  and `nextPlayableMatch` hands back one match at a time. With 4 or 6
+  entrants the founder wants every match in a round played at once so
+  nobody sits idle, then the winners meet. That means N concurrent game
+  states, which reaches the platform reducer, room sync, the bracket view,
+  the private-state key, and `MatchResolvedModal`. Milestone-sized, needs a
+  task spec. One design decision already taken with the founder: round
+  advancement becomes **automatic** once every match in the round resolves
+  — the current host-gated "Salir de la partida" per match doesn't scale
+  when the host isn't in most of them.
 - **M7 — Presentable**, or — if the founder wants to keep prioritizing
   games first, the same pattern M3.5/M5/M6 already followed — the two
   remaining entries in `BACKLOG.md`'s prioritized games list (Ludo, a
@@ -1030,5 +1105,6 @@ race game).
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-08-15 (Guess Who portrait framing, 8 name/art gender corrections, and
-  a neighbouring-character crop-bleed cleanup in the asset script)
+- 2026-08-15 (Battleship playability hotfix: layout stability, hit/miss
+  colours, multi-cell shot feedback, and match-scoped private state;
+  simultaneous tournament matches queued as the next task)

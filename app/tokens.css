@@ -55,6 +55,26 @@
   /* Points/score highlight — a readable gold, distinct from ink-muted. */
   --color-gold: #6b4e0f;
 
+  /* Battleship shot results (founder feedback, 2026-08-15: "si es agua
+     tiene que ser azul, y rojo cuando le pegas"). A miss previously reused
+     --color-surface-well, which reads as "empty parchment cell," not water,
+     and gave the board no hit/miss color contrast at all. Deliberately the
+     one blue in a palette BDR-0001 built without one: it is a literal
+     depiction (the sea) rather than a new brand accent, so it is scoped to
+     this single use and named for it.
+
+     Chosen for *lightness* separation, not just hue: a deeper navy paired
+     with white far more comfortably, but sat at almost exactly the wine
+     red's luminance (1.11:1), so water and a hit were told apart by hue
+     alone — the first thing to fail in sunlight or with red-green color
+     blindness, on a board whose entire feedback vocabulary is these two
+     colors. This sits clearly lighter than the hit red (2.09:1) and clearly
+     darker than an unfired cell's parchment (3.29:1) while still pairing
+     with white at AA (4.58:1). tests/unit/design-tokens.test.ts guards all
+     three relationships. */
+  --color-water: #2d7ab8;
+  --color-on-water: #ffffff;
+
   /* Penumbra — the reveal moment (BDR-0001): the screen dims, a warm
      glow gathers around the card. The only place NexPlay goes dark, so
      text tokens live here too rather than reusing the light-theme ones —
@@ -119,6 +139,9 @@
   --color-on-danger-surface: var(--color-on-danger-surface);
 
   --color-gold: var(--color-gold);
+
+  --color-water: var(--color-water);
+  --color-on-water: var(--color-on-water);
 
   --color-penumbra-ground: var(--color-penumbra-ground);
   --color-penumbra-glow: var(--color-penumbra-glow);

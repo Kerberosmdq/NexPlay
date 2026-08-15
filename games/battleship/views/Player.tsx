@@ -9,6 +9,7 @@ import {
   type BattleshipAction,
   type BattleshipPrivate,
   type BattleshipSide,
+  type BattleshipPhase,
   type CellResult,
 } from "../reducer";
 import {
@@ -384,46 +385,83 @@ export function PlayerView({
   const prevShotsRef = useRef<{ A: Record<string, CellResult>; B: Record<string, CellResult> }>({ A: {}, B: {} });
   const prevSunkRef = useRef<{ A: string[]; B: string[] }>({ A: [], B: [] });
   const strikeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [strikeCell, setStrikeCell] = useState<string | null>(null); // `${side}:${cell}`
+  // Every cell of the shot that just landed, as `${side}:${cell}` — a Set,
+  // not a single cell. It used to be one string, so a multi-cell weapon
+  // (M4b's Double/Triple/Cross) animated only whichever cell the diff loop
+  // happened to visit last: the founder's "cuando disparas un tiro especial
+  // solo se pone de color un solo cuadrado, no la forma del disparo".
+  const [strikeCells, setStrikeCells] = useState<ReadonlySet<string>>(() => new Set());
   const [announcement, setAnnouncement] = useState<{ text: string; sunk: boolean; shipType: string | null } | null>(
     null
   );
 
   useEffect(() => {
+    // One shot resolves every cell of its shape at once, so this collects
+    // the whole diff before touching state — the previous version set the
+    // strike cell and the announcement *inside* the per-cell loop, which
+    // meant a multi-cell weapon overwrote both on every iteration and only
+    // the last cell survived to be rendered.
+    const newCells: string[] = [];
+    let hits = 0;
+    let misses = 0;
+    let sunkType: string | null = null;
+    // `side` here is the *defending* side (whose ship, if any, was just
+    // hit) — when it's my own side, the sinking was done TO me, not BY me,
+    // so the phrasing has to flip.
+    let iWasSunk = false;
+
     for (const side of ["A", "B"] as const) {
       const prevShots = prevShotsRef.current[side];
-      const currShots = state.shots[side];
-      for (const [cell, result] of Object.entries(currShots)) {
+      for (const [cell, result] of Object.entries(state.shots[side])) {
         if (cell in prevShots) continue; // already seen, not a new result
-        const prevSunkCount = prevSunkRef.current[side].length;
-        const currSunkCount = state.sunkShips[side].length;
-        const sunkType = currSunkCount > prevSunkCount ? state.sunkShips[side][currSunkCount - 1] : null;
-        // `side` is the *defending* side here (whose ship, if any, was just
-        // hit) — when it's my own side, the sinking was done TO me, not BY
-        // me, so the phrasing has to flip (this is the modal the founder
-        // asked for: "que aparezca un modal que diga que lo hundiste" only
-        // reads right from the shooter's side).
-        const iWasSunk = side === mySide;
-
-        if (strikeTimerRef.current) clearTimeout(strikeTimerRef.current);
-        setStrikeCell(`${side}:${cell}`);
-        setAnnouncement({
-          text: sunkType
-            ? t(iWasSunk ? "firing.shipSunkAnnouncement" : "firing.sunkAnnouncement", { ship: tShips(sunkType) })
-            : result === "hit"
-              ? t("firing.hitAnnouncement")
-              : t("firing.missAnnouncement"),
-          sunk: Boolean(sunkType),
-          shipType: sunkType,
-        });
-        strikeTimerRef.current = setTimeout(() => {
-          setStrikeCell(null);
-          setAnnouncement(null);
-        }, 2200);
+        newCells.push(`${side}:${cell}`);
+        if (result === "hit") hits++;
+        else misses++;
+      }
+      const newlySunk = state.sunkShips[side].slice(prevSunkRef.current[side].length);
+      if (newlySunk.length > 0) {
+        // A Cross can complete two ships at once; the modal names one, and
+        // naming the last is what the previous per-cell loop effectively did.
+        sunkType = newlySunk[newlySunk.length - 1];
+        iWasSunk = side === mySide;
       }
     }
+
     prevShotsRef.current = { A: { ...state.shots.A }, B: { ...state.shots.B } };
     prevSunkRef.current = { A: [...state.sunkShips.A], B: [...state.sunkShips.B] };
+
+    if (newCells.length === 0) return;
+
+    if (strikeTimerRef.current) clearTimeout(strikeTimerRef.current);
+    // This is transient feedback on a timer, not state derivable during
+    // render: the strike animation and banner exist for 2.2s after a shot
+    // lands and then clear themselves, so there is nothing to compute from
+    // the current props instead. The external system being synchronized is
+    // the timer above. The previous version made these same two calls from
+    // inside a nested loop, where this rule's "directly in the effect body"
+    // heuristic simply didn't see them — hoisting them out is what made it
+    // fire, not a new cascading-render risk.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setStrikeCells(new Set(newCells));
+    setAnnouncement({
+      text: sunkType
+        ? t(iWasSunk ? "firing.shipSunkAnnouncement" : "firing.sunkAnnouncement", { ship: tShips(sunkType) })
+        : newCells.length > 1
+          ? // A multi-cell weapon needs its own phrasing: "¡Tocado!" alone
+            // is wrong when the same shot also splashed, and picking one
+            // cell's result to report was what made the old feedback
+            // arbitrary.
+            t("firing.multiAnnouncement", { hits, misses })
+          : hits > 0
+            ? t("firing.hitAnnouncement")
+            : t("firing.missAnnouncement"),
+      sunk: Boolean(sunkType),
+      shipType: sunkType,
+    });
+    strikeTimerRef.current = setTimeout(() => {
+      setStrikeCells(new Set());
+      setAnnouncement(null);
+    }, 2200);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.shots, state.sunkShips]);
 
@@ -447,6 +485,29 @@ export function PlayerView({
     // unrelated private-state change without ever changing the outcome.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase, state.winner, state.revealedFleets, mySide, loserSide]);
+
+  // A "Jugar de nuevo" rematch reuses the same match, so the platform's
+  // match-scoped private-state key (PlatformState.matchNumber) doesn't
+  // change and the previous round's fleet would carry over — the board
+  // would open on "¡FLOTA LISTA!" with the layout the opponent just spent a
+  // whole match learning. PLAY_AGAIN resets `readySides`, so a fresh entry
+  // into "placing" with nobody ready is the signal; the ref keeps this from
+  // wiping the fleet again on every later render of that same phase (the
+  // same guard shape Guess Who uses to re-pick its character on a rematch).
+  const prevPhaseRef = useRef<BattleshipPhase | null>(null);
+  useEffect(() => {
+    const enteringPlacing = state.phase === "placing" && prevPhaseRef.current !== "placing";
+    prevPhaseRef.current = state.phase;
+    if (!enteringPlacing || !mySide || !setPrivateState) return;
+    setPrivateState({ fleet: [] });
+    // Keyed on the phase transition rather than on "the board looks fresh":
+    // PLAY_AGAIN resets shots and readySides to exactly their start-of-match
+    // values, so any snapshot of those is identical between a first
+    // placement and a rematch, and the reset would never fire the second
+    // time. Staying within "placing" never re-triggers, so this cannot wipe
+    // a fleet mid-placement.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.phase, mySide]);
 
   // M4c: a 4-player match starts here, before anyone has a `mySide` yet —
   // must come before the `!mySide` guard below, which would otherwise
@@ -759,10 +820,15 @@ export function PlayerView({
           aim={aimGhostCells ? { cells: aimGhostCells, valid: aimGhostValid } : null}
           cellClassName={(_r, _c, cell) => {
             const result = shotsIFired[cell];
-            const striking = opponentSide && strikeCell === `${opponentSide}:${cell}`;
-            if (striking) return announcement?.sunk ? "bg-action-danger motion-shake" : "bg-action-danger motion-strike";
-            if (result === "hit") return "bg-action-danger";
-            if (result === "miss") return "bg-surface-well";
+            const striking = Boolean(opponentSide && strikeCells.has(`${opponentSide}:${cell}`));
+            // The animation used to force red on every struck cell whether
+            // it hit or splashed, so a miss flashed red and then settled
+            // grey — the founder's "cuando pegas o tirás al agua te aparece
+            // el cuadrado rojo". Colour now always follows the result; the
+            // strike only adds motion on top of it.
+            const base = result === "hit" ? "bg-action-danger" : result === "miss" ? "bg-water" : null;
+            if (striking && base) return `${base} ${announcement?.sunk ? "motion-shake" : "motion-strike"}`;
+            if (base) return base;
             return "bg-surface-sunken border border-line";
           }}
         />
@@ -783,12 +849,12 @@ export function PlayerView({
           cellClassName={(_r, _c, cell) => {
             const result = shotsIReceived[cell];
             const hasShip = Boolean(shipTypeAt(effectiveFleet, cell));
-            const striking = mySide && strikeCell === `${mySide}:${cell}`;
-            if (striking && !hasShip) {
-              return announcement?.sunk ? "bg-action-danger motion-shake" : "bg-action-danger motion-strike";
-            }
-            if (hasShip) return "bg-transparent"; // the ship image itself shows; hit dots layer on top
-            if (result === "miss") return "bg-surface-well";
+            const striking = Boolean(mySide && strikeCells.has(`${mySide}:${cell}`));
+            // Same result-follows-colour rule as the target board above. A
+            // cell holding one of my ships stays transparent either way so
+            // the ship art shows through, with the hit dots layered on top.
+            if (hasShip) return striking ? "bg-transparent motion-shake" : "bg-transparent";
+            if (result === "miss") return striking ? "bg-water motion-strike" : "bg-water";
             return "bg-surface-sunken border border-line";
           }}
         />
@@ -799,15 +865,25 @@ export function PlayerView({
       <div className="flex flex-col items-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
         <h2 className="font-display text-2xl text-ink text-center">{t("firing.title")}</h2>
 
-        {announcement && !announcement.sunk && (
-          <div
-            role="status"
-            aria-live="assertive"
-            className="w-full text-center py-3 px-4 rounded-2xl font-black text-lg bg-surface-sunken text-ink motion-deal"
-          >
-            {announcement.text}
-          </div>
-        )}
+        {/* Founder feedback (2026-08-15): "se mueve la pantalla del cel
+            cuando se dispara". This banner used to mount and unmount, so
+            firing pushed both boards down and, 2.2s later, pulled them back
+            up — the board moved out from under the player's thumb mid-game.
+            The slot is now always in the layout at a fixed height and only
+            its *contents* toggle, so nothing below it ever reflows. Kept
+            empty rather than removed when idle for the same reason: the
+            reserved space is the fix. */}
+        <div className="w-full h-14 flex items-center justify-center shrink-0" aria-hidden={!announcement}>
+          {announcement && !announcement.sunk && (
+            <div
+              role="status"
+              aria-live="assertive"
+              className="w-full text-center py-3 px-4 rounded-2xl font-black text-lg bg-surface-sunken text-ink motion-deal"
+            >
+              {announcement.text}
+            </div>
+          )}
+        </div>
 
         {announcement?.sunk && (
           <div
@@ -816,7 +892,7 @@ export function PlayerView({
             className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 px-4"
             onClick={() => {
               if (strikeTimerRef.current) clearTimeout(strikeTimerRef.current);
-              setStrikeCell(null);
+              setStrikeCells(new Set());
               setAnnouncement(null);
             }}
           >
@@ -836,14 +912,68 @@ export function PlayerView({
           </div>
         )}
 
-        {pendingIsMine ? (
-          <WaitingState label={t("firing.waitingForOpponent")} />
-        ) : pendingIsOpponents ? (
-          <WaitingState label={t("firing.resolvingYourAnswer")} />
-        ) : (
-          <p className={`text-lg font-black ${isMyTurn ? "text-action-secondary motion-pulse" : "text-ink-muted"}`}>
-            {isMyTurn ? t("firing.yourTurn") : t("firing.opponentTurn")}
-          </p>
+        {/* Same reserved-slot rule as the announcement above: this swaps
+            between a WaitingState and a one-line label on every turn, and
+            they are not the same height. */}
+        <div className="w-full h-12 flex items-center justify-center shrink-0">
+          {pendingIsMine ? (
+            <WaitingState label={t("firing.waitingForOpponent")} />
+          ) : pendingIsOpponents ? (
+            <WaitingState label={t("firing.resolvingYourAnswer")} />
+          ) : (
+            <p className={`text-lg font-black ${isMyTurn ? "text-action-secondary motion-pulse" : "text-ink-muted"}`}>
+              {isMyTurn ? t("firing.yourTurn") : t("firing.opponentTurn")}
+            </p>
+          )}
+        </div>
+
+        {/* The boards sit above every control that can grow or vanish. They
+            used to be last, under the weapon card — which unmounts the
+            instant you fire (`isMyTurn && !pendingShot`) and remounts when
+            your turn comes back, shoving both boards up and down by the
+            card's full height every single turn. That was the larger half
+            of "se mueve la pantalla del cel cuando se dispara"; reserving
+            space for a card whose height varies with weapon count would
+            have left a permanent blank gap instead, so the controls moved
+            below the boards. Anything that resizes now only pushes what is
+            underneath it, and the board stays put under the player's thumb
+            — which also puts the controls within thumb reach on a phone. */}
+        {layout === "stacked" && (
+          <>
+            {targetBoard}
+            {ownBoard}
+          </>
+        )}
+
+        {layout === "side-by-side" && (
+          <div className="flex flex-row gap-3 w-full justify-center items-start">
+            <div className="flex-1 min-w-0">{targetBoard}</div>
+            <div className="flex-1 min-w-0">{ownBoard}</div>
+          </div>
+        )}
+
+        {layout === "one-at-a-time" && (
+          <>
+            <div className="flex gap-2 w-full max-w-xs">
+              <Button
+                variant="ghost"
+                active={singleBoardView === "target"}
+                onClick={() => setSingleBoardView("target")}
+                className="text-xs"
+              >
+                {t("firing.targetBoardLabel")}
+              </Button>
+              <Button
+                variant="ghost"
+                active={singleBoardView === "own"}
+                onClick={() => setSingleBoardView("own")}
+                className="text-xs"
+              >
+                {t("firing.yourBoardLabel")}
+              </Button>
+            </div>
+            {singleBoardView === "target" ? targetBoard : ownBoard}
+          </>
         )}
 
         {isMyTurn && !state.pendingShot && (
@@ -931,44 +1061,6 @@ export function PlayerView({
             {t("firing.layoutOneAtATime")}
           </Button>
         </div>
-
-        {layout === "stacked" && (
-          <>
-            {targetBoard}
-            {ownBoard}
-          </>
-        )}
-
-        {layout === "side-by-side" && (
-          <div className="flex flex-row gap-3 w-full justify-center items-start">
-            <div className="flex-1 min-w-0">{targetBoard}</div>
-            <div className="flex-1 min-w-0">{ownBoard}</div>
-          </div>
-        )}
-
-        {layout === "one-at-a-time" && (
-          <>
-            <div className="flex gap-2 w-full max-w-xs">
-              <Button
-                variant="ghost"
-                active={singleBoardView === "target"}
-                onClick={() => setSingleBoardView("target")}
-                className="text-xs"
-              >
-                {t("firing.targetBoardLabel")}
-              </Button>
-              <Button
-                variant="ghost"
-                active={singleBoardView === "own"}
-                onClick={() => setSingleBoardView("own")}
-                className="text-xs"
-              >
-                {t("firing.yourBoardLabel")}
-              </Button>
-            </div>
-            {singleBoardView === "target" ? targetBoard : ownBoard}
-          </>
-        )}
       </div>
     );
   }
