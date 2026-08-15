@@ -5,6 +5,14 @@ import type { GuessWhoCharacter } from "./types";
 // deliberate content design (see tests/unit/guess-who-roster.test.ts),
 // not incidental: no single trait value should be a near-instant giveaway
 // or a near-useless question.
+//
+// Names are cosmetic (no rule reads them), but they must agree with how the
+// character is drawn in public/guess-who/<id>.png: the art was generated
+// from the traits alone, which left several portraits with a name of the
+// opposite gender (founder feedback, 2026-08-15). Renaming to match the
+// existing art is the fix — traits are untouched, so the roster balance the
+// test guards is unaffected. When adding or regenerating a portrait, check
+// the name against the drawing.
 export const GUESS_WHO_CHARACTERS: GuessWhoCharacter[] = [
   {
     id: "c1",
@@ -104,7 +112,7 @@ export const GUESS_WHO_CHARACTERS: GuessWhoCharacter[] = [
   },
   {
     id: "c9",
-    name: "Camila",
+    name: "Bruno",
     traits: {
       glasses: true,
       hat: false,
@@ -272,7 +280,7 @@ export const GUESS_WHO_CHARACTERS: GuessWhoCharacter[] = [
   },
   {
     id: "c23",
-    name: "Valeria",
+    name: "Thiago",
     traits: {
       glasses: false,
       hat: false,
@@ -284,7 +292,7 @@ export const GUESS_WHO_CHARACTERS: GuessWhoCharacter[] = [
   },
   {
     id: "c24",
-    name: "Máximo",
+    name: "Julieta",
     traits: {
       glasses: false,
       hat: false,
@@ -296,7 +304,7 @@ export const GUESS_WHO_CHARACTERS: GuessWhoCharacter[] = [
   },
   {
     id: "c25",
-    name: "Daniela",
+    name: "Ramiro",
     traits: {
       glasses: false,
       hat: true,
@@ -308,7 +316,7 @@ export const GUESS_WHO_CHARACTERS: GuessWhoCharacter[] = [
   },
   {
     id: "c26",
-    name: "Tomás",
+    name: "Paulina",
     traits: {
       glasses: false,
       hat: true,
@@ -320,7 +328,7 @@ export const GUESS_WHO_CHARACTERS: GuessWhoCharacter[] = [
   },
   {
     id: "c27",
-    name: "Constanza",
+    name: "Facundo",
     traits: {
       glasses: false,
       hat: true,
@@ -356,7 +364,7 @@ export const GUESS_WHO_CHARACTERS: GuessWhoCharacter[] = [
   },
   {
     id: "c30",
-    name: "Agustín",
+    name: "Amanda",
     traits: {
       glasses: false,
       hat: true,
@@ -380,7 +388,7 @@ export const GUESS_WHO_CHARACTERS: GuessWhoCharacter[] = [
   },
   {
     id: "c32",
-    name: "Ignacio",
+    name: "Lucía",
     traits: {
       glasses: false,
       hat: false,

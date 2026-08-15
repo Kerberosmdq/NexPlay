@@ -11,6 +11,13 @@
 // (N items side by side on one flat background color), just characters
 // instead of ships. Not part of the app's runtime — run once per batch
 // (`node scripts/generate-guesswho-assets.mjs <sheetPath> <id1> <id2> ...`).
+//
+// Also runs in a second, standalone mode over already-generated assets
+// (`node scripts/generate-guesswho-assets.mjs --clean public/guess-who/c26.png ...`),
+// which applies only the detached-fragment cleanup below. That mode exists
+// because the founder-provided source sheets are not committed to the repo,
+// so a crop-level defect found after a batch has landed can't be fixed by
+// re-slicing the original.
 import sharp from "../node_modules/.pnpm/sharp@0.34.5/node_modules/sharp/lib/index.js";
 import { mkdirSync } from "node:fs";
 
@@ -142,8 +149,82 @@ function applyManualSplits(ranges, splitArgs, data, width, height, channels, bg)
   return result;
 }
 
+const ALPHA_SOLID = 40; // alpha above which a pixel counts as real content, for fragment detection
+
+/** Erases opaque blobs that are disconnected from the character and touch a
+ * left/right edge of the crop — the signature of a neighbouring character
+ * bleeding in (a hat brim, most often), since that's the axis the sheet is
+ * sliced along. Batches 1–4 shipped three of these (c26 on both sides, c29,
+ * c31); they went unnoticed because the card used to crop portraits to a
+ * circle, which cut off exactly the margin the slivers sat in. The card now
+ * shows the whole portrait, so they have to actually be gone.
+ *
+ * Requiring an edge touch is what makes this safe to run blind: a legitimately
+ * detached feature (an earring drawn clear of the head, a glasses lens) sits in
+ * the interior and is never considered. The largest blob is always kept, so a
+ * character whose own art happens to reach an edge can't erase itself. */
+function removeDetachedFragments(pixels, width, height) {
+  const solid = (i) => pixels[i * 4 + 3] > ALPHA_SOLID;
+  const seen = new Uint8Array(width * height);
+  const blobs = [];
+
+  for (let start = 0; start < width * height; start++) {
+    if (!solid(start) || seen[start]) continue;
+    const members = [];
+    const stack = [start];
+    seen[start] = 1;
+    let touchesSideEdge = false;
+    while (stack.length) {
+      const p = stack.pop();
+      members.push(p);
+      const x = p % width;
+      const y = (p - x) / width;
+      if (x === 0 || x === width - 1) touchesSideEdge = true;
+      if (x > 0) { const n = p - 1; if (!seen[n] && solid(n)) { seen[n] = 1; stack.push(n); } }
+      if (x < width - 1) { const n = p + 1; if (!seen[n] && solid(n)) { seen[n] = 1; stack.push(n); } }
+      if (y > 0) { const n = p - width; if (!seen[n] && solid(n)) { seen[n] = 1; stack.push(n); } }
+      if (y < height - 1) { const n = p + width; if (!seen[n] && solid(n)) { seen[n] = 1; stack.push(n); } }
+    }
+    blobs.push({ members, touchesSideEdge });
+  }
+
+  if (blobs.length < 2) return 0;
+  blobs.sort((a, b) => b.members.length - a.members.length);
+  let erased = 0;
+  for (const blob of blobs.slice(1)) {
+    if (!blob.touchesSideEdge) continue;
+    for (const p of blob.members) pixels[p * 4 + 3] = 0;
+    erased += blob.members.length;
+  }
+  return erased;
+}
+
+/** `--clean` mode: re-run only the fragment cleanup over existing PNGs. */
+async function cleanExisting(files) {
+  for (const file of files) {
+    const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const erased = removeDetachedFragments(data, info.width, info.height);
+    if (erased === 0) {
+      console.log(`${file}: no detached edge fragments found, left untouched`);
+      continue;
+    }
+    await sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toFile(file);
+    console.log(`${file}: erased ${erased}px of detached edge fragments`);
+  }
+}
+
 async function main() {
   const [, , src, ...rest] = process.argv;
+
+  if (src === "--clean") {
+    if (rest.length === 0) {
+      console.error("Usage: node scripts/generate-guesswho-assets.mjs --clean <file1.png> <file2.png> ...");
+      process.exit(1);
+    }
+    await cleanExisting(rest);
+    return;
+  }
+
   const splitArgs = [];
   const characterIds = [];
   for (const arg of rest) {
@@ -198,11 +279,20 @@ async function main() {
       pixels[p + 3] = Math.round(pixels[p + 3] * ramp);
     }
 
+    // Padding is clamped to the neighbour's detected range above, but that
+    // only stops *this* crop from reaching into a neighbour whose content was
+    // detected — a hat brim overhanging into this character's own range still
+    // lands inside the crop, so it gets erased here instead.
     const id = characterIds[i];
+    const erased = removeDetachedFragments(pixels, cropped.info.width, cropped.info.height);
+
     await sharp(pixels, { raw: { width: cropped.info.width, height: cropped.info.height, channels: 4 } })
       .png()
       .toFile(`${OUT_DIR}/${id}.png`);
-    console.log(`Wrote ${OUT_DIR}/${id}.png (${cropped.info.width}x${cropped.info.height})`);
+    console.log(
+      `Wrote ${OUT_DIR}/${id}.png (${cropped.info.width}x${cropped.info.height})` +
+        (erased > 0 ? ` — erased ${erased}px of neighbouring-character bleed` : "")
+    );
   }
 
   console.log("Guess Who character assets generated.");

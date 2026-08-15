@@ -947,6 +947,66 @@ race game).
       a correct-guess win, a wrong-guess loss, and the champion screen — all
       showing the modal, none auto-advancing. Zero console errors throughout.
 
+- [x] **Hotfix (unnumbered)**: founder feedback (2026-08-15) while playtesting
+      Guess Who — two unrelated defects in the just-landed character art, plus
+      a latent third one the first fix exposed.
+      (1) **Portraits were cropped and hats were invisible.** `CharacterCard.tsx`
+      framed every portrait as a circle with `object-cover`. The art is
+      head-and-shoulders at roughly 2:3, so filling a *square* box scaled the
+      image to its width and pushed ~25% of its height out of view, top and
+      bottom — and the circle then trimmed the corners of what was left. The
+      top of every hat was the casualty, which is the single worst trait to
+      lose in a game whose entire mechanic is asking "¿tiene sombrero?".
+      Replaced with a portrait-shaped box (`w-full aspect-[2/3]`, rounded
+      corners) and `object-contain`, so nothing is cropped at any size. Cards
+      got bigger in the process, not smaller (48×48 circle → 62×93 in the
+      mobile grid, 96×96 → 112×168 for the `size="large"` card), by matching
+      the art's own aspect ratio and tightening the card's padding. The
+      cross-out strike needed `shrink-0` alongside its `w-[150%]` — the
+      centering flex parent was clamping it back to the frame's width, leaving
+      the slash short of the edges on the now-taller frame.
+      (2) **Eight characters had a name of the opposite gender to their art.**
+      Root cause: the art was generated from the *traits* (hair length, facial
+      hair, etc.), which say nothing about gender, so the generator drew
+      whoever it liked and the pre-existing names no longer matched. Reviewed
+      all 32 portraits against their names and found exactly eight, four in
+      each direction: c9 Camila→**Bruno**, c23 Valeria→**Thiago**, c25
+      Daniela→**Ramiro**, c27 Constanza→**Facundo**, c24 Máximo→**Julieta**,
+      c26 Tomás→**Paulina**, c30 Agustín→**Amanda**, c32 Ignacio→**Lucía**.
+      Renaming (rather than regenerating art) was the right fix because names
+      are cosmetic — no rule reads them — so traits are untouched and
+      `guess-who-roster.test.ts`'s balance guarantees are unaffected; the
+      16/16 gender split is preserved too, since the corrections were 4-and-4.
+      Three portraits that read as androgynous at grid size (c3 Emma, c7
+      Martina, c11 Isabella) were deliberately **left alone** after comparing
+      them at full resolution against a known-male and known-female portrait:
+      all three carry the same drawn eyelashes and softer jaw as the
+      unambiguously female c31, unlike the unambiguously male c9.
+      (3) **A latent crop defect that fix (1) exposed.** The art-batch entry
+      above records a neighbouring-character sliver being judged "harmless
+      because the circular crop trims exactly the margin the sliver sat in" —
+      true then, false the moment the card started showing the whole portrait.
+      A connected-component scan over all 32 assets found three real ones
+      (c26 on both edges, c29, c31 — fragments of neighbouring hat brims,
+      ~1.4k/580/660px) plus five sub-100px specks. Fixed in
+      `scripts/generate-guesswho-assets.mjs` rather than by hand-editing PNGs:
+      a new `removeDetachedFragments` step erases any opaque blob that is both
+      disconnected from the largest blob *and* touching a left/right edge —
+      the signature of bleed from the axis the sheet is sliced along. Requiring
+      the edge touch is what makes it safe to run blind: a legitimately
+      detached feature (an earring clear of the head, a glasses lens) is
+      interior and never considered, and the largest blob is always kept.
+      Since the founder-provided source sheets were never committed, the
+      script also gained a standalone `--clean <files>` mode to re-run just
+      that step over already-generated assets, which is how the three shipped
+      files were repaired; new batches get it automatically in the normal
+      slicing path.
+      Verified live in-browser: all 32 portraits load and render fully
+      contained with no clipping at both grid and large sizes, no horizontal
+      overflow at 375px, the cross-out strike spans the frame, and the eight
+      renamed characters render their new labels against the correct art.
+      `lint`, `typecheck`, and all 206 unit tests pass.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -970,4 +1030,5 @@ race game).
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-07-29 (Guess Who art complete; character-selection + match-resolved-modal hotfix shipped)
+- 2026-08-15 (Guess Who portrait framing, 8 name/art gender corrections, and
+  a neighbouring-character crop-bleed cleanup in the asset script)
