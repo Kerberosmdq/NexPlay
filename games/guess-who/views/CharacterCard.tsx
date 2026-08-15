@@ -22,11 +22,11 @@ interface CharacterCardProps {
   size?: "grid" | "large";
 }
 
-/** Placeholder character representation — a trait-based card, not an
- * illustration. Real portraits are a deliberate follow-up
- * (docs/09_ai/tasks/TASK-0038-guess-who.md); every trait is still fully
- * legible here so the game is completely playable before that art lands,
- * and swapping it in later only touches this component. */
+/** One character in the 32-card grid. Renders the real portrait when the
+ * character has art, and otherwise falls back to a trait-based placeholder
+ * that keeps every trait legible (docs/09_ai/tasks/TASK-0038-guess-who.md) —
+ * the whole roster has art today, but the fallback stays so adding a
+ * character never ships a blank card. */
 export function CharacterCard({ character, crossedOut = false, selected = false, onClick, size = "grid" }: CharacterCardProps) {
   const t = useTranslations("GuessWho.traits");
   const { traits } = character;
@@ -41,22 +41,26 @@ export function CharacterCard({ character, crossedOut = false, selected = false,
     <Wrapper
       type={onClick ? "button" : undefined}
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 rounded-2xl p-2 border transition-opacity ${
+      className={`flex flex-col items-center gap-1 rounded-2xl border transition-opacity ${isLarge ? "p-2" : "p-1"} ${
         selected ? "border-focus bg-surface-raised" : "border-line bg-surface-sunken"
       } ${crossedOut ? "opacity-30" : "opacity-100"} ${onClick ? "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" : ""}`}
     >
-      <div className="relative">
+      <div className={`relative ${isLarge ? "w-28" : "w-full"}`}>
         {hasArt ? (
+          // Portraits are head-and-shoulders at roughly 2:3, so a circular
+          // `object-cover` frame (what this used to be) cut the top of every
+          // hat off — the one trait a player most needs to see. A portrait-
+          // shaped box with `object-contain` shows the whole figure instead.
           // eslint-disable-next-line @next/next/no-img-element -- a fixed local asset, no next/image optimization needed for a small repeated card portrait
           <img
             src={`/guess-who/${character.id}.png`}
             alt=""
             aria-hidden="true"
-            className={`rounded-full object-cover bg-surface-raised ${isLarge ? "w-24 h-24" : "w-12 h-12"}`}
+            className="w-full aspect-[2/3] object-contain rounded-xl bg-surface-raised"
           />
         ) : (
           <div
-            className={`rounded-full flex items-center justify-center font-display text-on-primary ${
+            className={`mx-auto rounded-full flex items-center justify-center font-display text-on-primary ${
               isLarge ? "w-24 h-24 text-4xl" : "w-12 h-12 text-lg"
             }`}
             style={{ backgroundColor: HAIR_SWATCH[traits.hairColor] }}
@@ -87,7 +91,11 @@ export function CharacterCard({ character, crossedOut = false, selected = false,
             className="absolute inset-0 flex items-center justify-center"
             aria-hidden="true"
           >
-            <div className="w-full h-0.5 bg-action-danger rotate-45" />
+            {/* Wider than the box so the 45° strike still spans the whole
+                taller-than-wide portrait frame; `shrink-0` because the
+                centering flex parent would otherwise clamp it back to the
+                frame's width and leave the slash short of the edges. */}
+            <div className="w-[150%] shrink-0 h-0.5 bg-action-danger rotate-45" />
           </div>
         )}
       </div>

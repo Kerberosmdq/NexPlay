@@ -3,132 +3,136 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: Hotfix (unnumbered) — founder feedback, not a roadmap milestone;
-  plus the tail end of `TASK-0038`'s tracked follow-up (all 4 Guess Who art
-  batches landed in this same session, see their own PRs #54–#57).
-- **Title**: Guess Who — choose your own character; a "match resolved" modal
-  gating tournament auto-advance across every game.
+- **Task ID**: Hotfix (unnumbered) — founder feedback while playtesting Guess
+  Who, not a roadmap milestone.
+- **Title**: Guess Who — portraits no longer cropped by a circular frame
+  (hats were invisible); 8 characters renamed to match their art's gender; a
+  neighbouring-character crop-bleed cleanup added to the asset script.
 
 ## Current Branch
-- `feat/match-resolved-modal-and-character-selection`, branched off `main`
-  after PR #57 (Guess Who's fourth art batch) merged.
+- `fix/guess-who-portrait-framing-and-names`, branched off `main` after PR #58
+  (character selection + match-resolved modal) merged.
 
 ## What's in this change
 
-Two related pieces of founder feedback, both touching the platform level:
+Three defects, all in Guess Who's character art layer. The founder reported
+the first two; the third is a latent one the first fix exposed.
 
-### 1. Guess Who: choose your own character
-The secret character used to be auto-assigned at random the instant a device
-had a real private slice — the founder's actual complaint: "the game itself
-shouldn't hand you a character, you should pick who you are."
+### 1. Portraits were cropped — hats were invisible
+`games/guess-who/views/CharacterCard.tsx` framed every portrait as a circle
+with `object-cover`. The art is head-and-shoulders at roughly 2:3, so filling
+a *square* box scaled it to width and pushed ~25% of its height out of view
+top and bottom; the circular clip then trimmed the corners of what remained.
+The top of every hat was the casualty — the worst possible trait to lose in a
+game whose mechanic is asking "¿tiene sombrero?".
 
-`games/guess-who/reducer.ts` gained a `"selecting"` phase between `"config"`
-and `"playing"`: `readySides: Record<Side, boolean>` and a `CONFIRM_CHARACTER`
-action carrying only the side (never the character id — the room only ever
-learns "this side is ready," exactly Battleship's `SIDE_READY`/`"placing"`
-shape). `createInitialState` (multi-device) and `START_MATCH` (single-device)
-both now land in `"selecting"`; `CONFIRM_CHARACTER` flips to `"playing"` once
-both sides have confirmed. `PLAY_AGAIN` now returns to `"selecting"` too — a
-rematch means choosing again — which also subsumes the earlier ADR-0005
-v1.4.0 stale-character fix from `TASK-0038` (that ref-based "re-pick on
-entering playing" hack is gone; picking is just a real phase now).
+Fixed with a portrait-shaped box (`w-full aspect-[2/3]`, `rounded-xl`) and
+`object-contain`. Nothing is cropped at any size now. Note this made the cards
+*bigger*, not smaller — matching the art's own aspect ratio and tightening the
+grid card's padding took the mobile grid portrait from a 48×48 circle to
+62×93, and `size="large"` from 96×96 to 112×168.
 
-- **Multi-device (`Player.tsx`)**: the old auto-pick `useEffect` is deleted.
-  In `"selecting"`, the device renders the full grid; tapping a card sets
-  `privateState.myCharacterId` (freely changeable), and a "Confirmar" button
-  dispatches `CONFIRM_CHARACTER` once something's picked. After confirming,
-  the device shows `WaitingState` until the shared phase flips. A ref-based
-  phase-transition check clears the private slice on every fresh entry into
-  `"selecting"` (not just when it's null) — without it, a rematch's grid
-  would start pre-filled with the previous match's choice.
-- **Single-device (`SingleDeviceView.tsx`)**: `RevealCard`'s hold-to-reveal
-  gesture doesn't fit "hold to see the grid, then tap several cards, then
-  confirm" — releasing to tap would hide it again. Replaced with a plain
-  pass-the-phone gate ("Soy yo, elegir mi personaje") that, once tapped,
-  shows the grid for that player only; confirming records the pick into
-  local `assignments` state (single-device has no private-state channel at
-  all) and dispatches `CONFIRM_CHARACTER` for that side, then resets the gate
-  for the next player. Both players' confirms drive the exact same reducer
-  action sequence multi-device uses — single-device is just one screen
-  playing both roles.
+One thing that needed a second pass: the cross-out strike (`w-[150%]
+rotate-45`) was being clamped back to the frame's width by its centering flex
+parent, so the slash stopped short of the edges on the now-taller frame.
+`shrink-0` fixes it. Measured, not eyeballed — the rotated bounding box is
+67×67 against a 62×93 frame.
 
-### 2. A "match resolved" modal, for every game with `getWinner`, both device modes
-The real bug, found by re-reading the tournament-advance code rather than
-guessing: `useTournamentAdvance` (in `lib/realtime/platformReducer.ts`) fired
-`PLATFORM_ADVANCE_TOURNAMENT` in a `useEffect` the instant `getWinner()`
-returned a winner — no pause, no confirmation. The resolution screen would
-render for a fraction of a render cycle and then get replaced by the next
-match (or the champion screen) before anyone could see the final board or
-how the match was won. This affected Connect 4, Battleship, and Guess Who
-identically, since it's a shared platform mechanism, not a per-game bug.
+### 2. Eight characters had a name of the opposite gender to their art
+Root cause worth remembering: the portraits were generated from the **traits**
+(hair length, facial hair, glasses…), which encode nothing about gender, so
+the generator drew whoever it liked and the pre-existing names no longer
+matched. Reviewed all 32 against their art; found exactly eight, four in each
+direction. Renamed rather than regenerating art — names are cosmetic (no rule
+reads them), so traits are untouched and `guess-who-roster.test.ts`'s balance
+guarantees are unaffected. The roster's 16/16 gender split survives because
+the corrections were 4-and-4.
 
-New `components/platform/MatchResolvedModal.tsx`: shows "¡Partida
-terminada! / Ver tablero / Salir de la partida" the moment the active game's
-`getWinner()` resolves, for **every** match — tournament or standalone, in
-both device modes (per the founder's explicit answer: not tournament-only).
-"Ver tablero" just dismisses the modal locally (a ref tracks which resolved
-`gameState` it was shown for, so it doesn't reappear until a genuinely new
-match resolves). "Salir de la partida" is host-gated in multi-device (always
-available in single-device, no host concept there) and does whatever used to
-happen automatically: `PLATFORM_ADVANCE_TOURNAMENT` if there's a tournament
-in progress, `PLATFORM_RETURN_LOBBY` otherwise.
+| id | was | now |
+|---|---|---|
+| c9 | Camila | Bruno |
+| c23 | Valeria | Thiago |
+| c25 | Daniela | Ramiro |
+| c27 | Constanza | Facundo |
+| c24 | Máximo | Julieta |
+| c26 | Tomás | Paulina |
+| c30 | Agustín | Amanda |
+| c32 | Ignacio | Lucía |
 
-`useTournamentAdvance`'s automatic effect was deleted entirely from
-`platformReducer.ts`, replaced by a plain `getActiveMatchWinners(platformState)`
-helper (no dispatch, no `useEffect`, no `useRef`) that both `MultiDeviceRoom.tsx`
-and the single-device picker (`app/[locale]/page.tsx`) call directly.
+**Deliberately left alone**: c3 (Emma), c7 (Martina) and c11 (Isabella) read
+as androgynous at grid size. Compared at full resolution against a known-male
+(c9) and known-female (c31) portrait, all three carry the same drawn eyelashes
+and softer jaw as c31, so they stay female-named. If the founder disagrees on
+seeing them in play, these are the three to revisit.
 
-**A real gap found during live testing, fixed before this shipped**: a host
-with a tournament bye is a *spectator* in the currently-playing match
-(`MultiDeviceRoom.tsx`'s existing `!isMatchParticipant` early return shows
-them `TournamentBracket` instead of the game view). The modal was originally
-only rendered on the match-participant branch — so a bye'd host, the *only*
-device allowed to dispatch the advance action, never saw the modal at all,
-and the bracket sat stuck on the just-resolved match forever with no way for
-anyone to continue. Fixed by rendering `MatchResolvedModal` alongside
-`TournamentBracket` too, sharing the same `handleContinueAfterMatch` callback
-extracted above both branches.
+### 3. A latent crop defect that fix (1) exposed
+`CURRENT_STATE.md`'s art-batch entry records a neighbouring-character sliver
+judged "harmless because the circular crop trims exactly the margin the sliver
+sat in." That was true — and stopped being true the moment the card started
+showing the whole portrait. **Any future change to how these assets are
+displayed should re-check this class of assumption.**
+
+A connected-component scan over all 32 assets found three real ones (c26 on
+both edges, c29, c31 — fragments of neighbouring hat brims, ~1.4k/580/660px)
+plus five sub-100px specks. Fixed in `scripts/generate-guesswho-assets.mjs`,
+not by hand-editing PNGs: a new `removeDetachedFragments` step erases any
+opaque blob that is both disconnected from the largest blob *and* touching a
+left/right edge — the signature of bleed from the axis the sheet is sliced
+along. Requiring the edge touch is what makes it safe to run blind (a
+legitimately detached feature — an earring clear of the head, a glasses lens —
+is interior and never considered), and the largest blob is always kept so a
+character can never erase itself.
+
+Because the founder-provided source sheets are **not committed to the repo**,
+the script also gained a standalone `--clean <files>` mode that re-runs only
+that step over already-generated assets; that's how the three shipped files
+were repaired. New batches get the cleanup automatically in the normal slicing
+path.
 
 ### Live verification
-Across three real, separately-connected browser tabs, a full 3-player
-tournament: multi-device character selection (each device independently
-choosing and confirming, no coordination, matching ADR-0005's accepted
-1-in-32 collision risk); round 1 resolving to a correct-guess win, both
-match participants seeing the modal (the non-host with "esperando a que el
-anfitrión continúe" instead of a continue button); the bye'd host correctly
-gated on their own modal instance and able to advance; round 2 resolving to
-a wrong-guess loss; the champion screen only appearing after the host
-explicitly clicked "Salir de la partida." Also verified standalone
-single-device: selection phase (pass-the-phone gate for both players), a
-full match to a correct-guess win, the modal appearing and correctly
-dismissing to reveal the board underneath, and a rematch correctly
-restarting the selection loop. Zero console errors throughout every check.
+All 32 portraits fetched through the dev server return 200 and decode; every
+one renders fully contained (drawn size ≤ box size, measured via
+`getBoundingClientRect` against `naturalWidth`/`naturalHeight`) at both grid
+and large sizes; no horizontal overflow at 375px; the cross-out strike spans
+the frame; the eight renamed characters render their new labels against the
+correct art. Played through selection → playing → guess → resolution to reach
+the `size="large"` card. Zero console errors. `lint`, `typecheck`, and all
+206 unit tests pass.
+
+### Known cosmetic quirk (pre-existing, not fixed here)
+Several characters' near-white/cream clothing is fully transparent in the PNG
+— the chroma key can't distinguish it from the parchment background it was cut
+from. It reads correctly *because* the card background
+(`--color-surface-raised`, `#fbf6ec`) is itself near-white, so the clothing
+appears cream as intended. Verified by compositing the assets against that
+exact token. It would look wrong on a dark background, so anyone introducing a
+dark theme needs to regenerate these assets from the source sheets (which
+means asking the founder for them — they aren't in git).
+
+## Superseded context (previous handoff)
+
+The prior change on `main` was: Guess Who choose-your-own-character (a
+`"selecting"` reducer phase) plus `MatchResolvedModal` gating tournament
+auto-advance across every game with `getWinner`. See PR #58 and
+`CURRENT_STATE.md`'s entry for the detail; nothing in it was modified here.
 
 ## Files Modified / Added
-- `games/guess-who/reducer.ts` (`"selecting"` phase, `readySides`,
-  `CONFIRM_CHARACTER`)
-- `games/guess-who/views/Player.tsx` (selecting-phase grid + confirm,
-  removed auto-pick)
-- `games/guess-who/views/SingleDevice.tsx` (pass-the-phone selection gate,
-  removed `pickTwoDistinctCharacterIds`)
-- `components/platform/MatchResolvedModal.tsx` (new)
-- `components/platform/MultiDeviceRoom.tsx` (modal wired into both the
-  match-participant view and the bye'd-host spectator view; shared
-  `handleContinueAfterMatch`)
-- `app/[locale]/page.tsx` (modal wired into the single-device picker)
-- `lib/realtime/platformReducer.ts` (`useTournamentAdvance` deleted,
-  replaced by `getActiveMatchWinners`)
-- `i18n/es.json`, `i18n/en.json` (`Lobby.matchResolved*` keys; `GuessWho`
-  selecting-phase keys; removed now-unused `singleDevice.revealTitle`/
-  `holdToReveal`/`continueButton`)
-- `tests/unit/guess-who-game.test.ts` (rewritten: a `startPlaying()` helper
-  drives state through the new selecting phase; new `CONFIRM_CHARACTER`
-  test block; `PLAY_AGAIN` now asserts a return to `"selecting"`)
+- `games/guess-who/views/CharacterCard.tsx` (portrait-shaped `object-contain`
+  frame replacing the circular `object-cover` one; `shrink-0` on the cross-out
+  strike; grid-size padding tightened; stale "placeholder" doc comment
+  corrected — the fallback is now the exception, not the default)
+- `games/guess-who/content/characters.ts` (8 renames; a comment recording that
+  names must agree with the art, since nothing in code enforces it)
+- `scripts/generate-guesswho-assets.mjs` (`removeDetachedFragments` wired into
+  the normal slicing path, plus a standalone `--clean <files>` mode)
+- `public/guess-who/{c11,c12,c13,c14,c26,c27,c29,c31,c32}.png` (regenerated by
+  `--clean`; alpha-only changes, dimensions unchanged)
 
-Also landed in this same session (separate PRs, already merged): Guess
-Who's remaining 3 art batches (#55, #56, #57) — see their own PR
-descriptions and the `ADR-0005` v1.4-adjacent script fixes for
-`generate-guesswho-assets.mjs`'s `--split` precision improvements.
+No test files changed: the renames are cosmetic and `guess-who-roster.test.ts`
+asserts trait balance and name *uniqueness*, both of which still hold. The
+framing change is pure CSS in a component with no existing render tests (the
+project's Vitest environment is Node-only, no jsdom), so it was verified live
+in-browser instead — see above.
 
 ## External state (not in git, important for the next agent to know)
 - Same as prior handoffs: Supabase live, Vercel auto-deploying `main`, strict

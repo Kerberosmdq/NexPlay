@@ -75,6 +75,16 @@ every prior game), not yet scoped as a task spec.
   surface as a surprise during first real playtest.
 
 ## Technical/process ideas
+- **Guess Who portraits are only correct on a light background.** The chroma
+  key that cut the characters out of their parchment reference sheets also
+  removed their near-white/cream clothing, which is indistinguishable from
+  that background. It reads correctly today purely because the card sits on
+  `--color-surface-raised` (`#fbf6ec`), so the transparent clothing shows
+  near-white and looks intended. On a dark surface those characters would
+  appear to be missing their shirts. Blocks any dark theme, and needs the
+  founder's original reference sheets (never committed to the repo) to
+  regenerate properly. Surfaced 2026-08-15 while fixing the portrait framing;
+  not fixed there because it isn't visible in the current design.
 - **Analytics event taxonomy.** The exact list of `events` rows (names, enum
   values) is deferred from ADR-0003 to be finalized during M1 — low risk, just
   needs to happen before M1 is called done.
