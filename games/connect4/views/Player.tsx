@@ -5,6 +5,7 @@ import type { Player } from "@/lib/types/room";
 import type { Connect4State, Connect4Action, Connect4Side } from "../reducer";
 import { Board } from "./Board";
 import { Button, WaitingState } from "@/components/ui";
+import { ResultBlock, TurnBanner } from "./parts";
 
 interface PlayerProps {
   state: Connect4State;
@@ -38,14 +39,11 @@ export function PlayerView({ state, players, playerId, dispatch }: PlayerProps) 
     const won = mySide !== undefined && state.winnerSide === mySide;
 
     return (
-      <div className="flex flex-col items-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
-        <h2
-          className={`font-display text-4xl text-center leading-tight motion-celebrate ${
-            state.isDraw ? "text-ink" : won ? "text-action-primary" : "text-ink"
-          }`}
-        >
-          {state.isDraw ? t("draw") : won ? t("youWon") : t("youLost")}
-        </h2>
+      <div className="flex flex-col items-center gap-6 w-full">
+        <ResultBlock
+          winnerSide={state.isDraw ? null : (state.winnerSide as Connect4Side)}
+          title={state.isDraw ? t("draw") : won ? t("youWon") : t("youLost")}
+        />
 
         <Board
           cells={state.cells}
@@ -57,7 +55,7 @@ export function PlayerView({ state, players, playerId, dispatch }: PlayerProps) 
         />
 
         {isHost && (
-          <Button variant="ghost" onClick={() => dispatch({ type: "PLAY_AGAIN" })} className="mt-4 max-w-xs">
+          <Button variant="primary" onClick={() => dispatch({ type: "PLAY_AGAIN" })}>
             {t("playAgainButton")}
           </Button>
         )}
@@ -70,12 +68,12 @@ export function PlayerView({ state, players, playerId, dispatch }: PlayerProps) 
   const opponentName = state.sides[opponentSide] ? nameFor(players, state.sides[opponentSide]) : "";
 
   return (
-    <div className="flex flex-col items-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
-      <h2 className="font-display text-2xl text-ink text-center">{t("title")}</h2>
+    <div className="flex flex-col items-center gap-5 w-full">
+      <h2 className="font-display text-3xl text-ink text-center">{t("title")}</h2>
 
-      <p className={`text-sm font-bold text-center ${isMyTurn ? "text-action-primary" : "text-ink-muted"}`}>
+      <TurnBanner side={state.turn}>
         {isMyTurn ? t("yourTurn") : t("opponentTurn", { name: opponentName })}
-      </p>
+      </TurnBanner>
 
       <Board
         cells={state.cells}

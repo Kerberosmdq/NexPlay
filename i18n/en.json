@@ -327,7 +327,8 @@
       "passPhoneTo": "Pass the phone to {name}",
       "wins": "{name} wins!",
       "bothNamesHint": "Type both names to start."
-    }
+    },
+    "columnLabel": "Column {n}"
   },
   "GuessWho": {
     "title": "Guess Who?",
