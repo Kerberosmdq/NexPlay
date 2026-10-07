@@ -571,6 +571,11 @@ molded plastic toy), superseding `BDR-0001`.
   toy-physics gestures (pop, drop, flip, confetti), a synthesized plastic
   sound kit and Android vibration behind one switch that starts off. Done.
 
+- **Follow-up after the first real-phone session (`TASK-0048`):**
+  Battleship's playability reworked — toy ships drawn in code, a radar
+  layout in portrait and a console layout in landscape, a weapon dock with
+  shot shapes, aim-then-fire, and a shipyard for placing the fleet.
+
 **Done when:** every screen of all five games is on `BDR-0002`'s system
 (no Paper & Felt token left), and pressing, dropping, revealing and winning
 each have their motion, sound and vibration — verified on a real phone.
