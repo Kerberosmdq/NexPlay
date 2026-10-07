@@ -3,8 +3,9 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 19 - Full redesign, phase 1 (`TASK-0039`, UX flow fixes)
-  shipped on `feat/ux-flow-fixes`; phase 0 (`BDR-0002`) and phases 2–3 next.
+- Sprint: Sprint 19 - M6.5 redesign (Juguetería). Phase 1 (`TASK-0039`, UX
+  flow fixes, PR #61) and phase 0 (`TASK-0040`, `BDR-0002`, on
+  `docs/bdr-0002-jugueteria`) done; phase 2 (visual system) next.
 - Previous sprint: Sprint 18 - M5 (Connect 4) and M6 (Guess Who) shipped,
   plus a platform UX hotfix
 - Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
@@ -1023,6 +1024,14 @@ race game).
       e2e spec pass; the Battleship e2e couldn't run locally (Supabase host
       unreachable from this machine) — see `HANDOFF.md`.
 
+- [x] **TASK-0040**: `BDR-0002` — Juguetería (molded plastic toy) recorded
+      as NexPlay's visual direction, superseding `BDR-0001` (Paper & Felt).
+      Palette anchors measured for contrast (the mock-up's red and green
+      failed AA with white text and were darkened), `FEEL.md` rewritten,
+      `ADR-0004` amended to 1.1.0 (contract unchanged; solid-edge
+      elevation, penumbra retired, motion vocabulary to grow), redesign
+      added to `ROADMAP.md` as M6.5. Docs only.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -1031,8 +1040,8 @@ race game).
 
 ## Next Task
 - **Redesign, continued** (founder's current priority, ahead of M7's
-  remaining items and new games): `BDR-0002` recording Direction C, then
-  phase 2 (visual system) and phase 3 (motion, sound, haptics). See
+  remaining items and new games): phase 2 (visual system, per `BDR-0002`)
+  and phase 3 (motion, sound, haptics) of M6.5. See
   `HANDOFF.md` → "Context: the redesign this task opens".
 - After that: **M7 — Presentable**, or the two remaining entries in
   `BACKLOG.md`'s prioritized games list (Ludo, a dice-and-track race game).
@@ -1047,4 +1056,4 @@ race game).
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-10-07 (TASK-0039: redesign phase 1 — UX flow fixes and voseo)
+- 2026-10-07 (TASK-0040: BDR-0002 Juguetería; TASK-0039: redesign phase 1)

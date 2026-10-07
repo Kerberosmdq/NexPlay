@@ -2,33 +2,49 @@
 
 > The living personality doc `NEXPLAY_PLAN.md` §5 promises: "captures the
 > personality in words and examples so every agent designs toward the same
-> vibe." Formal decisions live in `BDR-0001` and `ADR-0004`; this doc is
+> vibe." Formal decisions live in `BDR-0002` and `ADR-0004`; this doc is
 > their companion in plain language — read this to get the *feel* right,
 > read those to get the *values* right.
 
 ## In one sentence
-NexPlay should feel like someone cleared the kitchen table, unpacked a
-game with real cardboard and wooden pieces, and dimmed the lights for one
-second when it's time to peek at your secret card.
+NexPlay should feel like tipping a toy box out onto the floor: chunky
+plastic pieces in bright colors, buttons that click when you push them,
+tokens that drop and bounce — and, when it's time to see your secret, a
+capsule that pops open just for you.
 
 ## The world this app lives in
-Not a "party app." A **board game**, rendered in a browser because that's
-the only way to hand five phones to five people at once. Every surface
-choice should answer: *would this material exist on a real game box or
-game board?* Cardstock, felt, stamped ink, a wooden token, a wax seal —
-yes. Frosted glass, a SaaS gradient hero, a dashboard card with a subtle
-shadow — no, and never, per `PROJECT_CONSTITUTION.md` Article 10.
+Not a "party app." A **toy box**, rendered in a browser because that's the
+only way to hand five phones to five people at once. Every surface choice
+should answer: *would this exist as a molded plastic piece in a real toy?*
+A studded baseplate, a chunky button with a molded edge, a keycap, a
+capsule from a prize machine, a plastic Connect 4 frame — yes. Frosted
+glass, glossy gradients, a soft blurry drop shadow, a dashboard card — no,
+and never, per `PROJECT_CONSTITUTION.md` Article 10.
+
+Three rules make the world hold together:
+- **The baseplate is the table.** The blue studded ground is where pieces
+  sit, never where text is read. Reading happens on white plastic panels.
+- **Depth is a molded edge.** A raised piece has a solid, darker bottom
+  edge. Never a blur, never a gradient, never shine.
+- **If you can press it, it moves.** Tappable things sink by their edge
+  height when pressed; things you can't tap have no edge. A child should be
+  able to tell which is which without reading a word.
 
 ## The one moment that gets to be dramatic
-Everything in NexPlay is warm and well-lit — except the reveal. When a
-player looks at their own secret role or word, the screen should feel like
-they cupped a hand around a card so only they can see it: the light dims,
-a small warm glow gathers around the one thing that matters, and everyone
-else's screen stays exactly as bright and ordinary as it was a second ago.
-That contrast — ordinary, then suddenly private — *is* the drama. It only
-works because the rest of the app doesn't spend that mood on lobbies,
-configuration screens, or waiting states. See `BDR-0001` for the concrete
-rule ("penumbra is earned, not decorative").
+Everything in NexPlay is bright and busy — except the secret. When a player
+looks at their own role or word, they hold down a capsule from a prize
+machine: the lid pops off, the card rises out, and the rest of the screen
+empties to bare baseplate so nothing else competes (or leaks). Let go and
+it snaps shut. That one pop *is* the drama, and it only works because
+lobbies, setup screens and waiting states never borrow it.
+
+## How it moves (and, in phase 3, sounds)
+Toy physics, not app physics. Presses sink and spring back. Tokens fall,
+bounce twice and settle. Pieces snap into place. Panels slide up from below
+like a drawer. Everything is short and springy; nothing floats or fades in
+slowly. Sounds are plastic: clicks, clacks, a little wind-up, a short toy
+fanfare for a win. Whoever has turned on "reduce motion" gets the same
+information without the movement.
 
 ## Who's holding the phone
 A 7-year-old, a 9-year-old, a parent, and whichever guests are over that
@@ -39,20 +55,20 @@ them, it works for everyone:
   wide letter-spacing that an adult finds "punchy" — a young reader
   recognizes words by shape, and stretched, shouting type erases that
   shape.
+- Each game is a color *and* a pictogram, so it can be recognized before it
+  can be read. Never color alone.
 - A picture next to a word whenever the game allows it (this is why
   Who Am I's word bank carries an emoji per word — Impostor's content pack
   is the one place this promise isn't kept yet; see `docs/BACKLOG.md`).
 - Never punish curiosity with confusion. An error state explains what to
-  do next, not just that something went wrong.
+  do next, not just that something went wrong, and an empty setup screen is
+  a starting point, not an error.
 
 ## Voice
 Warm, direct, a little playful — never corporate, never a stack of
 exclamation marks pretending to be excited on the copy's behalf. A button
 says what happens ("Crear sala"), not what the system calls its own
-internal action ("Iniciar sesión de sala"). One language per string — the
-current bilingual labels like "UNIRSE A SALA / JOIN PARTY" are a symptom
-of there being no language switcher anywhere in the app, not a style
-choice; fixing that switcher retires the bilingual labels for good.
+internal action ("Iniciar sesión de sala"). One language per string.
 
 **Spanish uses vos, everywhere** (founder decision, 2026-10-07): «Mantené
 apretado», «Pasale el teléfono», «Elegí tu personaje» — never a mix with
@@ -62,41 +78,44 @@ word reads as foreign in Spanish.
 
 ## What NexPlay is not
 - Not glassmorphism, ever (Article 10, restated because it's tempting).
+- Not glossy. No gradients on plastic, no highlights, no shine — that turns
+  a toy into an app icon.
 - Not a gradient-hero SaaS landing page.
 - Not a generic analytics-dashboard aesthetic — no floating cards with a
   faint drop shadow and a rounded corner because that's what every
   AI-generated app defaults to.
-- Not neon everywhere — that's the mistake the current build made, and
-  `BDR-0001` deliberately narrows that language to one moment instead of
-  discarding it.
+- Not the warm-cream-and-serif look either. That was `BDR-0001`'s Paper &
+  Felt, retired precisely because it is the palette AI-generated apps most
+  often land on.
 - Not emoji-as-decoration standing in for real illustration where a game
   actually needs one (a spinning ⏳ is not a loading state, it's a
   placeholder for one).
 
 ## The hexagon
 NexPlay is the first product of the Nex family, and the hexagon is its
-mark (`NEXPLAY_PLAN.md` §1, §5). The outer hexagon never changes shape; its
-*interior* is reinterpreted per game, the way a wax seal carries a
-different crest for a different house:
-- **Impostor** — a mask/silhouette cut into the hex.
-- **Who Am I** — a question mark.
-- **Battleship** (M4) — a grid, or a single wave line.
+mark (`NEXPLAY_PLAN.md` §1, §5). It is a chunky yellow plastic hex token
+with a molded edge. The outer hexagon never changes shape; the pictogram
+embossed *inside* it changes per game, in that game's own color:
+- **Impostor** (red) — a mask.
+- **¿Quién soy?** (yellow) — a head with a question mark.
+- **Conecta 4** (green) — four tokens in a line.
+- **¿Quién es Quién?** (purple) — a face with glasses.
+- **Batalla Naval** (white, blue pictogram) — a grid with a crosshair.
 
-This is also the app icon, the favicon, and the PWA install icon — today
-none of those exist; the app still ships Next.js's default favicon and
-scaffold SVGs in `public/`.
+The same token is the app icon, the favicon, and the PWA install icon.
 
 ## How to use this doc
-Before building a new screen: read the relevant phase description above,
-picture a real object it should feel like (a game box, a scorepad, a felt
-tray), and only then open `ADR-0004` for the tokens/primitives that
-implement it. If a design choice doesn't map to anything in this document,
-that's a signal to add to this document, not to invent silently and hope
-it matches.
+Before building a new screen: picture the toy piece it should be (a
+drawer, a keycap, a capsule, a game frame), check it against the three
+rules above, and only then open `ADR-0004` for the tokens and primitives
+that implement it. If a design choice doesn't map to anything in this
+document, that's a signal to add to this document, not to invent silently
+and hope it matches.
 
 ## Related Documents
-- `BDR-0001` — Visual Identity Direction (the formal decision this doc
+- `BDR-0002` — Visual Identity Direction (the formal decision this doc
   explains in plain language)
+- `BDR-0001` — the superseded Paper & Felt direction (history only)
 - `ADR-0004` — Design System Contract (tokens, primitives, motion)
 - `NEXPLAY_PLAN.md` §5 — Design & distinctiveness
 - `PROJECT_CONSTITUTION.md` Article 10

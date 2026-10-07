@@ -3,35 +3,63 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: `TASK-0039` — UX flow fixes (redesign phase 1).
-- **Title**: Pass-and-play reveal gating, one way back + one way out,
-  remembered family names, entry-screen fixes, no premature errors,
-  "how to play" for every game, and Spanish unified on voseo.
+- **Task ID**: `TASK-0040` — redesign phase 0 (docs only).
+- **Title**: `BDR-0002` — Juguetería (molded plastic toy) becomes NexPlay's
+  visual direction, superseding `BDR-0001` (Paper & Felt).
+- **Previous task**: `TASK-0039` — redesign phase 1, UX flow fixes (PR #61).
+  Its notes are kept below.
 
 ## Current Branch
-- `feat/ux-flow-fixes`, branched off `main` at `ebe5d36` (after PR #59).
-  Independent of the still-open `fix/battleship-playability` (PR #60).
+- `docs/bdr-0002-jugueteria`, branched off `feat/ux-flow-fixes` (PR #61)
+  because the state docs build on that PR's entries. Its PR targets
+  `feat/ux-flow-fixes`; once #61 merges, GitHub retargets it to `main`.
 
-## Context: the redesign this task opens
+## What TASK-0040 changed
+- `docs/00_decisions/brand/BDR-0002-VISUAL-IDENTITY-JUGUETERIA.md` (new):
+  the decision, the four alternatives, eleven rules every screen follows,
+  and palette anchors with measured contrast. The mock-up's red (#EF3B2D)
+  and green (#1FA357) fail AA with white text (3.94:1, 3.26:1) and were
+  replaced by #D3261B (5.17:1) and #178244 (4.87:1).
+- `BDR-0001`: status Superseded (1.1.0).
+- `docs/04_design/FEEL.md`: rewritten for the toy-box world (baseplate =
+  table, depth = molded edge, pressable things move; capsule reveal).
+- `ADR-0004`: amended to 1.1.0. Sections 1–5 unchanged; adds solid-edge
+  elevation tokens (blurred shadows become a violation), retires the
+  penumbra token set, extends the motion vocabulary (press/drop/snap).
+- `docs/ROADMAP.md`: the redesign is milestone **M6.5**, ahead of M7.
+- `docs/09_ai/tasks/TASK-0040-bdr-0002-jugueteria.md` (new), state docs.
+
+## Warnings (TASK-0040)
+- **The founder first said Direction A, then corrected it to C.** Every doc
+  now says C (Juguetería); PR #61 got a follow-up commit and its
+  description was edited to match. If anything still says "Cuaderno de
+  Recreo" as the chosen direction, it's stale.
+- Phase 2 must keep `ADR-0004`'s paired-token names and the contrast unit
+  test; only values change, plus the new edge tokens.
+- Guess Who portraits: open founder decision whether to redraw them in the
+  toy style (needs the external image tool). Phase 2 only frames them.
+
+## Context: the redesign (M6.5)
 On 2026-10-06 the founder asked for a full redesign (visual, UX, motion,
 gameplay). An audit of the shipped app plus four mocked visual directions
 (A "Cuaderno de Recreo" — school graph-paper notebook; B "Riso Club";
 C "Juguetería" — molded plastic toy; D "Teatro de Sombras") were presented;
-the founder chose **C** and **voseo**, and asked to start with phase 1.
-(They first said A by mistake and corrected it to C on 2026-10-07.) Planned phases:
-- **Phase 0 — `BDR-0002`** superseding `BDR-0001` (Paper & Felt) with
-  Direction C, then FEEL.md + ADR-0004 tokens rewritten for it. Not started.
-- **Phase 1 — this task.** Flow fixes that don't depend on the look.
-- **Phase 2 — visual system** (tokens, fonts, plastic surfaces, per-game
-  per-game icons replacing emoji, redrawn hexagon mark, new primitives).
-- **Phase 3 — motion, sound, haptics** (phase transitions, Web Audio kit
-  with mute, `navigator.vibrate` on Android, per-world celebrations).
+the founder chose **C** and **voseo** (first saying A by mistake, corrected
+to C on 2026-10-07), and asked to start with phase 1. Phases:
+- **Phase 1 — UX flow fixes** (`TASK-0039`, PR #61). Done.
+- **Phase 0 — `BDR-0002`**, `FEEL.md`, `ADR-0004` 1.1.0 (`TASK-0040`). Done.
+- **Phase 2 — visual system** (tokens, fonts, baseplate and molded-edge
+  primitives, capsule reveal, per-game pictograms replacing emoji, hex
+  token mark and icon set). Next.
+- **Phase 3 — motion, sound, haptics** (phase transitions, toy-physics
+  gestures, a plastic Web Audio kit with mute, `navigator.vibrate` on
+  Android).
 - Per-game gameplay ideas from the audit (who-starts coin flip in Connect 4,
   vote-by-vote reveal in Impostor, forehead tilt mode in Who Am I, family
   scoreboard across games, splitting Battleship's 1105-line view first)
   are each their own later task.
 
-## What's in this change
+## What TASK-0039 changed (phase 1, PR #61)
 1. **Reveal gating (single-device).** Impostor: a handoff screen ("Pasale el
    teléfono a Leo" → "Soy Leo") before each reveal; the next-player button
    is disabled until the card was actually held open (`RevealCard` gained an
@@ -66,7 +94,7 @@ the founder chose **C** and **voseo**, and asked to start with phase 1.
 7. **Voseo + sentence case** across `i18n/es.json` (recorded in FEEL.md's
    Voice section); English catalog also drops its ALL-CAPS strings.
 
-## Files Modified / Added
+## Files Modified / Added (TASK-0039)
 - `app/[locale]/page.tsx`, `components/platform/{RoomLobby,RoomWaitingLobby}.tsx`,
   `components/platform/HowToPlay.tsx` (new)
 - `components/ui/{Screen,RevealCard,ConfirmDialog,Field,CodeInput,index}.tsx|ts`,
@@ -81,7 +109,7 @@ the founder chose **C** and **voseo**, and asked to start with phase 1.
 - `docs/04_design/FEEL.md`, `docs/09_ai/tasks/TASK-0039-ux-flow-fixes.md`
   (new), `docs/09_ai/{CURRENT_STATE,HANDOFF}.md`
 
-## Warnings
+## Warnings (TASK-0039)
 - **`battleship-multi-device.spec.ts` could not be run locally**: the
   Supabase host didn't resolve from this machine (`ERR_NAME_NOT_RESOLVED`,
   room screen shows "No se pudo conectar a la sala"). Only its copy changed
@@ -109,9 +137,6 @@ before trusting a scary-looking console error — this session saw a stale
 fixed in the source, left over from a mid-edit HMR pass.
 
 ## Pending Tasks
-- **Phase 0: `BDR-0002`** — record Direction C ("Juguetería") as
-  superseding `BDR-0001`, with A/B/D as evaluated alternatives; then
-  FEEL.md and ADR-0004 token updates.
 - Phases 2 and 3 of the redesign (see "Context" above).
 - A dedicated founder playtest of Battleship's full feature set on real
   phones (carried forward).
@@ -120,4 +145,6 @@ fixed in the source, left over from a mid-edit HMR pass.
 - Ludo and the dice-and-track race game from `BACKLOG.md` (carried forward).
 
 ## Next Suggested Task
-- `BDR-0002` (docs-only branch), then phase 2 of the redesign.
+- M6.5 phase 2 — the visual system per `BDR-0002` (tokens, fonts, molded
+  edge primitives, capsule `RevealCard`, pictograms, hex token icons).
+  Large: worth splitting into a primitives task and per-game restyle tasks.
