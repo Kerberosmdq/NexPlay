@@ -3,15 +3,33 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: `TASK-0043` — M6.5 phase 2b, game 2 of 5.
-- **Title**: Who Am I restyled on the Juguetería system, plus a config type
-  fix.
-- **Previous tasks**: `TASK-0042` (Impostor, PR #64), `TASK-0041` (#63),
-  `TASK-0040` (#62), `TASK-0039` (#61). Their notes are kept below.
+- **Task ID**: `TASK-0044` — M6.5 phase 2b, game 3 of 5.
+- **Title**: Connect 4 restyled on the Juguetería system.
+- **Previous tasks**: `TASK-0043` (Who Am I, PR #65), `TASK-0042` (#64),
+  `TASK-0041` (#63), `TASK-0040` (#62), `TASK-0039` (#61). Notes below.
 
 ## Current Branch
-- `feat/jugueteria-who-am-i`, stacked on `feat/jugueteria-impostor` (#64)
-  → #63 → #62 → #61. Merge in that order, oldest first.
+- `feat/jugueteria-connect4`, stacked on `feat/jugueteria-who-am-i` (#65)
+  → #64 → #63 → #62 → #61. Merge oldest first.
+
+## What TASK-0044 changed
+- `games/connect4/views/parts.tsx` (new): `Disc` (hex token with a molded
+  edge — an edge layer under the face, because clip-path clips shadows;
+  optional last-move dot), `TurnBanner`, `ResultBlock`, `HEX_CLIP`.
+- `Board.tsx`: green plastic frame on its edge, dark hex sockets, discs via
+  `Disc`, last move dotted until the next drop, focus ring on columns,
+  aria-label from i18n (`Connect4.columnLabel`, was hardcoded Spanish).
+- `Player.tsx` / `SingleDevice.tsx`: turn banner, result block, setup with
+  each name next to its disc; single-device turn reads "Turno de {name}".
+- Single-device `nameOf` falls back to rebuilding players from the entered
+  names (ids are deterministic) if `localPlayers` is empty after a remount.
+
+## Warnings (TASK-0044)
+- In the dev browser pane, CSS animations sometimes sit at time 0 when the
+  window isn't painting (the match-resolved modal looked transparent). It's
+  the environment, not the app — the same animation runs fine once frames
+  are drawn. Don't "fix" it by removing `motion-deal`.
+- Multi-device Connect 4 not seen live (Supabase unreachable).
 
 ## What TASK-0043 changed
 - `games/who-am-i/views/Pictos.tsx` (new): head-with-question-mark,
@@ -139,7 +157,8 @@ to C on 2026-10-07), and asked to start with phase 1. Phases:
 - **Phase 0 — `BDR-0002`**, `FEEL.md`, `ADR-0004` 1.1.0 (`TASK-0040`). Done.
 - **Phase 2a — shared visual system** (`TASK-0041`). Done.
 - **Phase 2b — per-game restyles**, one task per game. Impostor
-  (`TASK-0042`) and Who Am I (`TASK-0043`) done; three to go.
+  (`TASK-0042`), Who Am I (`TASK-0043`) and Connect 4 (`TASK-0044`) done;
+  two to go.
 - **Phase 3 — motion, sound, haptics** (phase transitions, toy-physics
   gestures, a plastic Web Audio kit with mute, `navigator.vibrate` on
   Android).
@@ -234,5 +253,6 @@ fixed in the source, left over from a mid-edit HMR pass.
 - Ludo and the dice-and-track race game from `BACKLOG.md` (carried forward).
 
 ## Next Suggested Task
-- M6.5 phase 2b — next game: Connect 4 (board as the classic plastic
-  frame), then Guess Who, Battleship (split its 1105-line view first).
+- M6.5 phase 2b — next game: Guess Who (portraits in white plastic card
+  holders, flip-down crossing out), then Battleship (split its 1105-line
+  view first).

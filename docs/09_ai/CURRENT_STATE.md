@@ -6,8 +6,8 @@ Living status document tracking the current sprint, objectives, completed tasks,
 - Sprint: Sprint 19 - M6.5 redesign (Juguetería). Phase 1 (`TASK-0039`, UX
   flow fixes, PR #61), phase 0 (`TASK-0040`, `BDR-0002`, PR #62) and phase
   2a (`TASK-0041`, shared visual system, PR #63) done; phase 2b under way —
-  Impostor (`TASK-0042`, PR #64) and Who Am I (`TASK-0043`, on
-  `feat/jugueteria-who-am-i`) done.
+  Impostor (`TASK-0042`, PR #64), Who Am I (`TASK-0043`, PR #65) and
+  Connect 4 (`TASK-0044`, on `feat/jugueteria-connect4`) done.
 - Previous sprint: Sprint 18 - M5 (Connect 4) and M6 (Guess Who) shipped,
   plus a platform UX hotfix
 - Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
@@ -1061,6 +1061,13 @@ race game).
       latent type bug**: `setup` stored the schema's string default
       (`"300"`) in a numeric field; now parsed by a unit-tested helper.
 
+- [x] **TASK-0044**: Connect 4 restyled on the Juguetería system (M6.5
+      phase 2b, game 3 of 5): green plastic frame with dark sockets, hex
+      discs with a molded edge, a last-move dot, a turn banner with the
+      player's disc, a green result block. The column buttons' hardcoded
+      Spanish aria-label moved to i18n; single-device rebuilds local
+      players if remounted mid-match instead of showing a raw id.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -1069,8 +1076,8 @@ race game).
 
 ## Next Task
 - **Redesign, continued** (founder's current priority, ahead of M7's
-  remaining items and new games): phase 2b for the remaining games (Connect 4,
-  Guess Who, Battleship — one task each) and phase 3 (motion, sound, haptics) of M6.5. See
+  remaining items and new games): phase 2b for the remaining games (Guess Who,
+  Battleship — one task each) and phase 3 (motion, sound, haptics) of M6.5. See
   `HANDOFF.md` → "Context: the redesign this task opens".
 - After that: **M7 — Presentable**, or the two remaining entries in
   `BACKLOG.md`'s prioritized games list (Ludo, a dice-and-track race game).
@@ -1085,4 +1092,4 @@ race game).
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-10-07 (TASK-0043: Who Am I on Juguetería; TASK-0042; TASK-0041; TASK-0040; TASK-0039)
+- 2026-10-07 (TASK-0044: Connect 4 on Juguetería; TASK-0043; TASK-0042; TASK-0041; TASK-0040; TASK-0039)
