@@ -303,7 +303,9 @@
       },
       "aimHint": "Tocá el tablero rival para apuntar",
       "confirmShotButton": "¡Disparar! ({cost} cargas)",
-      "multiAnnouncement": "{hits} tocado(s), {misses} al agua"
+      "multiAnnouncement": "{hits} tocado(s), {misses} al agua",
+      "boardChoiceLabel": "Tablero visible",
+      "layoutLabel": "Cómo ver los tableros"
     },
     "resolution": {
       "youWon": "¡Ganaste!",

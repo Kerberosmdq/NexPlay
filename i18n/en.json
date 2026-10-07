@@ -303,7 +303,9 @@
       },
       "aimHint": "Tap the enemy board to aim",
       "confirmShotButton": "Fire! ({cost} charges)",
-      "multiAnnouncement": "{hits} hit(s), {misses} splash(es)"
+      "multiAnnouncement": "{hits} hit(s), {misses} splash(es)",
+      "boardChoiceLabel": "Board shown",
+      "layoutLabel": "Board layout"
     },
     "resolution": {
       "youWon": "You won!",
