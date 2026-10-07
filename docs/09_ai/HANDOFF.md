@@ -16,12 +16,13 @@ Document template for transferring task execution context between AI sessions an
 On 2026-10-06 the founder asked for a full redesign (visual, UX, motion,
 gameplay). An audit of the shipped app plus four mocked visual directions
 (A "Cuaderno de Recreo" — school graph-paper notebook; B "Riso Club";
-C "Juguetería"; D "Teatro de Sombras") were presented; the founder chose
-**A** and **voseo**, and asked to start with phase 1. Planned phases:
+C "Juguetería" — molded plastic toy; D "Teatro de Sombras") were presented;
+the founder chose **C** and **voseo**, and asked to start with phase 1.
+(They first said A by mistake and corrected it to C on 2026-10-07.) Planned phases:
 - **Phase 0 — `BDR-0002`** superseding `BDR-0001` (Paper & Felt) with
-  Direction A, then FEEL.md + ADR-0004 tokens rewritten for it. Not started.
+  Direction C, then FEEL.md + ADR-0004 tokens rewritten for it. Not started.
 - **Phase 1 — this task.** Flow fixes that don't depend on the look.
-- **Phase 2 — visual system** (tokens, fonts, paper textures, hand-drawn
+- **Phase 2 — visual system** (tokens, fonts, plastic surfaces, per-game
   per-game icons replacing emoji, redrawn hexagon mark, new primitives).
 - **Phase 3 — motion, sound, haptics** (phase transitions, Web Audio kit
   with mute, `navigator.vibrate` on Android, per-world celebrations).
@@ -108,8 +109,8 @@ before trusting a scary-looking console error — this session saw a stale
 fixed in the source, left over from a mid-edit HMR pass.
 
 ## Pending Tasks
-- **Phase 0: `BDR-0002`** — record Direction A ("Cuaderno de Recreo") as
-  superseding `BDR-0001`, with B/C/D as evaluated alternatives; then
+- **Phase 0: `BDR-0002`** — record Direction C ("Juguetería") as
+  superseding `BDR-0001`, with A/B/D as evaluated alternatives; then
   FEEL.md and ADR-0004 token updates.
 - Phases 2 and 3 of the redesign (see "Context" above).
 - A dedicated founder playtest of Battleship's full feature set on real

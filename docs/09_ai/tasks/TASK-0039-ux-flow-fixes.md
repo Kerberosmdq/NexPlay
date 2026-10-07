@@ -3,8 +3,8 @@
 ### Goal
 First phase of the founder-requested full redesign (2026-10-06 audit). This
 phase fixes flow and usability defects that are independent of the visual
-direction, so it can ship before the new look (Direction A, "Cuaderno de
-Recreo", to be recorded in `BDR-0002` as a separate docs task). It moves
+direction, so it can ship before the new look (Direction C, "Juguetería",
+to be recorded in `BDR-0002` as a separate docs task). It moves
 NexPlay toward `docs/ROADMAP.md`'s M7 bar: a stranger can be handed the URL
 and play without any explanation from the founder.
 
@@ -41,8 +41,8 @@ and play without any explanation from the founder.
    Voice section.
 
 ### Scope — out (non-goals for this task)
-- Any visual restyle (tokens, fonts, textures, icons, the Cuaderno direction
-  itself) — phase 2, after `BDR-0002`.
+- Any visual restyle (tokens, fonts, textures, icons, the Juguetería
+  direction itself) — phase 2, after `BDR-0002`.
 - Motion, sound, haptics — phase 3.
 - Gameplay changes (who-starts coin flip, family scoreboard, forehead tilt
   sensor, vote-by-vote reveal) — later per-game tasks.
@@ -63,7 +63,7 @@ and play without any explanation from the founder.
 - `docs/04_design/FEEL.md`, `docs/09_ai/*`
 
 ### Relevant context
-- 2026-10-06 audit + four design directions (founder chose A, voseo).
+- 2026-10-06 audit + four design directions (founder chose C, voseo).
 - `ADR-0004` (design-system primitives), `ADR-0002` (views contract),
   `docs/04_design/FEEL.md`.
 

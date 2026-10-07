@@ -1010,8 +1010,8 @@ race game).
       `lint`, `typecheck`, and all 206 unit tests pass.
 
 - [x] **TASK-0039**: UX flow fixes — phase 1 of the founder-requested full
-      redesign (2026-10-06 audit; founder chose visual Direction A
-      "Cuaderno de Recreo" and voseo, to be recorded in `BDR-0002`). Single-
+      redesign (2026-10-06 audit; founder chose visual Direction C
+      "Juguetería" and voseo, to be recorded in `BDR-0002`). Single-
       device pass-and-play can no longer skip a player (handoff screen +
       next locked until the card was held; Who Am I's timer starts on
       "Listo"), one way back ("← Juegos" in the top bar) and one way out
@@ -1031,7 +1031,7 @@ race game).
 
 ## Next Task
 - **Redesign, continued** (founder's current priority, ahead of M7's
-  remaining items and new games): `BDR-0002` recording Direction A, then
+  remaining items and new games): `BDR-0002` recording Direction C, then
   phase 2 (visual system) and phase 3 (motion, sound, haptics). See
   `HANDOFF.md` → "Context: the redesign this task opens".
 - After that: **M7 — Presentable**, or the two remaining entries in
