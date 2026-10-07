@@ -93,7 +93,8 @@
         "time5min": "5 minutos",
         "time7min": "7 minutos",
         "time10min": "10 minutos",
-        "timeUnlimited": "Sin límite de tiempo"
+        "timeUnlimited": "Sin límite de tiempo",
+        "timerSecondsMinutes": "Tiempo de la ronda (minutos)"
       },
       "howTo": {
         "step1": "Cada jugador tiene una palabra secreta que ven todos menos quien la tiene.",

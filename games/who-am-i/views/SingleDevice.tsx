@@ -5,8 +5,10 @@ import { useTranslations, useLocale } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import type { WhoAmIState, WhoAmIAction } from "../reducer";
 import { pickAssignments, pickReplacementWord } from "../pickRound";
-import { Button, Card, Scoreboard } from "@/components/ui";
+import { Button, Scoreboard } from "@/components/ui";
 import { loadFamilyRoster, prefillNames, rememberFamilyNames } from "@/lib/family/roster";
+import { GuessIcon, RoundClock, TimerPicker, WordCard, formatTime } from "./parts";
+import { ForeheadPicto, WhoPicto } from "./Pictos";
 
 export interface WhoAmISingleDeviceProps {
   state: WhoAmIState;
@@ -26,14 +28,8 @@ function makeLocalPlayers(names: string[]): Player[] {
   }));
 }
 
-function formatTime(totalSeconds: number): string {
-  const s = Math.max(0, totalSeconds);
-  return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
-}
-
 export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
   const t = useTranslations("WhoAmI");
-  const tConfig = useTranslations("games.who-am-i.config");
   const locale = useLocale();
 
   // Single-device has no realtime player roster, so names are entered
@@ -92,7 +88,8 @@ export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
     const notEnoughPlayers = validNames.length < 3;
 
     return (
-      <Card className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto">
+      <div className="flex flex-col items-center gap-6 w-full">
+        <WhoPicto size={64} className="text-edge-game-who-am-i" />
         <h2 className="font-display text-3xl text-ink text-center">{t("config.title")}</h2>
 
         <div className="w-full space-y-3">
@@ -100,13 +97,14 @@ export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
             <input
               key={i}
               value={name}
+              aria-label={t("config.playerNamePlaceholder", { n: i + 1 })}
               onChange={(e) => {
                 const next = [...names];
                 next[i] = e.target.value;
                 setNames(next);
               }}
               placeholder={t("config.playerNamePlaceholder", { n: i + 1 })}
-              className="w-full bg-surface-sunken border-2 border-line text-ink p-3 rounded-xl font-semibold outline-none focus-visible:border-focus"
+              className="w-full bg-surface-sunken border-2 border-transparent text-ink text-xl px-5 py-3 rounded-2xl font-bold placeholder:text-ink-muted placeholder:font-semibold outline-none shadow-[inset_0_3px_0_var(--color-edge-sunken)] focus-visible:border-focus"
             />
           ))}
           <Button variant="ghost" onClick={() => setNames([...names, ""])}>
@@ -114,23 +112,13 @@ export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
           </Button>
         </div>
 
-        <div className="w-full space-y-2">
-          <label className="text-ink-muted font-bold text-sm">{tConfig("timerSeconds")}</label>
-          <select
-            className="w-full bg-surface-sunken border-2 border-line text-ink p-3 rounded-xl font-semibold outline-none focus-visible:border-focus"
-            value={state.timerSeconds}
-            onChange={(e) => dispatch({ type: "SET_CONFIG", timerSeconds: parseInt(e.target.value, 10) })}
-          >
-            <option value={180}>{tConfig("time3min")}</option>
-            <option value={300}>{tConfig("time5min")}</option>
-            <option value={420}>{tConfig("time7min")}</option>
-            <option value={600}>{tConfig("time10min")}</option>
-            <option value={0}>{tConfig("timeUnlimited")}</option>
-          </select>
-        </div>
+        <TimerPicker
+          value={state.timerSeconds}
+          onChange={(timerSeconds) => dispatch({ type: "SET_CONFIG", timerSeconds })}
+        />
 
         <div className="w-full space-y-2">
-          {notEnoughPlayers && <p className="text-sm text-ink-muted text-center">{t("config.minPlayersHint")}</p>}
+          {notEnoughPlayers && <p className="text-base text-ink-muted text-center">{t("config.minPlayersHint")}</p>}
           <Button
             variant="primary"
             disabled={notEnoughPlayers}
@@ -148,12 +136,12 @@ export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
                 now: Date.now(),
               });
             }}
-            className="text-xl py-5"
+            className="text-2xl py-5"
           >
             {t("config.startButton")}
           </Button>
         </div>
-      </Card>
+      </div>
     );
   }
 
@@ -166,10 +154,11 @@ export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
 
     if (!turnReady) {
       return (
-        <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-10 px-4 text-center">
-          <h2 className="font-display text-3xl text-ink">{t("singleDevice.handoffTitle", { name })}</h2>
-          <p className="text-ink-muted">{t("singleDevice.handoffHint")}</p>
-          <Button variant="primary" onClick={() => setTurnReady(true)} className="text-xl py-5">
+        <div className="flex flex-col items-center gap-5 w-full text-center py-6">
+          <ForeheadPicto size={80} className="text-edge-game-who-am-i" />
+          <h2 className="font-display text-3xl text-ink leading-tight">{t("singleDevice.handoffTitle", { name })}</h2>
+          <p className="text-lg text-ink-muted">{t("singleDevice.handoffHint")}</p>
+          <Button variant="primary" onClick={() => setTurnReady(true)} className="text-2xl py-5">
             {t("singleDevice.readyButton")}
           </Button>
         </div>
@@ -177,21 +166,16 @@ export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
     }
 
     return (
-      <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4 text-center">
-        <p className="text-ink-muted font-bold text-base">{t("singleDevice.holdFor", { name })}</p>
+      <div className="flex flex-col items-center gap-5 w-full text-center">
+        <RoundClock label={state.timerSeconds <= 0 ? "∞" : formatTime(turnSecondsLeft)} />
 
-        <div className="w-full bg-surface-raised border-4 border-line rounded-3xl p-10 space-y-4">
-          <div className="text-8xl">{word?.emoji}</div>
-          <p className="font-display text-4xl text-ink">{word?.word}</p>
-        </div>
+        <p className="text-lg font-bold text-ink-muted">{t("singleDevice.holdFor", { name })}</p>
 
-        <div className="font-mono text-2xl font-bold text-ink">
-          {state.timerSeconds <= 0 ? "∞" : formatTime(turnSecondsLeft)}
-        </div>
+        <WordCard word={word} />
 
-        <div className="flex space-x-4 w-full">
+        <div className="flex gap-3 w-full">
           <Button
-            variant="primary"
+            variant="success"
             onClick={() => {
               if (current) dispatch({ type: "GUESS_CORRECT", playerId: current.id });
               nextTurn();
@@ -200,7 +184,7 @@ export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
             {t("singleDevice.guessedButton")}
           </Button>
           <Button
-            variant="danger"
+            variant="ghost"
             onClick={() => {
               if (current) dispatch({ type: "GUESS_WRONG", playerId: current.id });
               nextTurn();
@@ -210,47 +194,50 @@ export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
           </Button>
         </div>
 
-        <button
+        <Button
+          variant="ghost"
+          fullWidth={false}
+          className="px-4 text-base"
           onClick={() => {
             if (!current) return;
             const newWord = pickReplacementWord(locale, state.usedWordIds);
             dispatch({ type: "REROLL_WORD", playerId: current.id, newWord });
           }}
-          className="text-xs text-ink-muted underline"
         >
           {t("playing.rerollButton")}
-        </button>
+        </Button>
       </div>
     );
   }
 
   if (state.phase === "resolution") {
     return (
-      <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
-        <h2 className="font-display text-3xl text-ink text-center">{t("resolution.title")}</h2>
-        <Card className="w-full">
-          <Scoreboard
-            entries={roundPlayers.map((p) => {
-              const word = state.wordAssignments[p.id];
-              const guessedIt = state.guessedIds.includes(p.id);
-              return {
-                id: p.id,
-                icon: <span>{guessedIt ? "✅" : "❌"}</span>,
-                label: (
-                  <>
-                    <span className="text-ink font-bold">{p.displayName}</span>
-                    <span className="text-ink-muted text-sm ml-2">
-                      {word?.emoji} {word?.word}
-                    </span>
-                  </>
-                ),
-                value: <span className="font-mono text-gold font-bold">{state.scores[p.id] || 0} pts</span>,
-              };
-            })}
-          />
-        </Card>
+      <div className="flex flex-col items-center gap-5 w-full">
+        <div className="motion-celebrate w-full rounded-[1.75rem] bg-game-who-am-i text-on-game-who-am-i px-5 py-6 flex flex-col items-center gap-2 shadow-[0_var(--edge-lg)_0_var(--color-edge-game-who-am-i)]">
+          <WhoPicto size={64} />
+          <h2 className="font-display text-3xl text-center">{t("resolution.title")}</h2>
+        </div>
+        <Scoreboard
+          title={t("resolution.scoresTitle")}
+          entries={roundPlayers.map((p) => {
+            const word = state.wordAssignments[p.id];
+            return {
+              id: p.id,
+              icon: <GuessIcon guessed={state.guessedIds.includes(p.id)} />,
+              label: (
+                <span className="min-w-0">
+                  <span className="block text-lg font-bold text-ink truncate">{p.displayName}</span>
+                  <span className="block text-base text-ink-muted">
+                    <span aria-hidden="true">{word?.emoji}</span> {word?.word}
+                  </span>
+                </span>
+              ),
+              value: <span className="font-mono text-lg font-bold text-gold tabular-nums">{state.scores[p.id] || 0} pts</span>,
+            };
+          })}
+        />
         <Button
-          variant="ghost"
+          variant="primary"
           onClick={() => {
             setActiveIndex(0);
             setTurnReady(false);

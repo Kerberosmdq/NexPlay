@@ -56,6 +56,7 @@ describe("design tokens — WCAG AA contrast (ADR-0004 §4)", () => {
     ["success-surface", "color-success-surface", "color-on-success-surface"],
     ["danger-surface", "color-danger-surface", "color-on-danger-surface"],
     ["success", "color-success", "color-on-success"],
+    ["success-hover", "color-success-hover", "color-on-success"],
     ["ground", "color-ground", "color-on-ground"],
     ["game-impostor", "color-game-impostor", "color-on-game-impostor"],
     ["game-who-am-i", "color-game-who-am-i", "color-on-game-who-am-i"],

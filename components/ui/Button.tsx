@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
+export type ButtonVariant = "primary" | "secondary" | "success" | "danger" | "ghost";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -21,6 +21,8 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
     "bg-action-primary hover:bg-action-primary-hover text-on-primary shadow-[0_var(--edge-md)_0_var(--color-edge-primary)]",
   secondary:
     "bg-action-secondary hover:bg-action-secondary-hover text-on-secondary shadow-[0_var(--edge-md)_0_var(--color-edge-secondary)]",
+  success:
+    "bg-success hover:bg-success-hover text-on-success shadow-[0_var(--edge-md)_0_var(--color-edge-success)]",
   danger:
     "bg-action-danger hover:bg-action-danger-hover text-on-danger shadow-[0_var(--edge-md)_0_var(--color-edge-danger)]",
   ghost:

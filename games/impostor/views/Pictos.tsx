@@ -1,29 +1,8 @@
-import type { ReactNode } from "react";
+import { Picto, type PictoProps } from "@/components/ui";
 
 /** BDR-0002: Impostor's pictograms, replacing the emoji it used as
- * illustration (FEEL.md: "not emoji-as-decoration"). Chunky round strokes in
- * a 0–48 viewBox, drawn in `currentColor` so each screen picks the color.
- * Decorative — every one sits next to text that says the same thing. */
-function Picto({ size = 56, className = "", children }: { size?: number; className?: string; children: ReactNode }) {
-  return (
-    <svg
-      viewBox="0 0 48 48"
-      width={size}
-      height={size}
-      aria-hidden="true"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="3.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {children}
-    </svg>
-  );
-}
-
-type PictoProps = { size?: number; className?: string };
+ * illustration (FEEL.md: "not emoji-as-decoration"), drawn in the shared
+ * `Picto` frame. */
 
 /** The impostor: a mask with two eye holes. */
 export function MaskPicto(props: PictoProps) {

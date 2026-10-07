@@ -93,7 +93,8 @@
         "time5min": "5 minutes",
         "time7min": "7 minutes",
         "time10min": "10 minutes",
-        "timeUnlimited": "No time limit"
+        "timeUnlimited": "No time limit",
+        "timerSecondsMinutes": "Round length (minutes)"
       },
       "howTo": {
         "step1": "Each player has a secret word that everyone can see except them.",

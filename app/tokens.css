@@ -63,6 +63,7 @@
   --color-edge-danger: #4f0819;
 
   --color-success: #178244;
+  --color-success-hover: #13703a;
   --color-on-success: #ffffff;
   --color-edge-success: #0d5129;
 
@@ -166,6 +167,7 @@
   --color-edge-danger: var(--color-edge-danger);
 
   --color-success: var(--color-success);
+  --color-success-hover: var(--color-success-hover);
   --color-on-success: var(--color-on-success);
   --color-edge-success: var(--color-edge-success);
 
