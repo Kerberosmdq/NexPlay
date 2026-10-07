@@ -11,3 +11,4 @@ export { LanguageSwitcher } from "./LanguageSwitcher";
 export { ShareCode, type ShareCodeProps } from "./ShareCode";
 export { ConfirmDialog, type ConfirmDialogProps } from "./ConfirmDialog";
 export { Dialog, type DialogProps } from "./Dialog";
+export { NexMark, type NexMarkProps } from "./NexMark";

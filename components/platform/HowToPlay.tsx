@@ -11,7 +11,7 @@ const STEPS = ["step1", "step2", "step3"] as const;
  * follows the same `games.<id>.*` catalog convention as a game's
  * `description`, so a new game only adds three strings per locale — no
  * `GameModule` contract change. */
-export function HowToPlayButton({ gameId }: { gameId: string }) {
+export function HowToPlayButton({ gameId, compact = false }: { gameId: string; compact?: boolean }) {
   const t = useTranslations("Lobby");
   const tGame = useTranslations();
   const [open, setOpen] = useState(false);
@@ -20,8 +20,16 @@ export function HowToPlayButton({ gameId }: { gameId: string }) {
 
   return (
     <>
-      <Button variant="ghost" fullWidth={false} className="px-4 text-sm" onClick={() => setOpen(true)}>
-        {t("howToPlayButton")}
+      {/* Compact: a round "?" key for tight rows (the game picker), still
+          announced by its full name. */}
+      <Button
+        variant="ghost"
+        fullWidth={false}
+        className={compact ? "w-14 px-0 text-2xl shrink-0" : "px-4 text-base"}
+        aria-label={compact ? t("howToPlayButton") : undefined}
+        onClick={() => setOpen(true)}
+      >
+        {compact ? "?" : t("howToPlayButton")}
       </Button>
       {open && (
         <Dialog title={t("howToPlayTitle", { game: tGame(game.meta.name) })} onClose={() => setOpen(false)}>

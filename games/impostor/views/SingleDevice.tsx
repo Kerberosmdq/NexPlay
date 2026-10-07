@@ -189,9 +189,9 @@ export function SingleDeviceView({ state, dispatch }: ImpostorSingleDeviceProps)
             isImpostor ? (
               <div className="text-center space-y-4">
                 <div className="text-8xl">🕵️</div>
-                <h3 className="font-display text-2xl text-penumbra-danger">{t("roleReveal.youAreImpostor")}</h3>
+                <h3 className="font-display text-2xl text-action-primary">{t("roleReveal.youAreImpostor")}</h3>
                 {state.hintDifficulty !== "none" && state.secretWord && (
-                  <p className="text-lg text-on-penumbra font-bold">
+                  <p className="text-lg text-ink font-bold">
                     {state.hintDifficulty === "hard" ? state.secretWord.category : state.secretWord.easyHint}
                   </p>
                 )}
@@ -199,7 +199,7 @@ export function SingleDeviceView({ state, dispatch }: ImpostorSingleDeviceProps)
             ) : (
               <div className="text-center space-y-4">
                 <div className="text-8xl">🤫</div>
-                <p className="font-display text-3xl text-penumbra-success">{state.secretWord?.word}</p>
+                <p className="font-display text-3xl text-success">{state.secretWord?.word}</p>
               </div>
             )
           }
@@ -385,7 +385,7 @@ export function SingleDeviceView({ state, dispatch }: ImpostorSingleDeviceProps)
         {impostorSurvived ? (
           <div className="w-full text-center space-y-2 bg-surface-sunken border-2 border-action-secondary/40 rounded-3xl py-6 px-4">
             <div className="text-5xl">👑</div>
-            <h2 className="font-display text-2xl text-action-secondary">{t("resolution.impostorSurvived")}</h2>
+            <h2 className="font-display text-2xl text-accent">{t("resolution.impostorSurvived")}</h2>
             <p className="text-base text-ink-muted font-semibold">
               {t("resolution.survivedCelebration", { names: impostorNames })}
             </p>
@@ -395,7 +395,7 @@ export function SingleDeviceView({ state, dispatch }: ImpostorSingleDeviceProps)
             {res?.impostorGuessedWord ? t("resolution.impostorStoleVictory") : t("resolution.innocentVictory")}
           </h2>
         )}
-        <p className="font-display text-xl text-action-secondary">{state.secretWord?.word}</p>
+        <p className="font-display text-xl text-accent">{state.secretWord?.word}</p>
         <Card className="w-full">
           <Scoreboard
             entries={roundPlayers.map((p) => ({

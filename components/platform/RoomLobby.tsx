@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { generateRoomCode, isValidRoomCode } from "@/lib/realtime";
 import { rememberFamilyNames } from "@/lib/family/roster";
-import { Button, CodeInput, Field, LanguageSwitcher } from "@/components/ui";
+import { Button, Card, CodeInput, Field, LanguageSwitcher, NexMark } from "@/components/ui";
 
 export interface RoomLobbyProps {
   onStartSingleDevice: (displayName: string) => void;
@@ -55,42 +54,38 @@ export function RoomLobby({
   };
 
   return (
-    <div className="relative w-full max-w-lg mx-auto">
-      <div className="relative w-full overflow-hidden p-6 sm:p-8 bg-surface-raised text-ink rounded-3xl border-4 border-line shadow-[0_16px_40px_rgba(43,33,24,0.18)] space-y-6">
-        <div className="flex justify-end">
-          <LanguageSwitcher />
-        </div>
+    <div className="w-full max-w-lg mx-auto flex flex-col gap-6">
+      <div className="flex justify-end">
+        <LanguageSwitcher />
+      </div>
 
-        {/* Brand Header — the real Nex hexagon mark (BDR-0001 §4,
-            TASK-0030), the same file wired as the app's favicon/PWA icon. */}
-        <div className="text-center space-y-2 pb-2">
-          <div className="flex items-center justify-center gap-3">
-            <Image
-              src="/icon.png"
-              alt=""
-              width={80}
-              height={80}
-              priority
-              aria-hidden="true"
-              className="w-16 h-16 sm:w-20 sm:h-20"
-            />
-            <h1 className="font-display text-5xl sm:text-6xl tracking-tight">NexPlay</h1>
-          </div>
-          <p className="text-sm sm:text-base font-semibold text-ink-muted pt-2">
-            {t("tagline")}
-          </p>
+      {/* Brand header — on the baseplate itself: the hex token mark and a
+          white molded title (BDR-0002 §1, §8). */}
+      <div className="flex flex-col items-center gap-2 text-center">
+        <div className="flex items-center justify-center gap-3">
+          <NexMark size={76} />
+          <h1
+            className="font-display text-5xl sm:text-6xl text-on-ground"
+            style={{ textShadow: "0 5px 0 var(--color-edge-ground)" }}
+          >
+            NexPlay
+          </h1>
         </div>
+        <p className="text-lg font-bold text-on-ground">{t("tagline")}</p>
+      </div>
 
-        {/* Mode Switcher */}
-        <div className="grid grid-cols-2 gap-3 bg-surface-sunken p-2 rounded-2xl border-3 border-line">
+      <Card className="space-y-6">
+        {/* Mode switch: the chosen mode is a raised yellow key, the other a
+            flat socket. */}
+        <div className="grid grid-cols-2 gap-2 bg-surface-sunken p-2 rounded-2xl shadow-[inset_0_3px_0_var(--color-edge-sunken)]">
           <Button
-            variant="primary"
+            variant="secondary"
             active={mode === "multi-device"}
             onClick={() => {
               setMode("multi-device");
               setError(null);
             }}
-            className="text-sm sm:text-base px-3 leading-tight"
+            className="text-base px-3 !mb-0"
           >
             {t("multiDeviceButton")}
           </Button>
@@ -101,7 +96,7 @@ export function RoomLobby({
               setMode("single-device");
               setError(null);
             }}
-            className="text-sm sm:text-base px-3 leading-tight"
+            className="text-base px-3 !mb-0"
           >
             {t("singleDeviceButton")}
           </Button>
@@ -119,25 +114,23 @@ export function RoomLobby({
           <div
             role="alert"
             aria-live="assertive"
-            className="p-4 bg-danger-surface border-3 border-action-danger rounded-2xl text-sm font-bold text-on-danger-surface text-center"
+            className="p-4 bg-danger-surface rounded-2xl text-base font-bold text-on-danger-surface text-center"
           >
             {error}
           </div>
         )}
 
         {mode === "multi-device" ? (
-          <div className="space-y-6 pt-2">
+          <div className="space-y-5">
             <CodeInput label={t("roomCodeLabel")} value={joinCodeInput} onChange={setJoinCodeInput} />
 
             <Button variant="primary" onClick={handleJoin} className="text-xl sm:text-2xl">
               {t("joinButton")}
             </Button>
 
-            <div className="relative flex py-1 items-center">
+            <div className="flex items-center gap-4 py-1">
               <div className="flex-grow border-t-2 border-line"></div>
-              <span className="flex-shrink mx-4 text-sm font-semibold text-ink-muted">
-                {t("orCreateNew")}
-              </span>
+              <span className="text-base font-semibold text-ink-muted">{t("orCreateNew")}</span>
               <div className="flex-grow border-t-2 border-line"></div>
             </div>
 
@@ -146,13 +139,11 @@ export function RoomLobby({
             </Button>
           </div>
         ) : (
-          <div className="pt-4">
-            <Button variant="secondary" onClick={handleSingleDevice} className="text-xl sm:text-2xl">
-              {t("startSingleDeviceButton")}
-            </Button>
-          </div>
+          <Button variant="primary" onClick={handleSingleDevice} className="text-xl sm:text-2xl">
+            {t("startSingleDeviceButton")}
+          </Button>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

@@ -14,9 +14,9 @@ export interface ConfirmDialogProps {
 
 /** ADR-0004 §2: the one confirmation-dialog primitive for any destructive
  * or hard-to-reverse action (leaving a room, returning everyone to the
- * lobby). A plain neutral scrim, not `RevealCard`'s penumbra treatment —
- * that dark-and-glow look is reserved for the secret-reveal moment
- * (BDR-0001), not a generic "are you sure". Escape and a backdrop click
+ * lobby). A plain scrim and panel, never `RevealCard`'s capsule — that is
+ * reserved for the secret-reveal moment (BDR-0002 §9), not a generic "are
+ * you sure". Escape and a backdrop click
  * count as Cancel, and Cancel is rendered first so it gets initial focus. */
 export function ConfirmDialog({
   title,

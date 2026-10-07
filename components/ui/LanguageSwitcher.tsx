@@ -19,7 +19,7 @@ export function LanguageSwitcher() {
     <div
       role="group"
       aria-label={t("languageLabel")}
-      className="inline-flex rounded-full border-2 border-line bg-surface-sunken p-1 text-xs font-black uppercase tracking-widest"
+      className="inline-flex gap-1 rounded-2xl bg-surface-sunken p-1.5 shadow-[inset_0_3px_0_var(--color-edge-sunken)] font-display text-sm"
     >
       {routing.locales.map((loc) => (
         <button
@@ -28,8 +28,10 @@ export function LanguageSwitcher() {
           aria-pressed={locale === loc}
           aria-label={loc === "es" ? t("languageSpanish") : t("languageEnglish")}
           onClick={() => router.replace(pathname, { locale: loc })}
-          className={`min-w-11 min-h-11 rounded-full px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-            locale === loc ? "bg-action-primary text-on-primary" : "text-ink-muted"
+          className={`min-w-11 min-h-11 rounded-xl px-3 py-2 focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+            locale === loc
+              ? "bg-action-secondary text-on-secondary shadow-[0_var(--edge-sm)_0_var(--color-edge-secondary)]"
+              : "text-ink-muted"
           }`}
         >
           {loc.toUpperCase()}

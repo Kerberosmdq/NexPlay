@@ -43,7 +43,7 @@ export function MatchResolvedModal({ gameState, winners, canContinue, onContinue
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: "rgba(43, 33, 24, 0.55)" }}
+      style={{ backgroundColor: "color-mix(in srgb, var(--color-ink) 60%, transparent)" }}
       onClick={() => setDismissed(true)}
     >
       <div
@@ -51,7 +51,7 @@ export function MatchResolvedModal({ gameState, winners, canContinue, onContinue
         aria-modal="true"
         aria-labelledby="match-resolved-title"
         aria-describedby="match-resolved-message"
-        className="motion-deal bg-surface-raised border border-line rounded-3xl p-6 w-full max-w-sm space-y-4"
+        className="motion-deal bg-surface-raised rounded-[1.75rem] p-6 w-full max-w-sm space-y-4 shadow-[0_var(--edge-lg)_0_var(--color-edge-raised)]"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="match-resolved-title" className="font-display text-2xl text-ink">

@@ -129,14 +129,14 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             isImpostor ? (
               <div className="text-center space-y-6">
                 <div className="text-8xl">🕵️</div>
-                <h3 className="font-display text-3xl text-penumbra-danger">{t("roleReveal.youAreImpostor")}</h3>
+                <h3 className="font-display text-3xl text-action-primary">{t("roleReveal.youAreImpostor")}</h3>
 
                 {state.hintDifficulty !== "none" && secretWord && (
-                  <div className="border border-penumbra-danger/40 p-4 rounded-xl mt-4">
-                    <p className="text-sm text-penumbra-danger uppercase tracking-widest font-bold mb-1">
+                  <div className="border border-action-primary/40 p-4 rounded-xl mt-4">
+                    <p className="text-sm text-action-primary uppercase tracking-widest font-bold mb-1">
                       {t("roleReveal.yourClue")}
                     </p>
-                    <p className="text-xl text-on-penumbra font-bold">
+                    <p className="text-xl text-ink font-bold">
                       {state.hintDifficulty === "hard" ? secretWord.category : secretWord.easyHint}
                     </p>
                   </div>
@@ -145,8 +145,8 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             ) : (
               <div className="text-center space-y-6">
                 <div className="text-8xl">🤫</div>
-                <h3 className="text-xl font-bold text-on-penumbra-muted">{t("roleReveal.secretWordIs")}</h3>
-                <p className="font-display text-4xl text-penumbra-success px-6 py-3 rounded-2xl border border-penumbra-success/40">
+                <h3 className="text-xl font-bold text-ink-muted">{t("roleReveal.secretWordIs")}</h3>
+                <p className="font-display text-4xl text-success px-6 py-3 rounded-2xl border border-success/40">
                   {secretWord?.word}
                 </p>
               </div>
@@ -186,7 +186,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
           <p className="text-ink-muted font-bold">{t("discussion.everyoneSpoke")}</p>
         ) : isMyTurn ? (
           <div className="w-full max-w-sm space-y-4">
-            <p className="text-2xl font-black text-action-secondary motion-pulse">{t("discussion.yourTurn")}</p>
+            <p className="text-2xl font-black text-accent motion-pulse">{t("discussion.yourTurn")}</p>
             <Button variant="primary" onClick={() => dispatch({ type: "NEXT_TURN" })} className="text-xl">
               {t("discussion.saidMyWord")}
             </Button>
@@ -373,7 +373,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         {impostorSurvived ? (
           <div className="w-full text-center space-y-3 bg-surface-sunken border-2 border-action-secondary/40 rounded-3xl py-8 px-4">
             <div className="text-6xl">👑</div>
-            <h2 className="font-display text-3xl text-action-secondary leading-tight">
+            <h2 className="font-display text-3xl text-accent leading-tight">
               {t("resolution.impostorSurvived")}
             </h2>
             <p className="text-lg text-ink-muted font-semibold">
@@ -389,7 +389,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
         <div className="text-xl text-ink-muted text-center">
           {t("resolution.secretWordWas")}
           <br />
-          <span className="font-display text-3xl text-action-secondary block mt-2">{state.secretWord?.word}</span>
+          <span className="font-display text-3xl text-accent block mt-2">{state.secretWord?.word}</span>
         </div>
 
         <Card className="w-full">

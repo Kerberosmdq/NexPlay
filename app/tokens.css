@@ -1,86 +1,128 @@
 /*
- * NexPlay Design Tokens — ADR-0004 (Design System Contract)
- * Palette & typography: BDR-0001 (Paper & Felt, penumbra reveals)
+ * NexPlay Design Tokens — ADR-0004 (Design System Contract, 1.1.0)
+ * Palette & typography: BDR-0002 (Juguetería — molded plastic toy)
  *
  * Semantic, paired tokens: a component asks for a *use* ("surface",
- * "action-primary"), never a raw color name. Every action/status pair
- * (bg + its "on" foreground) is chosen together and covered by
- * tests/unit/design-tokens.test.ts, which asserts each meets WCAG AA
- * (>=4.5:1).
+ * "action-primary"), never a raw color name. Every text/background pair is
+ * chosen together and covered by tests/unit/design-tokens.test.ts, which
+ * asserts each meets WCAG AA (>=4.5:1).
  *
- * This file implements BDR-0001's anchors: a warm, light parchment
- * ground by default (never dark — dark is invoked only for the reveal
- * moment, via --color-penumbra-*), a felt-green primary action, a
- * terracotta secondary action, and three typefaces matched to BDR-0001
- * §3's roles (condensed display, humanist body/UI, monospace for
- * codes/timers/scores).
+ * The world (BDR-0002): a toy-blue studded baseplate is the ground — the
+ * table, never a surface for reading — and content sits on white plastic
+ * panels. Depth is a solid, darker molded edge under a piece (the
+ * --color-edge-* tokens, used as an un-blurred offset shadow), never a
+ * blurred shadow, a gradient or gloss.
  */
 
 :root {
-  /* Surfaces — parchment ground, from base to raised to sunken/well */
-  --color-surface: #efe6d6;
-  --color-surface-raised: #fbf6ec;
-  --color-surface-sunken: #e7d9c0;
-  --color-surface-well: #ded0b4;
+  /* Ground — the studded baseplate behind everything. Only large titles and
+     short labels sit directly on it (white, 5.15:1). */
+  --color-ground: #2a66e0;
+  --color-ground-stud: #3b76ee;
+  --color-on-ground: #ffffff;
+  --color-edge-ground: #173e8f;
+
+  /* Surfaces — white plastic panels, from base to raised to sunken/well.
+     `surface` and `surface-raised` are both white plastic: a raised piece
+     is told apart by its molded edge, not by a different white. */
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #eef3fb;
+  --color-surface-well: #e1e9f6;
+  --color-edge-raised: #c6d2ea;
+  --color-edge-sunken: #d5dff0;
 
   /* Text */
-  --color-ink: #2b2118;
-  --color-ink-muted: #635441;
+  --color-ink: #13213f;
+  --color-ink-muted: #4a5878;
 
-  /* Structure */
-  --color-line: #c79a62;
-  --color-focus: #c0562a;
+  /* A readable accent for highlighted text (whose turn it is, the word at
+     the end of a round). The yellow secondary action is unreadable as text
+     on white (1.54:1), so highlighted text uses this instead. */
+  --color-accent: #8b45d6;
 
-  /* Actions — bg / hover / on (foreground), chosen and tested as pairs */
-  --color-action-primary: #1f6b52;
-  --color-action-primary-hover: #17513e;
+  /* Structure. Focus is ink, not yellow: it has to stand out against both
+     white plastic (15.95:1) and the blue ground (3.09:1, non-text >=3). */
+  --color-line: #c6d2ea;
+  --color-focus: #13213f;
+
+  /* Actions — bg / hover / on (foreground) / edge, chosen as sets */
+  --color-action-primary: #d3261b;
+  --color-action-primary-hover: #b81f15;
   --color-on-primary: #ffffff;
+  --color-edge-primary: #8f170f;
 
-  --color-action-secondary: #a8481f;
-  --color-action-secondary-hover: #8f3c1a;
-  --color-on-secondary: #ffffff;
+  --color-action-secondary: #ffc928;
+  --color-action-secondary-hover: #f2b705;
+  --color-on-secondary: #13213f;
+  --color-edge-secondary: #b98600;
 
   --color-action-danger: #8a1030;
   --color-action-danger-hover: #6e0d26;
   --color-on-danger: #ffffff;
+  --color-edge-danger: #4f0819;
+
+  --color-success: #178244;
+  --color-on-success: #ffffff;
+  --color-edge-success: #0d5129;
 
   /* Status surfaces — pale tint + darker "on" text, for banners (correct
      guess, wrong guess) as opposed to the solid action-* buttons above. */
-  --color-success-surface: #e3efe7;
-  --color-on-success-surface: #14503d;
+  --color-success-surface: #e3f4ea;
+  --color-on-success-surface: #0f5a2e;
 
-  --color-danger-surface: #f5e4e1;
-  --color-on-danger-surface: #7a0e29;
+  --color-danger-surface: #fde6e4;
+  --color-on-danger-surface: #8f170f;
 
   /* Points/score highlight — a readable gold, distinct from ink-muted. */
-  --color-gold: #6b4e0f;
+  --color-gold: #8a5a00;
 
-  /* Penumbra — the reveal moment (BDR-0001): the screen dims, a warm
-     glow gathers around the card. The only place NexPlay goes dark, so
-     text tokens live here too rather than reusing the light-theme ones —
-     "innocent word" and "you're the impostor" need their own readable
-     colors against this specific dark ground, not the parchment pairs. */
-  --color-penumbra-ground: #0a0f2c;
-  --color-penumbra-glow: #f0b429;
-  --color-on-penumbra: #f5efe3;
-  --color-on-penumbra-muted: #c9bba0;
-  --color-penumbra-danger: #ff7a90;
-  --color-penumbra-success: #6fe3b4;
+  /* Per-game colors (BDR-0002 §6): each game is a color *and* a pictogram,
+     never the color alone. Each pairs with its own "on" color. */
+  --color-game-impostor: #d3261b;
+  --color-on-game-impostor: #ffffff;
+  --color-edge-game-impostor: #8f170f;
+  --color-game-who-am-i: #ffc928;
+  --color-on-game-who-am-i: #13213f;
+  --color-edge-game-who-am-i: #b98600;
+  --color-game-connect4: #178244;
+  --color-on-game-connect4: #ffffff;
+  --color-edge-game-connect4: #0d5129;
+  --color-game-guess-who: #8b45d6;
+  --color-on-game-guess-who: #ffffff;
+  --color-edge-game-guess-who: #5c2a96;
+  --color-game-battleship: #ffffff;
+  --color-on-game-battleship: #13213f;
+  --color-edge-game-battleship: #c6d2ea;
 
-  /* Typography — BDR-0001 §3: condensed display, humanist body/UI,
-     monospace for codes/timers/scores. The actual font stacks (with their
-     own generated fallbacks) come from next/font's `variable` classes on
-     <html> in layout.tsx — not redeclared here, since a :root rule for
-     the same custom property next/font already sets on <html> would be a
-     circular self-reference (var(--font-display, ...) referencing
-     --font-display itself), which is an invalid value per spec, not a
-     graceful fallback. */
+  /* Battleship shot results (founder feedback, 2026-08-15: "si es agua
+     tiene que ser azul, y rojo cuando le pegas"). Deliberately a literal
+     depiction (the sea), scoped to this single use and named for it.
+     Chosen for *lightness* separation, not just hue: clearly lighter than
+     the hit red (2.09:1 against action-danger) and clearly darker than an
+     unfired cell (3.75:1 against surface-well), while still pairing with
+     white at AA (4.58:1). */
+  --color-water: #2d7ab8;
+  --color-on-water: #ffffff;
+
+  /* Typography — BDR-0002 §7: Titan One (display: titles, buttons, big
+     numbers), Baloo 2 (everything read or typed), and a monospace face kept
+     for digits only (timers, scores). The actual font stacks come from
+     next/font's `variable` classes on <html> in layout.tsx — not redeclared
+     here, since a :root rule for the same custom property would be a
+     circular self-reference. */
 
   /* Radius */
   --radius-sm: 0.5rem;
   --radius-md: 1rem;
   --radius-lg: 1.5rem;
   --radius-full: 9999px;
+
+  /* Molded edge heights — how far a piece sits above what it's on, and so
+     how far a button travels when pressed (BDR-0002 §3–4). */
+  --edge-sm: 4px;
+  --edge-md: 6px;
+  --edge-lg: 8px;
 
   /* Motion timing (gestures themselves are in app/motion.css) */
   --duration-fast: 100ms;
@@ -89,13 +131,21 @@
 }
 
 @theme inline {
+  --color-ground: var(--color-ground);
+  --color-ground-stud: var(--color-ground-stud);
+  --color-on-ground: var(--color-on-ground);
+  --color-edge-ground: var(--color-edge-ground);
+
   --color-surface: var(--color-surface);
   --color-surface-raised: var(--color-surface-raised);
   --color-surface-sunken: var(--color-surface-sunken);
   --color-surface-well: var(--color-surface-well);
+  --color-edge-raised: var(--color-edge-raised);
+  --color-edge-sunken: var(--color-edge-sunken);
 
   --color-ink: var(--color-ink);
   --color-ink-muted: var(--color-ink-muted);
+  --color-accent: var(--color-accent);
 
   --color-line: var(--color-line);
   --color-focus: var(--color-focus);
@@ -103,14 +153,21 @@
   --color-action-primary: var(--color-action-primary);
   --color-action-primary-hover: var(--color-action-primary-hover);
   --color-on-primary: var(--color-on-primary);
+  --color-edge-primary: var(--color-edge-primary);
 
   --color-action-secondary: var(--color-action-secondary);
   --color-action-secondary-hover: var(--color-action-secondary-hover);
   --color-on-secondary: var(--color-on-secondary);
+  --color-edge-secondary: var(--color-edge-secondary);
 
   --color-action-danger: var(--color-action-danger);
   --color-action-danger-hover: var(--color-action-danger-hover);
   --color-on-danger: var(--color-on-danger);
+  --color-edge-danger: var(--color-edge-danger);
+
+  --color-success: var(--color-success);
+  --color-on-success: var(--color-on-success);
+  --color-edge-success: var(--color-edge-success);
 
   --color-success-surface: var(--color-success-surface);
   --color-on-success-surface: var(--color-on-success-surface);
@@ -120,12 +177,24 @@
 
   --color-gold: var(--color-gold);
 
-  --color-penumbra-ground: var(--color-penumbra-ground);
-  --color-penumbra-glow: var(--color-penumbra-glow);
-  --color-on-penumbra: var(--color-on-penumbra);
-  --color-on-penumbra-muted: var(--color-on-penumbra-muted);
-  --color-penumbra-danger: var(--color-penumbra-danger);
-  --color-penumbra-success: var(--color-penumbra-success);
+  --color-game-impostor: var(--color-game-impostor);
+  --color-on-game-impostor: var(--color-on-game-impostor);
+  --color-edge-game-impostor: var(--color-edge-game-impostor);
+  --color-game-who-am-i: var(--color-game-who-am-i);
+  --color-on-game-who-am-i: var(--color-on-game-who-am-i);
+  --color-edge-game-who-am-i: var(--color-edge-game-who-am-i);
+  --color-game-connect4: var(--color-game-connect4);
+  --color-on-game-connect4: var(--color-on-game-connect4);
+  --color-edge-game-connect4: var(--color-edge-game-connect4);
+  --color-game-guess-who: var(--color-game-guess-who);
+  --color-on-game-guess-who: var(--color-on-game-guess-who);
+  --color-edge-game-guess-who: var(--color-edge-game-guess-who);
+  --color-game-battleship: var(--color-game-battleship);
+  --color-on-game-battleship: var(--color-on-game-battleship);
+  --color-edge-game-battleship: var(--color-edge-game-battleship);
+
+  --color-water: var(--color-water);
+  --color-on-water: var(--color-on-water);
 
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);

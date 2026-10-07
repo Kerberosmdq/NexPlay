@@ -24,6 +24,7 @@ import {
 import { useWakeLock } from "@/lib/hooks/useWakeLock";
 import { Button, Screen } from "@/components/ui";
 import { HowToPlayButton } from "@/components/platform/HowToPlay";
+import { GameIcon, gameBlockClasses } from "@/components/platform/GameIcon";
 
 // Mirrors MultiDeviceRoom's TERMINAL_PHASE_BY_GAME — see the comment there
 // for why this per-game lookup exists instead of a generic contract field.
@@ -224,9 +225,9 @@ function SingleDeviceGamePicker({
     // still listed, disabled with the reason, so the family knows the game
     // exists and what it needs instead of wondering where it went.
     return (
-      <div className="w-full max-w-md space-y-4">
-        <h3 className="font-display text-2xl text-ink text-center">{t("gamesLabel")}</h3>
-        <ul className="space-y-3">
+      <div className="w-full space-y-4">
+        <h3 className="font-display text-3xl text-ink text-center">{t("gamesLabel")}</h3>
+        <ul className="space-y-5">
           {[...Object.values(AVAILABLE_GAMES)]
             // Playable games first; the unavailable ones trail at the end.
             .sort(
@@ -238,31 +239,37 @@ function SingleDeviceGamePicker({
             const playable = game.meta.supportedModes.includes("single-device");
             const { minPlayers, maxPlayers } = game.meta;
             return (
-              <li
-                key={game.id}
-                className={`bg-surface-raised border-2 border-line rounded-2xl p-4 space-y-3 ${playable ? "" : "opacity-60"}`}
-              >
-                <div className="space-y-1">
-                  <h4 className="font-display text-xl text-ink">{tGame(game.meta.name)}</h4>
-                  <p className="text-sm text-ink-muted">{tGame(`games.${game.id}.description`)}</p>
-                  <p className="text-sm font-bold text-ink">
-                    {minPlayers === maxPlayers
-                      ? t("playersExact", { n: minPlayers })
-                      : t("playersRange", { min: minPlayers, max: maxPlayers })}
-                    {!playable && <> · {t("needsSeveralPhones")}</>}
-                  </p>
+              // BDR-0002 §6: each game is its own colored block with its
+              // pictogram — recognizable before it can be read.
+              <li key={game.id} className={playable ? "" : "opacity-60"}>
+                <div className={`flex items-center gap-3 rounded-t-2xl px-4 py-3 ${gameBlockClasses(game.id)}`}>
+                  <GameIcon gameId={game.id} size={44} className="shrink-0" />
+                  <div className="min-w-0">
+                    <h4 className="font-display text-2xl leading-tight">{tGame(game.meta.name)}</h4>
+                    <p className="text-base font-bold">
+                      {minPlayers === maxPlayers
+                        ? t("playersExact", { n: minPlayers })
+                        : t("playersRange", { min: minPlayers, max: maxPlayers })}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex gap-2 items-center">
-                  {playable && (
-                    <Button
-                      variant="primary"
-                      onClick={() => dispatch({ type: "PLATFORM_START_GAME", gameId: game.id, players: [] })}
-                      className="flex-1"
-                    >
-                      {t("playThisButton")}
-                    </Button>
-                  )}
-                  <HowToPlayButton gameId={game.id} />
+                <div className="bg-surface-sunken rounded-b-2xl px-4 pt-3 pb-1 space-y-3">
+                  <p className="text-base text-ink-muted">
+                    {tGame(`games.${game.id}.description`)}
+                    {!playable && <span className="block font-bold text-ink">{t("needsSeveralPhones")}</span>}
+                  </p>
+                  <div className="flex gap-2 items-center">
+                    {playable && (
+                      <Button
+                        variant="primary"
+                        onClick={() => dispatch({ type: "PLATFORM_START_GAME", gameId: game.id, players: [] })}
+                        className="flex-1"
+                      >
+                        {t("playThisButton")}
+                      </Button>
+                    )}
+                    <HowToPlayButton gameId={game.id} compact />
+                  </div>
                 </div>
               </li>
             );

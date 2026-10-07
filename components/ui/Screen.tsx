@@ -49,14 +49,14 @@ export function Screen({
   return (
     <div className="w-full flex flex-col items-center gap-4">
       {(displayName || onExit || onBack) && (
-        <div className="w-full max-w-md flex justify-between items-center gap-3 px-2">
+        <div className="w-full max-w-lg flex justify-between items-center gap-3">
           {onBack ? (
             <Button variant="ghost" fullWidth={false} onClick={onBack} aria-label={backAriaLabel} className="px-4">
               <span aria-hidden="true">← </span>
               {backLabel}
             </Button>
           ) : (
-            <span className="text-sm text-ink-muted">{displayName}</span>
+            <span className="font-display text-lg text-on-ground">{displayName}</span>
           )}
           {onExit && (
             <Button
@@ -71,7 +71,11 @@ export function Screen({
           )}
         </div>
       )}
-      {children}
+      {/* BDR-0002 §1–2: the blue baseplate is the table, never a surface to
+          read on — every screen's content sits on one white plastic tray. */}
+      <div className="w-full max-w-lg bg-surface rounded-[2rem] px-4 py-6 sm:px-6 shadow-[0_var(--edge-lg)_0_var(--color-edge-raised)] flex flex-col items-center">
+        {children}
+      </div>
       {confirmingExit && onExit && (
         <ConfirmDialog
           title={t("exitConfirmTitle")}

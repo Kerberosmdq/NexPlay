@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-// BDR-0001 §4: the hexagon is real. Next.js App Router auto-links this
+// BDR-0002 §8: the hex token is the app icon. Next.js App Router auto-links this
 // as the PWA manifest — no manual <link rel="manifest"> needed.
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -9,8 +9,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Juega en familia y amigos en tiempo real.",
     start_url: "/",
     display: "standalone",
-    background_color: "#efe6d6",
-    theme_color: "#1f6b52",
+    background_color: "#2a66e0",
+    theme_color: "#2a66e0",
     icons: [
       {
         src: "/icons/icon-192.png",

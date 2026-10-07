@@ -55,6 +55,14 @@ describe("design tokens — WCAG AA contrast (ADR-0004 §4)", () => {
     ["action-danger", "color-action-danger", "color-on-danger"],
     ["success-surface", "color-success-surface", "color-on-success-surface"],
     ["danger-surface", "color-danger-surface", "color-on-danger-surface"],
+    ["success", "color-success", "color-on-success"],
+    ["ground", "color-ground", "color-on-ground"],
+    ["game-impostor", "color-game-impostor", "color-on-game-impostor"],
+    ["game-who-am-i", "color-game-who-am-i", "color-on-game-who-am-i"],
+    ["game-connect4", "color-game-connect4", "color-on-game-connect4"],
+    ["game-guess-who", "color-game-guess-who", "color-on-game-guess-who"],
+    ["game-battleship", "color-game-battleship", "color-on-game-battleship"],
+    ["water", "color-water", "color-on-water"],
   ];
 
   it.each(actionPairs)("%s bg/on pair meets AA (>=4.5:1)", (_name, bgKey, fgKey) => {
@@ -74,15 +82,40 @@ describe("design tokens — WCAG AA contrast (ADR-0004 §4)", () => {
     ["ink-muted on surface-well", "color-ink-muted", "color-surface-well"],
     ["gold on surface", "color-gold", "color-surface"],
     ["gold on surface-raised", "color-gold", "color-surface-raised"],
-    ["on-penumbra on penumbra-ground", "color-on-penumbra", "color-penumbra-ground"],
-    ["on-penumbra-muted on penumbra-ground", "color-on-penumbra-muted", "color-penumbra-ground"],
-    ["penumbra-danger on penumbra-ground", "color-penumbra-danger", "color-penumbra-ground"],
-    ["penumbra-success on penumbra-ground", "color-penumbra-success", "color-penumbra-ground"],
+    ["gold on surface-sunken", "color-gold", "color-surface-sunken"],
+    ["ink on surface-sunken", "color-ink", "color-surface-sunken"],
+    ["accent on surface", "color-accent", "color-surface"],
+    ["accent on surface-sunken", "color-accent", "color-surface-sunken"],
+    // Red and green are also used as text on white (an impostor reveal, a
+    // correct answer), not only as button backgrounds.
+    ["action-primary as text on surface", "color-action-primary", "color-surface"],
+    ["success as text on surface", "color-success", "color-surface"],
+    ["action-danger as text on surface", "color-action-danger", "color-surface"],
   ];
 
   it.each(textOnSurfaces)("%s meets AA (>=4.5:1)", (_name, fgKey, bgKey) => {
     const fg = tokens[fgKey];
     const bg = tokens[bgKey];
     expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(AA_MIN);
+  });
+});
+
+// ADR-0004 1.1.0: the focus ring is non-text UI and must reach 3:1 against
+// both things it can sit on — white plastic and the blue ground.
+describe("design tokens — focus ring visibility (WCAG 1.4.11)", () => {
+  it.each([
+    ["on surface", "color-surface"],
+    ["on ground", "color-ground"],
+  ])("focus %s meets 3:1", (_name, bgKey) => {
+    expect(contrastRatio(tokens["color-focus"], tokens[bgKey])).toBeGreaterThanOrEqual(3);
+  });
+});
+
+// The sea has to read as different from both a hit and an unfired cell by
+// lightness, not hue alone (founder feedback 2026-08-15).
+describe("design tokens — Battleship water separation", () => {
+  it("water is distinguishable from a hit and from an unfired cell", () => {
+    expect(contrastRatio(tokens["color-water"], tokens["color-action-danger"])).toBeGreaterThanOrEqual(1.8);
+    expect(contrastRatio(tokens["color-water"], tokens["color-surface-well"])).toBeGreaterThanOrEqual(3);
   });
 });

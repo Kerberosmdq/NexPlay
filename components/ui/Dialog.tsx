@@ -14,7 +14,8 @@ export interface DialogProps {
 }
 
 /** ADR-0004 §2: the one modal shell — scrim, focus trap, Escape and
- * backdrop-to-close. `ConfirmDialog` and the how-to-play dialog are both
+ * backdrop-to-close, drawn as a white plastic panel (BDR-0002).
+ * `ConfirmDialog` and the how-to-play dialog are both
  * built on it, so every modal in the app behaves the same way. Focus moves
  * to the first button inside on open. */
 export function Dialog({ title, onClose, role = "dialog", children }: DialogProps) {
@@ -57,7 +58,7 @@ export function Dialog({ title, onClose, role = "dialog", children }: DialogProp
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: "rgba(43, 33, 24, 0.55)" }}
+      style={{ backgroundColor: "color-mix(in srgb, var(--color-ink) 60%, transparent)" }}
       onClick={onClose}
     >
       <div
@@ -65,10 +66,10 @@ export function Dialog({ title, onClose, role = "dialog", children }: DialogProp
         role={role}
         aria-modal="true"
         aria-labelledby={titleId}
-        className="motion-deal bg-surface-raised border border-line rounded-3xl p-6 w-full max-w-sm space-y-4"
+        className="motion-deal bg-surface-raised rounded-[1.75rem] p-6 w-full max-w-sm space-y-4 shadow-[0_var(--edge-lg)_0_var(--color-edge-raised)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id={titleId} className="font-display text-2xl text-ink">
+        <h2 id={titleId} className="font-display text-2xl text-ink leading-tight">
           {title}
         </h2>
         {children}

@@ -841,7 +841,7 @@ export function PlayerView({
         ) : pendingIsOpponents ? (
           <WaitingState label={t("firing.resolvingYourAnswer")} />
         ) : (
-          <p className={`text-lg font-black ${isMyTurn ? "text-action-secondary motion-pulse" : "text-ink-muted"}`}>
+          <p className={`text-lg font-black ${isMyTurn ? "text-accent motion-pulse" : "text-ink-muted"}`}>
             {isMyTurn ? t("firing.yourTurn") : t("firing.opponentTurn")}
           </p>
         )}
