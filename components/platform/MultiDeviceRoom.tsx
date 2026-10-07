@@ -73,9 +73,15 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
   // below would violate the Rules of Hooks. `activeGame?.id ?? "none"` keys
   // the slice to "no game yet" while still in the lobby; usePrivateState
   // re-initializes automatically once that key changes to a real game id.
+  // The match number is part of the key, not just the game id: without it a
+  // tournament's next match reused the previous match's stored secret (see
+  // `PlatformState.matchNumber`), so a Battleship player arrived at the next
+  // round with their old fleet already placed — the one their last opponent
+  // had just finished mapping. Changing the key is what makes
+  // `usePrivateState` re-initialize, so this alone fixes it for every game.
   const [privateState, setPrivateState] = usePrivateState(
     roomCode,
-    activeGame?.id ?? "none",
+    activeGame ? `${activeGame.id}:${gameState.matchNumber}` : "none",
     userId,
     () => (activeGame?.setupPrivate ? activeGame.setupPrivate(userId, gameState.gameState) : undefined)
   );

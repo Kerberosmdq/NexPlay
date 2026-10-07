@@ -99,6 +99,29 @@ describe("design tokens — WCAG AA contrast (ADR-0004 §4)", () => {
     const bg = tokens[bgKey];
     expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(AA_MIN);
   });
+
+  // Battleship's board is unreadable if its three cell states look alike —
+  // the founder reported exactly that (2026-08-15): every shot rendered red,
+  // so water and a hit were indistinguishable. These are the board's whole
+  // feedback vocabulary, so guard that they stay tellable apart by
+  // *lightness*, not only hue — hue alone is the first thing to fail in
+  // sunlight or with red-green color blindness. The first draft of
+  // --color-water was a navy that paired beautifully with white but sat at
+  // 1.11:1 against the wine red, which is what this assertion caught.
+  const boardStates: Array<[string, string, string]> = [
+    ["water vs hit", "color-water", "color-action-danger"],
+    ["water vs unfired cell", "color-water", "color-surface-sunken"],
+    ["hit vs unfired cell", "color-action-danger", "color-surface-sunken"],
+  ];
+
+  it.each(boardStates)("%s are distinguishable by lightness (>=2:1)", (_name, aKey, bKey) => {
+    const a = tokens[aKey];
+    const b = tokens[bKey];
+    expect(a, `${aKey} missing from app/tokens.css`).toBeDefined();
+    expect(b, `${bKey} missing from app/tokens.css`).toBeDefined();
+    expect(a).not.toBe(b);
+    expect(contrastRatio(a, b)).toBeGreaterThanOrEqual(2);
+  });
 });
 
 // ADR-0004 1.1.0: the focus ring is non-text UI and must reach 3:1 against
@@ -112,11 +135,3 @@ describe("design tokens — focus ring visibility (WCAG 1.4.11)", () => {
   });
 });
 
-// The sea has to read as different from both a hit and an unfired cell by
-// lightness, not hue alone (founder feedback 2026-08-15).
-describe("design tokens — Battleship water separation", () => {
-  it("water is distinguishable from a hit and from an unfired cell", () => {
-    expect(contrastRatio(tokens["color-water"], tokens["color-action-danger"])).toBeGreaterThanOrEqual(1.8);
-    expect(contrastRatio(tokens["color-water"], tokens["color-surface-well"])).toBeGreaterThanOrEqual(3);
-  });
-});

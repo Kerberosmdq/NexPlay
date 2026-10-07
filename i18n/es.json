@@ -302,7 +302,8 @@
         "cross": "Cruz"
       },
       "aimHint": "Tocá el tablero rival para apuntar",
-      "confirmShotButton": "¡Disparar! ({cost} cargas)"
+      "confirmShotButton": "¡Disparar! ({cost} cargas)",
+      "multiAnnouncement": "{hits} tocado(s), {misses} al agua"
     },
     "resolution": {
       "youWon": "¡Ganaste!",

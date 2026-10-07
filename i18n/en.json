@@ -302,7 +302,8 @@
         "cross": "Cross"
       },
       "aimHint": "Tap the enemy board to aim",
-      "confirmShotButton": "Fire! ({cost} charges)"
+      "confirmShotButton": "Fire! ({cost} charges)",
+      "multiAnnouncement": "{hits} hit(s), {misses} splash(es)"
     },
     "resolution": {
       "youWon": "You won!",
