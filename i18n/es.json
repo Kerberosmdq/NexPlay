@@ -115,7 +115,7 @@
       },
       "howTo": {
         "step1": "Cada uno coloca su flota en su tablero, sin que el rival la vea.",
-        "step2": "Por turnos, disparan a una casilla del tablero rival: agua, tocado o hundido.",
+        "step2": "Por turnos, apuntan a una casilla del tablero rival y disparan: agua, tocado o hundido. Las cargas (+1 por turno, +2 cuando te hunden un barco) pagan disparos especiales.",
         "step3": "Gana quien hunde primero todos los barcos del rival."
       }
     },
@@ -267,55 +267,66 @@
     },
     "placing": {
       "title": "Colocá tu flota",
-      "placingShip": "Colocando",
-      "fleetComplete": "¡Flota lista!",
-      "tapToMoveHint": "Tocá un barco para moverlo",
       "cellsLong": "{count} casillas",
-      "orientationHorizontal": "Horizontal",
-      "orientationVertical": "Vertical",
       "randomButton": "Colocar al azar",
-      "undoButton": "Deshacer",
-      "dragToPlaceHint": "Arrastrá para colocarlo",
       "readyButton": "¡Listo!",
       "waitingForOpponentReady": "Esperando a que tu rival termine de colocar su flota...",
-      "watchingCaptainHint": "Tu compañero de equipo está colocando la flota — la vas a ver aparecer acá"
+      "watchingCaptainHint": "Tu compañero de equipo está colocando la flota — la vas a ver aparecer acá",
+      "pickShipHint": "Elegí un barco del astillero.",
+      "tapCellHint": "Tocá una casilla para poner el barco, o arrastralo.",
+      "tapToRotateHint": "Tocá un barco para girarlo; arrastralo para moverlo.",
+      "doesNotFitHint": "No entra ahí: probá otra casilla.",
+      "cannotRotateHint": "No tiene lugar para girar ahí.",
+      "shipyardLabel": "Astillero"
     },
     "firing": {
-      "title": "¡A hundir la flota!",
-      "yourTurn": "Tu turno — elegí una casilla",
-      "opponentTurn": "Turno de tu rival",
       "waitingForOpponent": "Esperando la respuesta de tu rival...",
       "resolvingYourAnswer": "Respondiendo el disparo...",
-      "targetBoardLabel": "Tablero de tu rival",
-      "yourBoardLabel": "Tu tablero",
       "hitAnnouncement": "¡Tocado!",
       "missAnnouncement": "Agua...",
       "sunkAnnouncement": "¡Hundiste {ship}!",
       "shipSunkAnnouncement": "¡Te hundieron {ship}!",
       "tapToContinue": "Tocá para continuar",
-      "layoutStacked": "Uno arriba del otro",
-      "layoutSideBySide": "Lado a lado",
-      "layoutOneAtATime": "De a uno",
-      "chargesLabel": "Cargas: {count}",
-      "plainShotButton": "Disparo simple",
       "weapon": {
         "doubleHorizontal": "Doble horizontal",
         "doubleVertical": "Doble vertical",
         "triple": "Triple",
         "cross": "Cruz"
       },
-      "aimHint": "Tocá el tablero rival para apuntar",
-      "confirmShotButton": "¡Disparar! ({cost} cargas)",
       "multiAnnouncement": "{hits} tocado(s), {misses} al agua",
-      "boardChoiceLabel": "Tablero visible",
-      "layoutLabel": "Cómo ver los tableros"
+      "myTurnBanner": "¡Te toca!",
+      "rivalTurnBanner": "Turno de {name}",
+      "rivalBoardLabel": "Tablero de {name}",
+      "ownFleetLabel": "Tu flota",
+      "showRivalBoard": "Ver el tablero de {name}",
+      "swapBoardsLabel": "Cambiar de tablero",
+      "fireButton": "¡Fuego!",
+      "aimFirst": "Tocá el tablero para apuntar",
+      "alreadyFired": "Ya disparaste ahí",
+      "rotateShot": "Girar",
+      "chargesWord": "Cargas",
+      "chargesHint": "+1 por turno · +2 cuando te hunden un barco",
+      "playLandscape": "Jugar acostado",
+      "rotatePhoneHint": "Girá el teléfono para jugar acostado.",
+      "free": "gratis",
+      "plainShotLabel": "Disparo simple, gratis",
+      "weaponLabel": "{weapon}, cuesta {cost} cargas, arma del {ship}",
+      "weaponShort": {
+        "plain": "Simple",
+        "doubleHorizontal": "Doble",
+        "doubleVertical": "Doble",
+        "triple": "Triple",
+        "cross": "Cruz"
+      },
+      "waitForTurn": "Esperá tu turno"
     },
     "resolution": {
       "youWon": "¡Ganaste!",
       "youLost": "Perdiste esta vez",
-      "revealedFleetLabel": "La flota de tu rival era",
       "waitingForReveal": "Revelando la flota...",
-      "nextRoundButton": "Jugar de nuevo"
+      "nextRoundButton": "Jugar de nuevo",
+      "theirFleetLabel": "La flota de {name}",
+      "yourFleetLabel": "Tu flota"
     }
   },
   "Connect4": {

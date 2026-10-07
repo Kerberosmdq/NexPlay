@@ -106,6 +106,13 @@
   --color-water: #2d7ab8;
   --color-on-water: #ffffff;
 
+  /* Battleship's toy ships (TASK-0048): grey molded plastic, drawn in code.
+     Decorative fills only — no text sits on them. */
+  --color-ship-hull: #a9b5cb;
+  --color-ship-edge: #5d6b86;
+  --color-ship-deck: #7d8aa3;
+  --color-ship-hole: #4a5878;
+
   /* Typography — BDR-0002 §7: Titan One (display: titles, buttons, big
      numbers), Baloo 2 (everything read or typed), and a monospace face kept
      for digits only (timers, scores). The actual font stacks come from
@@ -197,6 +204,11 @@
 
   --color-water: var(--color-water);
   --color-on-water: var(--color-on-water);
+
+  --color-ship-hull: var(--color-ship-hull);
+  --color-ship-edge: var(--color-ship-edge);
+  --color-ship-deck: var(--color-ship-deck);
+  --color-ship-hole: var(--color-ship-hole);
 
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
