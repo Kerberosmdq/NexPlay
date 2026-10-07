@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import type { Player, PrivateStateUpdater } from "@/lib/types/room";
 import {
   otherSide,
@@ -60,7 +60,6 @@ export function PlayerView({
       ? "B"
       : null;
   const fleet = privateState?.fleet ?? [];
-  const loserSide = state.winner ? otherSide(state.winner) : null;
 
   // M4c: the captain (`sides[side][0]`) is the one whose `privateState.fleet`
   // is real — a 1-vs-1 match's one player is always their own side's
@@ -75,19 +74,29 @@ export function PlayerView({
 
   const { strikeCells, announcement, dismiss } = useShotFeedback(state, mySide);
 
-  // ADR-0005: once the match resolves, the losing side's own device reveals
-  // its board — it's no longer secret at that point. Every hook must run
-  // unconditionally before any phase-based early return below.
+  // The other side's name(s) for banners and labels — a team reads as a
+  // localized list ("Ana y Leo" / "Ana and Leo").
+  const format = useFormatter();
+  const sideName = (side: BattleshipSide) =>
+    format.list(
+      state.sides[side].map((id) => players.find((p) => p.id === id)?.displayName ?? id),
+      { type: "conjunction" }
+    );
+
+  // ADR-0005: once the match resolves, fleets are no longer secret. Each
+  // side's own device reveals its board — the loser's and, since TASK-0048,
+  // the winner's too, so both players see both fleets at the end. Every hook
+  // must run unconditionally before any phase-based early return below.
   useEffect(() => {
     if (state.phase !== "resolution" || !mySide || !setPrivateState) return;
-    if (loserSide !== mySide || state.revealedFleets[mySide]) return;
+    if (!isCaptain || state.revealedFleets[mySide]) return;
     dispatch({ type: "REVEAL_FLEET", side: mySide, fleet: effectiveFleet });
     // `effectiveFleet`/`dispatch` are stable enough in practice (new closures
     // each render, but the guards above make this effect a no-op once it has
     // fired) — depending on the full array here would refire on every
     // unrelated private-state change without ever changing the outcome.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.phase, state.winner, state.revealedFleets, mySide, loserSide]);
+  }, [state.phase, state.winner, state.revealedFleets, mySide, isCaptain]);
 
   // A "Jugar de nuevo" rematch reuses the same match, so the platform's
   // match-scoped private-state key (PlatformState.matchNumber) doesn't
@@ -143,6 +152,7 @@ export function PlayerView({
         state={state}
         mySide={mySide}
         opponentSide={otherSide(mySide)}
+        opponentName={sideName(otherSide(mySide))}
         effectiveFleet={effectiveFleet}
         strikeCells={strikeCells}
         announcement={announcement}
@@ -153,7 +163,15 @@ export function PlayerView({
   }
 
   if (state.phase === "resolution") {
-    return <Resolution state={state} mySide={mySide} isHost={isHost} dispatch={dispatch} />;
+    return (
+      <Resolution
+        state={state}
+        mySide={mySide}
+        opponentName={sideName(otherSide(mySide))}
+        isHost={isHost}
+        dispatch={dispatch}
+      />
+    );
   }
 
   return null;

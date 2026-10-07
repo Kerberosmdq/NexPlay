@@ -120,3 +120,41 @@ export function anchorOf(ship: ShipPlacement): { row: number; col: number } {
   const coords = ship.cells.map((c) => c.split("-").map(Number));
   return { row: Math.min(...coords.map(([r]) => r)), col: Math.min(...coords.map(([, c]) => c)) };
 }
+
+/** Puts `spec`'s ship with its top-left cell at (row, col) in `orientation`,
+ * replacing that ship if it was already on the board (a move) — TASK-0048's
+ * shipyard places ships in any order. Returns the new fleet, or `null` if it
+ * would run off the board or overlap another ship. */
+export function placeShipAt(
+  fleet: ShipPlacement[],
+  spec: ShipSpec,
+  row: number,
+  col: number,
+  orientation: Orientation,
+  boardSize: number
+): ShipPlacement[] | null {
+  const others = fleet.filter((s) => s.type !== spec.type);
+  const cells = shipCells(row, col, spec.length, orientation, boardSize);
+  if (!cells || !canPlaceShip(others, cells)) return null;
+  return [...others, { type: spec.type, cells }];
+}
+
+/** Turns a placed ship 90° around its anchor (tapping a placed ship in the
+ * shipyard). Near an edge or another ship, it slides back along the new
+ * axis one cell at a time until it fits, so a ship by the border still
+ * turns instead of refusing. `null` when it can't turn anywhere nearby. */
+export function rotateShipInPlace(fleet: ShipPlacement[], type: string, boardSize: number): ShipPlacement[] | null {
+  const ship = fleet.find((s) => s.type === type);
+  if (!ship) return null;
+  const next: Orientation = orientationOf(ship) === "horizontal" ? "vertical" : "horizontal";
+  const { row, col } = anchorOf(ship);
+  const spec = { type, length: ship.cells.length };
+  for (let back = 0; back < ship.cells.length; back++) {
+    const r = next === "vertical" ? row - back : row;
+    const c = next === "horizontal" ? col - back : col;
+    if (r < 0 || c < 0) break;
+    const placed = placeShipAt(fleet, spec, r, c, next, boardSize);
+    if (placed) return placed;
+  }
+  return null;
+}

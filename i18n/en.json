@@ -115,7 +115,7 @@
       },
       "howTo": {
         "step1": "Each side places its fleet on its own board, hidden from the rival.",
-        "step2": "Taking turns, fire at a cell on the rival's board: miss, hit or sunk.",
+        "step2": "Taking turns, aim at a cell on the rival's board and fire: miss, hit or sunk. Charges (+1 per turn, +2 when one of your ships sinks) pay for special shots.",
         "step3": "The first to sink every rival ship wins."
       }
     },
@@ -267,55 +267,66 @@
     },
     "placing": {
       "title": "Place your fleet",
-      "placingShip": "Placing",
-      "fleetComplete": "Fleet ready!",
-      "tapToMoveHint": "Tap a ship to move it",
       "cellsLong": "{count} cells",
-      "orientationHorizontal": "Horizontal",
-      "orientationVertical": "Vertical",
       "randomButton": "Place randomly",
-      "undoButton": "Undo",
-      "dragToPlaceHint": "Drag to place it",
       "readyButton": "Ready!",
       "waitingForOpponentReady": "Waiting for your opponent to finish placing their fleet...",
-      "watchingCaptainHint": "Your teammate is placing the fleet — you'll see it appear here"
+      "watchingCaptainHint": "Your teammate is placing the fleet — you'll see it appear here",
+      "pickShipHint": "Pick a ship from the shipyard.",
+      "tapCellHint": "Tap a cell to place the ship, or drag it.",
+      "tapToRotateHint": "Tap a ship to turn it; drag it to move it.",
+      "doesNotFitHint": "It doesn't fit there: try another cell.",
+      "cannotRotateHint": "There's no room to turn it there.",
+      "shipyardLabel": "Shipyard"
     },
     "firing": {
-      "title": "Sink the fleet!",
-      "yourTurn": "Your turn — pick a cell",
-      "opponentTurn": "Your opponent's turn",
       "waitingForOpponent": "Waiting for your opponent's answer...",
       "resolvingYourAnswer": "Resolving the shot...",
-      "targetBoardLabel": "Your opponent's board",
-      "yourBoardLabel": "Your board",
       "hitAnnouncement": "Hit!",
       "missAnnouncement": "Miss...",
       "sunkAnnouncement": "You sank their {ship}!",
       "shipSunkAnnouncement": "They sank your {ship}!",
       "tapToContinue": "Tap to continue",
-      "layoutStacked": "Stacked",
-      "layoutSideBySide": "Side by side",
-      "layoutOneAtATime": "One at a time",
-      "chargesLabel": "Charges: {count}",
-      "plainShotButton": "Plain shot",
       "weapon": {
         "doubleHorizontal": "Double horizontal",
         "doubleVertical": "Double vertical",
         "triple": "Triple",
         "cross": "Cross"
       },
-      "aimHint": "Tap the enemy board to aim",
-      "confirmShotButton": "Fire! ({cost} charges)",
       "multiAnnouncement": "{hits} hit(s), {misses} splash(es)",
-      "boardChoiceLabel": "Board shown",
-      "layoutLabel": "Board layout"
+      "myTurnBanner": "Your turn!",
+      "rivalTurnBanner": "{name}'s turn",
+      "rivalBoardLabel": "{name}'s board",
+      "ownFleetLabel": "Your fleet",
+      "showRivalBoard": "Show {name}'s board",
+      "swapBoardsLabel": "Switch boards",
+      "fireButton": "Fire!",
+      "aimFirst": "Tap the board to aim",
+      "alreadyFired": "You already fired there",
+      "rotateShot": "Turn",
+      "chargesWord": "Charges",
+      "chargesHint": "+1 per turn · +2 when one of your ships sinks",
+      "playLandscape": "Play sideways",
+      "rotatePhoneHint": "Turn your phone sideways to play.",
+      "free": "free",
+      "plainShotLabel": "Single shot, free",
+      "weaponLabel": "{weapon}, costs {cost} charges, from your {ship}",
+      "weaponShort": {
+        "plain": "Single",
+        "doubleHorizontal": "Double",
+        "doubleVertical": "Double",
+        "triple": "Triple",
+        "cross": "Cross"
+      },
+      "waitForTurn": "Wait for your turn"
     },
     "resolution": {
       "youWon": "You won!",
       "youLost": "You lost this time",
-      "revealedFleetLabel": "Your opponent's fleet was",
       "waitingForReveal": "Revealing the fleet...",
-      "nextRoundButton": "Play again"
+      "nextRoundButton": "Play again",
+      "theirFleetLabel": "{name}'s fleet",
+      "yourFleetLabel": "Your fleet"
     }
   },
   "Connect4": {

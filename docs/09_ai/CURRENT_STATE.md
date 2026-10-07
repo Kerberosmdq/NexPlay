@@ -1158,6 +1158,17 @@ race game).
       confetti; every phase change slides in via `PhaseTransition` without
       remounting the game view. Each game wired to its own cues.
 
+- [x] **TASK-0048**: Battleship playability redesign after the founder's
+      first real-phone session ("no lo siento lindo ni cómodo de usar").
+      Founder chose radar (portrait) + console (landscape), ships in code,
+      8×8. Toy ships drawn as SVG with red pegs for hits; boards with
+      A–H/1–8; one big board + a swap-able mini-map in portrait, both boards
+      and the dock side by side in landscape (plus a fullscreen landscape
+      lock where the browser allows it); a weapon dock showing each shot's
+      shape, cost and source ship; aim-then-fire for every shot; a shipyard
+      to place ships in any order (tap a placed ship to turn it, drag to
+      move it); both fleets revealed at the end.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -1183,4 +1194,4 @@ race game).
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-10-07 (TASK-0047: motion, sound, haptics; TASK-0046 back to TASK-0039)
+- 2026-10-07 (TASK-0048: Battleship playability redesign; TASK-0047 back to TASK-0039)

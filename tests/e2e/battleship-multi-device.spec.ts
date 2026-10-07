@@ -42,27 +42,37 @@ test("two players join a room, place fleets, and fire a shot in Battleship", asy
 
     await expect(hostPage.getByText("Colocá tu flota")).toBeVisible({ timeout: 15_000 });
     await expect(guestPage.getByText("Colocá tu flota")).toBeVisible({ timeout: 15_000 });
+    // The shipyard lists every ship to place (TASK-0048).
+    await expect(hostPage.getByText("Astillero")).toBeVisible();
 
     for (const page of [hostPage, guestPage]) {
       await page.getByRole("button", { name: "Colocar al azar" }).click();
       await page.getByRole("button", { name: "¡Listo!" }).click();
     }
 
-    await expect(hostPage.getByText("¡A hundir la flota!")).toBeVisible({ timeout: 15_000 });
-    await expect(guestPage.getByText("¡A hundir la flota!")).toBeVisible({ timeout: 15_000 });
+    // Firing (TASK-0048): one side sees "¡Te toca!", the other "Turno de …".
+    const myTurn = (page: typeof hostPage) => page.getByText("¡Te toca!");
+    // Two separate pages: poll both rather than combining locators.
+    await expect
+      .poll(async () => (await myTurn(hostPage).isVisible()) || (await myTurn(guestPage).isVisible()), {
+        timeout: 15_000,
+      })
+      .toBe(true);
 
     // Whichever side moves first (fleet setup is randomized so ordering by
     // real turn isn't guaranteed to be the host) fires; the assertions
     // below only care that a shot resolves and the turn state converges on
     // both devices, not which side happened to go first.
-    const [firstMover, secondMover] = (await hostPage.getByText("Tu turno").isVisible())
+    const [firstMover, secondMover] = (await myTurn(hostPage).isVisible())
       ? [hostPage, guestPage]
       : [guestPage, hostPage];
 
+    // Aim, then fire: a tap only aims now, so a stray tap can't waste a shot.
     await firstMover.getByRole("button", { name: "A1" }).click();
+    await firstMover.getByRole("button", { name: "¡Fuego!" }).click();
 
-    await expect(firstMover.getByText("Turno de tu rival")).toBeVisible({ timeout: 15_000 });
-    await expect(secondMover.getByText("Tu turno")).toBeVisible({ timeout: 15_000 });
+    await expect(firstMover.getByText(/^Turno de /).first()).toBeVisible({ timeout: 15_000 });
+    await expect(myTurn(secondMover)).toBeVisible({ timeout: 15_000 });
   } finally {
     await hostContext.close();
     await guestContext.close();

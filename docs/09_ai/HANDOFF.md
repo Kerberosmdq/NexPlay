@@ -3,14 +3,49 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: `TASK-0047` — M6.5 phase 3 (M6.5 code-complete).
-- **Title**: Motion, sound and haptics for the Juguetería system.
-- **Previous tasks**: `TASK-0046` (Battleship, PR #68) back to `TASK-0039`
-  (#61). Notes below.
+- **Task ID**: `TASK-0048` — Battleship playability redesign.
+- **Title**: Toy ships in code, radar + console layouts, weapon dock,
+  aim-then-fire, shipyard placement.
+- **Previous**: the whole M6.5 stack landed in `main` via PR #69 (merge
+  commit `3e1b37f`); #60/#61 show as merged, #62–#68 were closed as landed
+  there. Earlier task notes are kept below.
 
 ## Current Branch
-- `feat/jugueteria-feel`, stacked on `feat/jugueteria-battleship` (#68) →
-  #67 → … → #61 (+ #60). Merge oldest first.
+- `feat/battleship-ux`, branched off `main` after #69.
+
+## What TASK-0048 changed
+- **`ToyShip.tsx`** (new): SVG molded-plastic ships (grey hull on a darker
+  edge, deck details per type, a stripe in the weapon's colour, a peg hole
+  per cell, a red peg per hit). Replaces the PNG art on boards, in the
+  shipyard and in the sunk modal. Ship colours are tokens
+  (`--color-ship-*`). `public/battleship/*.png` and
+  `scripts/generate-ship-assets.mjs` are now unused (kept; delete when sure).
+- **`BoardGrid.tsx`**: ToyShip overlays with hit pegs, optional A–H/1–8
+  coordinates, a non-interactive `mini` variant, `HIT_CELL` / `MISS_CELL`;
+  drag tracking now in state (the React compiler lint rejected ref writes
+  from the cell handlers) and reports the pointer kind.
+- **`Firing.tsx`** (rewritten): portrait radar (one big board — rival's on
+  my turn, mine on theirs after a 1.4 s beat — plus a mini-map that swaps
+  them), landscape console (both boards + dock), a weapon dock with shape
+  glyphs, cost pegs and the source ship's colour, aim-then-fire for every
+  shot, "Jugar acostado" (fullscreen + landscape lock via
+  `lib/hooks/useIsLandscape.ts`; iOS gets a "turn your phone" hint). The
+  layout chooser is gone.
+- **`Placement.tsx`** (rewritten): the shipyard. Pure helpers
+  `placeShipAt` / `rotateShipInPlace` in `placement.ts` (6 unit tests).
+- **`Player.tsx`**: every side's captain reveals its fleet at the end (not
+  only the loser); team names as a localized list (`useFormatter().list`).
+- **`Resolution.tsx`**: both fleets with every peg.
+- **`Screen.tsx`**: the tray widens in landscape (`landscape:max-w-5xl`).
+- i18n: new placing/firing/resolution strings; the old layout, orientation,
+  undo and "Tu turno" strings removed. e2e updated for aim-then-fire.
+
+## Warnings (TASK-0048)
+- Landscape on a 375 px-tall phone still scrolls a little because of the
+  top bar and the host's "Volver al lobby" row; the boards, dock and
+  "¡Fuego!" fit in view. Hiding the top bar in landscape would close it.
+- Not yet seen on a real phone: the shipyard drag (finger lift), the
+  landscape lock on Android, 2-vs-2 and tournament flows after the rewrite.
 
 ## What TASK-0047 changed
 - **`lib/feedback/index.ts`** (new): `playCue(cue)` synthesizes each sound
@@ -345,9 +380,5 @@ fixed in the source, left over from a mid-edit HMR pass.
 - Ludo and the dice-and-track race game from `BACKLOG.md` (carried forward).
 
 ## Next Suggested Task
-- Merge the M6.5 stack oldest first (#60/#61 → … → the phase 3 PR), then a
-  real-phone family session: multi-device in every game, Battleship 2-vs-2
-  and a tournament (watch for the unreproduced freeze from #60), and sound +
-  vibration on Android. Tune `SOUNDS`/`HAPTICS` from what the family says.
-- After that: M7 — Presentable, or the Guess Who portrait redraw (the agent
-  writes the image prompts; the founder runs them).
+- Founder phone session on `TASK-0048` (placement by finger, landscape on
+  Android, a full match to the end). Then M7 — Presentable.

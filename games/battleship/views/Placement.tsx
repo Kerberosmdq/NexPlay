@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { PrivateStateUpdater } from "@/lib/types/room";
 import type { BattleshipAction, BattleshipPrivate, BattleshipSide, BattleshipState } from "../reducer";
@@ -13,15 +13,42 @@ import {
   shipAt,
   orientationOf,
   anchorOf,
+  placeShipAt,
+  rotateShipInPlace,
   type ShipPlacement,
+  type ShipSpec,
   type Orientation,
 } from "../placement";
 import { Button, WaitingState } from "@/components/ui";
 import { playCue } from "@/lib/feedback";
 import { BoardGrid, EMPTY_CELL } from "./BoardGrid";
+import { ToyShip } from "./ToyShip";
 
-/** The "placing" phase. A side's captain drags each ship onto the board; a
- * non-captain teammate (M4c) watches the captain's fleet appear live. */
+/** An in-progress press on the board: placing a ship from the shipyard
+ * ("new") or moving one already on the board ("move"). `grab` is where on the
+ * ship the press landed, so a moved ship doesn't jump to put its bow under
+ * the finger; `moved` tells a drag from a tap. */
+type Drag = {
+  mode: "new" | "move";
+  spec: ShipSpec;
+  orientation: Orientation;
+  grab: { row: number; col: number };
+  anchor: { row: number; col: number };
+  moved: boolean;
+};
+
+function clampAnchor(row: number, col: number, spec: ShipSpec, orientation: Orientation, boardSize: number) {
+  const maxRow = orientation === "vertical" ? boardSize - spec.length : boardSize - 1;
+  const maxCol = orientation === "horizontal" ? boardSize - spec.length : boardSize - 1;
+  return { row: Math.min(Math.max(row, 0), maxRow), col: Math.min(Math.max(col, 0), maxCol) };
+}
+
+/** The "placing" phase, as a shipyard (TASK-0048). Every ship waits in a tray
+ * under the board; the captain picks any ship, in any order, and taps or
+ * drags it onto the board. Tapping a placed ship turns it in place; dragging
+ * it moves it. Dragged by a finger, a new ship sits one row above the touch
+ * point, so the finger doesn't hide it. A non-captain teammate (M4c) watches
+ * the captain's fleet appear live. */
 export function Placement({
   state,
   mySide,
@@ -41,26 +68,13 @@ export function Placement({
 }) {
   const t = useTranslations("Battleship");
   const tShips = useTranslations("Battleship.ships");
-  const [orientation, setOrientation] = useState<Orientation>("horizontal");
-  // The ghost preview anchor while placing a ship — set by pressing a cell
-  // and moved by dragging; released, it commits if valid there.
-  const [previewCell, setPreviewCell] = useState<{ row: number; col: number } | null>(null);
-  // True for the instant between picking an already-placed ship back up and
-  // either moving it or releasing again. A plain tap-to-pick-up (press and
-  // release with no movement in between) must NOT re-commit the ship right
-  // back where it was — that would silently undo the pickup before the
-  // player has a chance to hit the rotate button, which is exactly the "no
-  // me deja girarlo" bug: rotating only has an effect while the ship is
-  // off the fleet (i.e. while `nextShip` is standing in for it), and that
-  // window used to close itself instantly on release.
-  const justPickedUpRef = useRef(false);
+  const [selectedType, setSelectedType] = useState<string | null>(state.fleetSpec[0]?.type ?? null);
+  const [newOrientation, setNewOrientation] = useState<Orientation>("horizontal");
+  const [drag, setDrag] = useState<Drag | null>(null);
+  const [hint, setHint] = useState<"pick" | "place" | "rotate" | "noFit" | "noRotate">("place");
 
   const iAmReady = state.readySides[mySide];
 
-  // M4c: a non-captain teammate never edits — they watch the captain's fleet
-  // appear live via the side channel (`effectiveFleet`, which for them is
-  // the mirrored fleet), same board rendering as their own board during
-  // firing.
   if (!isCaptain) {
     return (
       <div className="flex flex-col items-center gap-5 w-full">
@@ -69,6 +83,7 @@ export function Placement({
         <BoardGrid
           boardSize={state.boardSize}
           ships={effectiveFleet}
+          coords
           cellClassName={(_r, _c, cell) => (shipTypeAt(effectiveFleet, cell) ? "bg-transparent" : EMPTY_CELL)}
         />
       </div>
@@ -76,153 +91,194 @@ export function Placement({
   }
 
   const placedTypes = new Set(fleet.map((s) => s.type));
-  const nextShip = state.fleetSpec.find((spec) => !placedTypes.has(spec.type));
   const fleetReady = isFleetComplete(fleet, state.fleetSpec);
+  const setFleet = (next: ShipPlacement[]) => setPrivateState?.({ fleet: next });
+  const nextUnplaced = (after: ShipPlacement[]) =>
+    state.fleetSpec.find((spec) => !after.some((s) => s.type === spec.type))?.type ?? null;
 
-  // The ghost preview: recomputed from `previewCell` on every render, not
-  // stored itself, so rotating or moving the anchor always reflects the
-  // current orientation/ship immediately.
-  const ghostCells =
-    nextShip && previewCell && !iAmReady
-      ? shipCells(previewCell.row, previewCell.col, nextShip.length, orientation, state.boardSize)
-      : null;
-  const ghostValid = Boolean(ghostCells && canPlaceShip(fleet, ghostCells));
+  // The ship being dragged is drawn as a ghost; while moving one, the board
+  // shows the rest of the fleet without it.
+  const ghostCells = drag?.moved
+    ? shipCells(drag.anchor.row, drag.anchor.col, drag.spec.length, drag.orientation, state.boardSize)
+    : null;
+  const shipsOnBoard = drag?.mode === "move" && drag.moved ? fleet.filter((s) => s.type !== drag.spec.type) : fleet;
+  const ghostValid = Boolean(ghostCells && canPlaceShip(shipsOnBoard, ghostCells));
 
-  // Founder feedback: this should feel like actually dragging the ship
-  // across the board, not tap-somewhere / tap-again / press a separate
-  // confirm button. A press starts the drag (picking an already-placed ship
-  // back up if the fleet is complete and the press lands on one — gated on
-  // `!nextShip` so a second ship can never get silently dropped mid-move),
-  // continuous movement updates the ghost in real time, and releasing
-  // commits the placement if it's valid there — a quick tap-and-release with
-  // no movement in between still works, as a (very short) drag onto the
-  // cell you tapped.
   const handleDragStart = (row: number, col: number) => {
     if (iAmReady || !setPrivateState) return;
-    justPickedUpRef.current = false;
-    if (!nextShip) {
-      const existing = shipAt(fleet, `${row}-${col}`);
-      if (existing) {
-        setPrivateState((prev) => ({ fleet: prev.fleet.filter((s) => s.type !== existing.type) }));
-        setOrientation(orientationOf(existing));
-        setPreviewCell(anchorOf(existing)); // resumes exactly where it was, no jump on pickup
-        justPickedUpRef.current = true;
-        return;
-      }
+    const existing = shipAt(fleet, `${row}-${col}`);
+    if (existing) {
+      const anchor = anchorOf(existing);
+      setDrag({
+        mode: "move",
+        spec: { type: existing.type, length: existing.cells.length },
+        orientation: orientationOf(existing),
+        grab: { row: row - anchor.row, col: col - anchor.col },
+        anchor,
+        moved: false,
+      });
+      return;
     }
-    setPreviewCell({ row, col });
+    const spec = state.fleetSpec.find((s) => s.type === selectedType);
+    if (!spec) {
+      setHint("pick");
+      return;
+    }
+    setDrag({
+      mode: "new",
+      spec,
+      orientation: newOrientation,
+      grab: { row: 0, col: 0 },
+      anchor: clampAnchor(row, col, spec, newOrientation, state.boardSize),
+      moved: false,
+    });
+  };
+
+  const handleDragMove = (row: number, col: number, pointer: string) => {
+    setDrag((d) => {
+      if (!d) return d;
+      // A new ship rides one row above a finger; a grabbed ship keeps the
+      // spot it was grabbed by, so it doesn't jump.
+      const lift = d.mode === "new" && pointer === "touch" ? 1 : 0;
+      const anchor = clampAnchor(row - d.grab.row - lift, col - d.grab.col, d.spec, d.orientation, state.boardSize);
+      return { ...d, anchor, moved: true };
+    });
   };
 
   const handleDragEnd = () => {
-    // A plain tap that only picked a ship back up (no movement in between)
-    // must leave it picked up rather than instantly re-placing it — that
-    // instant re-placement was what made the rotate button a no-op right
-    // after grabbing an already-placed ship.
-    if (justPickedUpRef.current) {
-      justPickedUpRef.current = false;
+    const d = drag;
+    setDrag(null);
+    if (!d || !setPrivateState) return;
+
+    if (d.mode === "move" && !d.moved) {
+      // A tap on a placed ship turns it.
+      const turned = rotateShipInPlace(fleet, d.spec.type, state.boardSize);
+      if (turned) {
+        setFleet(turned);
+        playCue("select");
+        setHint("rotate");
+      } else {
+        playCue("wrong");
+        setHint("noRotate");
+      }
       return;
     }
-    if (!nextShip || !ghostCells || !ghostValid || !setPrivateState) return;
-    setPrivateState((prev) => ({ fleet: [...prev.fleet, { type: nextShip.type, cells: ghostCells }] }));
+
+    const placed = placeShipAt(fleet, d.spec, d.anchor.row, d.anchor.col, d.orientation, state.boardSize);
+    if (!placed) {
+      playCue("wrong");
+      setHint("noFit");
+      return;
+    }
+    setFleet(placed);
     playCue("drop");
-    setPreviewCell(null);
+    if (d.mode === "new") {
+      setNewOrientation(d.orientation);
+      const next = nextUnplaced(placed);
+      setSelectedType(next);
+      setHint(next ? "place" : "rotate");
+    }
   };
 
+  const hintText = {
+    pick: t("placing.pickShipHint"),
+    place: t("placing.tapCellHint"),
+    rotate: t("placing.tapToRotateHint"),
+    noFit: t("placing.doesNotFitHint"),
+    noRotate: t("placing.cannotRotateHint"),
+  }[fleetReady && hint === "place" ? "rotate" : hint];
+
   return (
-    <div className="flex flex-col items-center gap-5 w-full">
+    <div className="flex flex-col items-center gap-4 w-full">
       <h2 className="font-display text-3xl text-ink text-center">{t("placing.title")}</h2>
 
       {iAmReady ? (
         <WaitingState label={t("placing.waitingForOpponentReady")} />
       ) : (
         <>
-          <div className="w-full flex items-center gap-3 bg-surface-sunken rounded-2xl px-4 py-3">
-            {nextShip && (
-              // eslint-disable-next-line @next/next/no-img-element -- a fixed local asset
-              <img
-                src={`/battleship/${nextShip.type}.png`}
-                alt=""
-                aria-hidden="true"
-                className="w-8 h-14 object-contain shrink-0"
-              />
-            )}
-            <div className="min-w-0 text-left">
-              <p className="text-base font-bold text-ink-muted">
-                {nextShip ? t("placing.placingShip") : t("placing.fleetComplete")}
-              </p>
-              {nextShip ? (
-                <>
-                  <p className="font-display text-xl text-ink leading-tight">
-                    {tShips(nextShip.type)} — {t("placing.cellsLong", { count: nextShip.length })}
-                  </p>
-                  <p className="text-sm text-ink-muted">{t("placing.dragToPlaceHint")}</p>
-                </>
-              ) : (
-                <p className="text-base text-ink-muted">{t("placing.tapToMoveHint")}</p>
-              )}
+          <p
+            role="status"
+            className={`w-full text-center rounded-2xl px-4 py-2 font-bold ${
+              hint === "noFit" || hint === "noRotate" ? "bg-danger-surface text-on-danger-surface" : "bg-ink text-on-ground"
+            }`}
+          >
+            {hintText}
+          </p>
+
+          <div className="w-full max-w-sm">
+            <BoardGrid
+              boardSize={state.boardSize}
+              coords
+              onDragStart={handleDragStart}
+              onDragMove={handleDragMove}
+              onDragEnd={handleDragEnd}
+              ships={shipsOnBoard}
+              ghost={ghostCells && drag ? { cells: ghostCells, type: drag.spec.type, valid: ghostValid } : null}
+              cellClassName={() => EMPTY_CELL}
+            />
+          </div>
+
+          {/* The shipyard: every ship of the fleet, placed or not. */}
+          <div className="w-full space-y-2">
+            <p className="text-base font-bold text-ink-muted">{t("placing.shipyardLabel")}</p>
+            <div className="flex flex-wrap justify-center gap-2 bg-surface-sunken rounded-2xl p-2 shadow-[inset_0_3px_0_var(--color-edge-sunken)]">
+              {state.fleetSpec.map((spec) => {
+                const placed = placedTypes.has(spec.type);
+                const selected = selectedType === spec.type && !placed;
+                return (
+                  <button
+                    key={spec.type}
+                    type="button"
+                    aria-pressed={selected}
+                    aria-label={`${tShips(spec.type)} — ${t("placing.cellsLong", { count: spec.length })}`}
+                    onClick={() => {
+                      playCue("select");
+                      if (placed) {
+                        // Taking a placed ship back to the yard to place it again.
+                        setFleet(fleet.filter((s) => s.type !== spec.type));
+                      }
+                      setSelectedType(spec.type);
+                      setHint("place");
+                    }}
+                    className={`flex flex-col items-center gap-1 rounded-xl px-2 pt-2 pb-1 transition-transform focus-visible:outline focus-visible:outline-3 focus-visible:outline-focus ${
+                      selected
+                        ? "bg-action-secondary -translate-y-1 shadow-[0_var(--edge-sm)_0_var(--color-edge-secondary)]"
+                        : placed
+                          ? "opacity-40"
+                          : "bg-surface-raised shadow-[0_var(--edge-sm)_0_var(--color-edge-raised)]"
+                    }`}
+                  >
+                    <span className="block h-5" style={{ width: `${spec.length * 1.25}rem` }}>
+                      <ToyShip type={spec.type} length={spec.length} orientation="horizontal" />
+                    </span>
+                    <span className="text-xs font-bold text-ink">{tShips(spec.type)}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <BoardGrid
-            boardSize={state.boardSize}
-            onDragStart={handleDragStart}
-            onDragMove={(row, col) => {
-              // Real movement means this is a genuine drag, not a
-              // pickup-tap — from here on, releasing should commit.
-              justPickedUpRef.current = false;
-              setPreviewCell({ row, col });
-            }}
-            onDragEnd={handleDragEnd}
-            ships={fleet}
-            ghost={nextShip && ghostCells ? { cells: ghostCells, type: nextShip.type, valid: ghostValid } : null}
-            cellClassName={(_r, _c, cell) => {
-              if (shipTypeAt(fleet, cell)) return "bg-transparent"; // the ship image itself shows
-              if (ghostCells?.includes(cell)) return "bg-transparent"; // the ghost ship image shows instead
-              return EMPTY_CELL;
-            }}
-          />
-
-          {/* Natural-width keys that wrap, not a fixed three-column grid:
-              "Horizontal" alone is wider than a third of a 375px tray. */}
-          <div className="flex flex-wrap justify-center gap-2 w-full">
-            <Button
-              variant="ghost"
-              onClick={() => setOrientation((o) => (o === "horizontal" ? "vertical" : "horizontal"))}
-              fullWidth={false}
-              className="px-4 text-base"
-            >
-              {orientation === "horizontal" ? t("placing.orientationHorizontal") : t("placing.orientationVertical")}
-            </Button>
+          <div className="flex gap-3 w-full">
             <Button
               variant="ghost"
               onClick={() => {
-                setPrivateState?.({ fleet: randomFleetPlacement(state.fleetSpec, state.boardSize) });
-                setPreviewCell(null);
+                setFleet(randomFleetPlacement(state.fleetSpec, state.boardSize));
+                setSelectedType(null);
+                setHint("rotate");
               }}
-              fullWidth={false}
-              className="px-4 text-base"
+              className="text-lg px-3"
             >
               {t("placing.randomButton")}
             </Button>
             <Button
-              variant="ghost"
-              onClick={() => setPrivateState?.((prev) => ({ fleet: prev.fleet.slice(0, -1) }))}
-              fullWidth={false}
-              className="px-4 text-base"
-              disabled={fleet.length === 0}
+              variant="primary"
+              onClick={() => dispatch({ type: "SIDE_READY", side: mySide })}
+              disabled={!fleetReady}
+              className="text-lg px-3"
             >
-              {t("placing.undoButton")}
+              {t("placing.readyButton")}
             </Button>
           </div>
-
-          <Button
-            variant="primary"
-            onClick={() => dispatch({ type: "SIDE_READY", side: mySide })}
-            disabled={!fleetReady}
-            className="text-xl"
-          >
-            {t("placing.readyButton")}
-          </Button>
         </>
       )}
     </div>

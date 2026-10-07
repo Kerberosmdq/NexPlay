@@ -1,27 +1,91 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { BattleshipAction, BattleshipSide, BattleshipState } from "../reducer";
 import { shipTypeAt, type ShipPlacement, type Orientation } from "../placement";
 import { weaponCells, weaponForShipType, WEAPON_COST, type WeaponType } from "../weapons";
-import { Button, KeyRow, WaitingState } from "@/components/ui";
-import { BoardGrid, EMPTY_CELL } from "./BoardGrid";
+import { Button } from "@/components/ui";
+import { playCue } from "@/lib/feedback";
+import { requestLandscape, useIsLandscape } from "@/lib/hooks/useIsLandscape";
+import { BoardGrid, EMPTY_CELL, HIT_CELL, MISS_CELL } from "./BoardGrid";
+import { WEAPON_COLOR, ToyShip } from "./ToyShip";
 import type { ShotAnnouncement } from "./useShotFeedback";
 
-type BoardLayout = "stacked" | "side-by-side" | "one-at-a-time";
-const BOARD_LAYOUT_STORAGE_KEY = "nexplay:battleship-board-layout";
+type Shot = WeaponType | "plain";
 
-function isBoardLayout(value: string | null): value is BoardLayout {
-  return value === "stacked" || value === "side-by-side" || value === "one-at-a-time";
+/** Cells of a shot shape relative to its anchor, for drawing the shape on
+ * its key (the board uses `weaponCells` for the real thing). */
+const SHAPES: Record<Shot, Array<[number, number]>> = {
+  plain: [[0, 0]],
+  doubleHorizontal: [
+    [0, 0],
+    [0, 1],
+  ],
+  doubleVertical: [
+    [0, 0],
+    [1, 0],
+  ],
+  triple: [
+    [0, 0],
+    [0, 1],
+    [0, 2],
+  ],
+  cross: [
+    [0, 1],
+    [1, 0],
+    [1, 1],
+    [1, 2],
+    [2, 1],
+  ],
+};
+
+function ShapeGlyph({ shot, orientation }: { shot: Shot; orientation: Orientation }) {
+  const cells = shot === "triple" && orientation === "vertical" ? SHAPES.triple.map(([r, c]) => [c, r]) : SHAPES[shot];
+  const rows = Math.max(...cells.map(([r]) => r)) + 1;
+  const cols = Math.max(...cells.map(([, c]) => c)) + 1;
+  return (
+    <span
+      aria-hidden="true"
+      className="grid gap-[2px]"
+      style={{ gridTemplateColumns: `repeat(${cols}, 0.45rem)`, gridTemplateRows: `repeat(${rows}, 0.45rem)` }}
+    >
+      {Array.from({ length: rows * cols }, (_, i) => {
+        const on = cells.some(([r, c]) => r * cols + c === i);
+        return <span key={i} className={`rounded-full ${on ? "bg-ink" : ""}`} />;
+      })}
+    </span>
+  );
 }
 
-/** The "firing" phase: the target board, my own board, the weapon panel and
- * the per-device board layout preference. */
+/** Charges as countable red pegs (TASK-0048). */
+function Pegs({ count, max = 6, small = false }: { count: number; max?: number; small?: boolean }) {
+  const shown = Math.min(count, max);
+  const size = small ? "w-2 h-2" : "w-3 h-3";
+  return (
+    <span className="inline-flex items-center gap-1" aria-hidden="true">
+      {Array.from({ length: shown }, (_, i) => (
+        <span key={i} className={`${size} rounded-full bg-action-primary shadow-[0_2px_0_var(--color-edge-primary)]`} />
+      ))}
+      {count > max && <span className="font-display text-sm text-ink">+{count - max}</span>}
+    </span>
+  );
+}
+
+/** The "firing" phase (TASK-0048).
+ *
+ * Portrait — the radar: one big board (the rival's on my turn, my own on
+ * theirs, so I see where I'm being hit) and the other as a mini-map beside
+ * the turn banner; tapping the mini-map swaps them. Landscape — the console:
+ * both boards side by side with the weapon dock between them. In both, a
+ * shot is aimed by tapping the board (its shape appears) and fired with one
+ * big "¡Fuego!" in thumb reach; every weapon key shows its shape, its cost
+ * in pegs and the colour of the ship that grants it. */
 export function Firing({
   state,
   mySide,
   opponentSide,
+  opponentName,
   effectiveFleet,
   strikeCells,
   announcement,
@@ -31,6 +95,7 @@ export function Firing({
   state: BattleshipState;
   mySide: BattleshipSide;
   opponentSide: BattleshipSide;
+  opponentName: string;
   effectiveFleet: ShipPlacement[];
   strikeCells: ReadonlySet<string>;
   announcement: ShotAnnouncement | null;
@@ -38,285 +103,322 @@ export function Firing({
   dispatch: (action: BattleshipAction) => void;
 }) {
   const t = useTranslations("Battleship");
-
-  // M4b weapon aiming: `null` selectedWeapon means the plain, free, always-
-  // available single-cell shot. Picking a weapon just arms aiming mode — it
-  // doesn't fire until `aimCell` is also set and confirmed, so a shape
-  // preview can be shown first (weapons cost charges; a plain shot doesn't
-  // need this two-step confirmation and still fires on a single tap).
-  const [selectedWeapon, setSelectedWeapon] = useState<WeaponType | null>(null);
-  const [weaponOrientation, setWeaponOrientation] = useState<Orientation>("horizontal");
-  const [aimCell, setAimCell] = useState<{ row: number; col: number } | null>(null);
-
-  // Per-device display preference (not game state — never touches the
-  // reducer or syncs between players). Read lazily on first render rather
-  // than via a mount effect, so there's no cascading re-render from setting
-  // state inside an effect body.
-  const [layout, setLayout] = useState<BoardLayout>(() => {
-    try {
-      const stored = localStorage.getItem(BOARD_LAYOUT_STORAGE_KEY);
-      return isBoardLayout(stored) ? stored : "stacked";
-    } catch {
-      return "stacked";
-    }
-  });
-  const [singleBoardView, setSingleBoardView] = useState<"target" | "own">("target");
-  useEffect(() => {
-    try {
-      localStorage.setItem(BOARD_LAYOUT_STORAGE_KEY, layout);
-    } catch {
-      // Losing this convenience isn't worth crashing the app over.
-    }
-  }, [layout]);
+  const tShips = useTranslations("Battleship.ships");
+  const landscape = useIsLandscape();
 
   const isMyTurn = state.turn === mySide;
   const pendingIsMine = state.pendingShot?.shooterSide === mySide;
-  const pendingIsOpponents = state.pendingShot && !pendingIsMine;
+  const pendingIsOpponents = Boolean(state.pendingShot && !pendingIsMine);
   const shotsIFired = state.shots[opponentSide];
   const shotsIReceived = state.shots[mySide];
   const myCharges = state.charges[mySide];
+  const canAim = isMyTurn && !state.pendingShot;
 
-  // M4b: every weapon whose ship is still afloat on my own side — a weapon
-  // disappears the instant its ship is sunk, regardless of charges (the
-  // "ship-bound" half of the founder's design). Affordability is checked
-  // separately per weapon so the selector can show what's still out of
-  // reach rather than hiding it entirely.
+  const [shot, setShot] = useState<Shot>("plain");
+  const [tripleOrientation, setTripleOrientation] = useState<Orientation>("horizontal");
+  const [aimCell, setAimCell] = useState<{ row: number; col: number } | null>(null);
+  const [view, setView] = useState<"target" | "own">(isMyTurn ? "target" : "own");
+  const [rotateHint, setRotateHint] = useState(false);
+
+  // The radar follows the turn: the rival's board when it's mine to shoot,
+  // my own when they shoot at me — after a beat, so the result of my own
+  // shot stays on screen long enough to see.
+  const prevTurnRef = useRef(isMyTurn);
+  useEffect(() => {
+    if (prevTurnRef.current === isMyTurn) return;
+    prevTurnRef.current = isMyTurn;
+    if (isMyTurn) {
+      playCue("pop");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setView("target");
+      return;
+    }
+    const timer = setTimeout(() => setView("own"), 1400);
+    return () => clearTimeout(timer);
+  }, [isMyTurn]);
+
+  // My weapons: every ship-bound weapon whose ship is still afloat.
   const myWeapons = state.fleetSpec
     .map((spec) => ({ shipType: spec.type, weapon: weaponForShipType(spec.type) }))
     .filter(
       (w): w is { shipType: string; weapon: WeaponType } => w.weapon !== null && !state.sunkShips[mySide].includes(w.shipType)
     );
 
-  const aimGhostCells =
-    selectedWeapon && aimCell ? weaponCells(selectedWeapon, aimCell.row, aimCell.col, weaponOrientation, state.boardSize) : null;
-  // A shot is only worth confirming if at least one of its cells is still
-  // unfired-at — same "some risk is on you" rule the plain shot already has
-  // via `shotsIFired[cell]`, just tolerant of a partially-wasted shape.
-  const aimGhostValid = Boolean(aimGhostCells?.length && aimGhostCells.some((c) => !shotsIFired[c]));
-  const aimCost = selectedWeapon ? WEAPON_COST[selectedWeapon] : 0;
+  const aimCells = aimCell
+    ? shot === "plain"
+      ? [`${aimCell.row}-${aimCell.col}`]
+      : weaponCells(shot, aimCell.row, aimCell.col, tripleOrientation, state.boardSize)
+    : null;
+  const cost = shot === "plain" ? 0 : WEAPON_COST[shot];
+  // Worth firing only if at least one cell is still unknown.
+  const aimValid = Boolean(aimCells?.length && aimCells.some((c) => !shotsIFired[c]) && myCharges >= cost);
 
-  const selectWeapon = (weapon: WeaponType | null) => {
-    setSelectedWeapon(weapon);
+  const fire = () => {
+    if (!canAim || !aimCells || !aimValid) return;
+    dispatch({ type: "FIRE", side: mySide, cells: aimCells, weapon: shot === "plain" ? null : shot });
+    setShot("plain");
     setAimCell(null);
   };
 
-  const confirmWeaponShot = () => {
-    if (!selectedWeapon || !aimGhostCells || !aimGhostValid || myCharges < aimCost) return;
-    dispatch({ type: "FIRE", side: mySide, cells: aimGhostCells, weapon: selectedWeapon });
-    setSelectedWeapon(null);
-    setAimCell(null);
+  const targetCellClass = (cell: string) => {
+    const result = shotsIFired[cell];
+    const striking = strikeCells.has(`${opponentSide}:${cell}`);
+    const base = result === "hit" ? HIT_CELL : result === "miss" ? MISS_CELL : EMPTY_CELL;
+    if (striking && result) return `${base} ${announcement?.sunk ? "motion-shake" : "motion-strike"}`;
+    return base;
   };
+  const ownCellClass = (cell: string) => {
+    const result = shotsIReceived[cell];
+    const striking = strikeCells.has(`${mySide}:${cell}`);
+    if (shipTypeAt(effectiveFleet, cell)) return striking ? "bg-transparent motion-shake" : "bg-transparent";
+    if (result === "miss") return striking ? `${MISS_CELL} motion-strike` : MISS_CELL;
+    return EMPTY_CELL;
+  };
+  const ownHits = Object.entries(shotsIReceived)
+    .filter(([, result]) => result === "hit")
+    .map(([cell]) => cell);
 
-  const targetBoard = (
-    <div className="w-full space-y-2">
-      <p className="text-base font-bold text-ink-muted text-center">{t("firing.targetBoardLabel")}</p>
-      <BoardGrid
-        boardSize={state.boardSize}
-        onCellClick={
-          isMyTurn && !state.pendingShot
-            ? (row, col, cell) => {
-                if (selectedWeapon) {
-                  setAimCell({ row, col });
-                  return;
-                }
-                if (shotsIFired[cell]) return;
-                dispatch({ type: "FIRE", side: mySide, cells: [cell], weapon: null });
+  const targetBoard = (opts: { mini?: boolean } = {}) => (
+    <BoardGrid
+      boardSize={state.boardSize}
+      mini={opts.mini}
+      coords={!opts.mini}
+      onCellClick={!opts.mini && canAim ? (row, col) => setAimCell({ row, col }) : undefined}
+      sunkShips={state.sunkShipCells[opponentSide]}
+      aim={!opts.mini && aimCells ? { cells: aimCells, valid: aimValid } : null}
+      cellClassName={(_r, _c, cell) => targetCellClass(cell)}
+    />
+  );
+  const ownBoard = (opts: { mini?: boolean } = {}) => (
+    <BoardGrid
+      boardSize={state.boardSize}
+      mini={opts.mini}
+      coords={!opts.mini}
+      ships={effectiveFleet}
+      hitCells={ownHits}
+      cellClassName={(_r, _c, cell) => ownCellClass(cell)}
+    />
+  );
+
+  const banner = (
+    <div
+      className={`flex-1 min-w-0 flex flex-col justify-center rounded-2xl px-3 py-2 text-center ${
+        isMyTurn
+          ? "bg-action-secondary text-on-secondary shadow-[0_var(--edge-sm)_0_var(--color-edge-secondary)] motion-pop"
+          : "bg-surface-sunken text-ink"
+      }`}
+    >
+      <p className="font-display text-xl leading-tight">
+        {isMyTurn ? t("firing.myTurnBanner") : t("firing.rivalTurnBanner", { name: opponentName })}
+      </p>
+      {(pendingIsMine || pendingIsOpponents) && (
+        <p className="text-sm font-bold">
+          {pendingIsMine ? t("firing.waitingForOpponent") : t("firing.resolvingYourAnswer")}
+        </p>
+      )}
+    </div>
+  );
+
+  // Reserved height: the banner comes and goes with every shot and must
+  // never push the boards (founder feedback, 2026-08-15).
+  const announcementSlot = (
+    <div className="w-full h-11 flex items-center justify-center shrink-0" aria-hidden={!announcement}>
+      {announcement && !announcement.sunk && (
+        <div
+          role="status"
+          aria-live="assertive"
+          className="w-full text-center py-2 px-4 rounded-2xl font-display text-lg bg-ink text-on-ground motion-deal"
+        >
+          {announcement.text}
+        </div>
+      )}
+    </div>
+  );
+
+  const sunkModal = announcement?.sunk && (
+    <div
+      role="alertdialog"
+      aria-live="assertive"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ backgroundColor: "color-mix(in srgb, var(--color-ink) 60%, transparent)" }}
+      onClick={onDismissAnnouncement}
+    >
+      <div className="bg-surface-raised rounded-[1.75rem] px-8 py-8 max-w-xs w-full text-center space-y-4 motion-celebrate shadow-[0_var(--edge-lg)_0_var(--color-edge-raised)]">
+        {announcement.shipType && (
+          <div className="mx-auto h-12" style={{ width: `${(state.fleetSpec.find((s) => s.type === announcement.shipType)?.length ?? 3) * 3}rem` }}>
+            <ToyShip
+              type={announcement.shipType}
+              length={state.fleetSpec.find((s) => s.type === announcement.shipType)?.length ?? 3}
+              orientation="horizontal"
+              hits={Array.from({ length: 5 }, (_, i) => i)}
+            />
+          </div>
+        )}
+        <p className="font-display text-2xl text-ink">{announcement.text}</p>
+        <p className="text-base text-ink-muted">{t("firing.tapToContinue")}</p>
+      </div>
+    </div>
+  );
+
+  const dock = (vertical: boolean) => (
+    <div className="w-full flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex items-center gap-2 font-display text-base text-ink">
+          {t("firing.chargesWord")} <span className="tabular-nums">{myCharges}</span>
+          <Pegs count={myCharges} small={vertical} />
+        </span>
+        {shot === "triple" && (
+          <Button
+            variant="ghost"
+            fullWidth={false}
+            sound="select"
+            onClick={() => setTripleOrientation((o) => (o === "horizontal" ? "vertical" : "horizontal"))}
+            className="!min-h-10 px-3 text-sm !mb-1"
+          >
+            {t("firing.rotateShot")}
+          </Button>
+        )}
+      </div>
+      {!vertical && <p className="text-xs font-bold text-ink-muted -mt-1">{t("firing.chargesHint")}</p>}
+      <div className={vertical ? "grid grid-cols-2 gap-2" : "flex gap-2"}>
+        {(["plain", ...myWeapons.map((w) => w.weapon)] as Shot[]).map((s) => {
+          const keyCost = s === "plain" ? 0 : WEAPON_COST[s];
+          const affordable = myCharges >= keyCost;
+          const ship = s === "plain" ? null : myWeapons.find((w) => w.weapon === s)?.shipType;
+          return (
+            <button
+              key={s}
+              type="button"
+              disabled={!canAim || !affordable}
+              aria-pressed={shot === s}
+              aria-label={
+                s === "plain"
+                  ? t("firing.plainShotLabel")
+                  : t("firing.weaponLabel", { weapon: t(`firing.weapon.${s}`), cost: keyCost, ship: tShips(ship ?? "") })
               }
-            : undefined
-        }
-        sunkShips={state.sunkShipCells[opponentSide]}
-        aim={aimGhostCells ? { cells: aimGhostCells, valid: aimGhostValid } : null}
-        cellClassName={(_r, _c, cell) => {
-          const result = shotsIFired[cell];
-          const striking = strikeCells.has(`${opponentSide}:${cell}`);
-          // Colour always follows the result (founder feedback, 2026-08-15:
-          // a miss used to flash red); the strike only adds motion on top.
-          const base = result === "hit" ? "bg-action-danger" : result === "miss" ? "bg-water" : null;
-          if (striking && base) return `${base} ${announcement?.sunk ? "motion-shake" : "motion-strike"}`;
-          if (base) return base;
-          return EMPTY_CELL;
-        }}
-      />
+              onPointerDown={() => canAim && affordable && playCue("select")}
+              onClick={() => setShot(s)}
+              className={`flex-1 min-w-0 flex flex-col items-center gap-1 rounded-xl border-2 px-1 pt-2 pb-1.5 transition-[transform,box-shadow] duration-75 active:translate-y-[var(--edge-sm)] active:shadow-none disabled:opacity-40 disabled:shadow-none focus-visible:outline focus-visible:outline-3 focus-visible:outline-focus ${
+                shot === s
+                  ? "bg-action-secondary border-transparent shadow-[0_var(--edge-sm)_0_var(--color-edge-secondary)]"
+                  : "bg-surface-raised border-line shadow-[0_var(--edge-sm)_0_var(--color-edge-raised)]"
+              }`}
+            >
+              <ShapeGlyph shot={s} orientation={tripleOrientation} />
+              <span className="font-display text-xs leading-none text-ink">{t(`firing.weaponShort.${s}`)}</span>
+              {s === "plain" ? (
+                <span className="text-[0.65rem] font-bold text-ink-muted leading-none">{t("firing.free")}</span>
+              ) : (
+                <Pegs count={keyCost} small />
+              )}
+              {s !== "plain" && (
+                <span className="w-6 h-1 rounded-full" style={{ background: WEAPON_COLOR[s] }} aria-hidden="true" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <Button
+        variant="primary"
+        sound={null}
+        disabled={!canAim || !aimValid}
+        onClick={fire}
+        className="text-2xl"
+      >
+        {!canAim
+          ? t("firing.waitForTurn")
+          : !aimCells
+            ? t("firing.aimFirst")
+            : !aimValid
+              ? t("firing.alreadyFired")
+              : t("firing.fireButton")}
+      </Button>
     </div>
   );
 
-  const ownBoard = (
-    <div className="w-full space-y-2">
-      <p className="text-base font-bold text-ink-muted text-center">{t("firing.yourBoardLabel")}</p>
-      <BoardGrid
-        boardSize={state.boardSize}
-        ships={effectiveFleet}
-        hitCells={Object.entries(shotsIReceived)
-          .filter(([, result]) => result === "hit")
-          .map(([cell]) => cell)}
-        cellClassName={(_r, _c, cell) => {
-          const result = shotsIReceived[cell];
-          const hasShip = Boolean(shipTypeAt(effectiveFleet, cell));
-          const striking = strikeCells.has(`${mySide}:${cell}`);
-          // Same result-follows-colour rule as the target board. A cell
-          // holding one of my ships stays transparent either way so the ship
-          // art shows through, with the hit dots layered on top.
-          if (hasShip) return striking ? "bg-transparent motion-shake" : "bg-transparent";
-          if (result === "miss") return striking ? "bg-water motion-strike" : "bg-water";
-          return EMPTY_CELL;
-        }}
-      />
-    </div>
-  );
+  if (landscape) {
+    return (
+      <div className="flex flex-col gap-3 w-full">
+        {sunkModal}
+        {/* One row for the turn and the last shot: landscape height is
+            precious. */}
+        <div className="flex gap-3 items-center">
+          {banner}
+          <div className="flex-1 min-w-0">{announcementSlot}</div>
+        </div>
+        <div className="flex gap-3 items-start justify-center w-full">
+          <div className="flex-1 min-w-0 space-y-1" style={{ maxWidth: "min(40vw, calc(100dvh - 12.5rem))" }}>
+            <p className="text-sm font-bold text-ink-muted text-center">{t("firing.ownFleetLabel")}</p>
+            {ownBoard()}
+          </div>
+          <div className="w-40 shrink-0">{dock(true)}</div>
+          <div className="flex-1 min-w-0 space-y-1" style={{ maxWidth: "min(40vw, calc(100dvh - 12.5rem))" }}>
+            <p className="text-sm font-bold text-ink-muted text-center">{t("firing.rivalBoardLabel", { name: opponentName })}</p>
+            {targetBoard()}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const showingTarget = view === "target";
 
   return (
-    <div className="flex flex-col items-center gap-4 w-full">
-      <h2 className="font-display text-3xl text-ink text-center">{t("firing.title")}</h2>
-
-      {/* Founder feedback (2026-08-15): "se mueve la pantalla del cel cuando
-          se dispara". The banner slot is always in the layout at a fixed
-          height and only its *contents* toggle, so nothing below it ever
-          reflows. Kept empty rather than removed when idle: the reserved
-          space is the fix. */}
-      <div className="w-full h-14 flex items-center justify-center shrink-0" aria-hidden={!announcement}>
-        {announcement && !announcement.sunk && (
-          <div
-            role="status"
-            aria-live="assertive"
-            className="w-full text-center py-3 px-4 rounded-2xl font-display text-xl bg-surface-sunken text-ink motion-deal"
-          >
-            {announcement.text}
-          </div>
-        )}
-      </div>
-
-      {announcement?.sunk && (
-        <div
-          role="alertdialog"
-          aria-live="assertive"
-          className="fixed inset-0 z-50 flex items-center justify-center px-4"
-          style={{ backgroundColor: "color-mix(in srgb, var(--color-ink) 60%, transparent)" }}
-          onClick={onDismissAnnouncement}
+    <div className="flex flex-col items-center gap-3 w-full">
+      {sunkModal}
+      <div className="w-full flex items-stretch gap-3">
+        {banner}
+        {/* The mini-map: the board that isn't big right now. Tap to swap. */}
+        <button
+          type="button"
+          onClick={() => {
+            playCue("select");
+            setView(showingTarget ? "own" : "target");
+          }}
+          aria-label={t("firing.swapBoardsLabel")}
+          className="w-20 shrink-0 rounded-xl bg-surface-raised p-1 shadow-[0_var(--edge-sm)_0_var(--color-edge-raised)] active:translate-y-[var(--edge-sm)] active:shadow-none focus-visible:outline focus-visible:outline-3 focus-visible:outline-focus"
         >
-          <div className="bg-surface-raised rounded-[1.75rem] px-8 py-8 max-w-xs w-full text-center space-y-4 motion-celebrate shadow-[0_var(--edge-lg)_0_var(--color-edge-raised)]">
-            {announcement.shipType && (
-              // eslint-disable-next-line @next/next/no-img-element -- a fixed local asset, no next/image optimization needed for a small modal icon
-              <img
-                src={`/battleship/${announcement.shipType}.png`}
-                alt=""
-                aria-hidden="true"
-                className="w-20 h-20 mx-auto object-contain"
-              />
-            )}
-            <p className="font-display text-2xl text-ink">{announcement.text}</p>
-            <p className="text-base text-ink-muted">{t("firing.tapToContinue")}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Same reserved-slot rule: this swaps between a WaitingState and a
-          one-line label on every turn, and they are not the same height. */}
-      <div className="w-full h-12 flex items-center justify-center shrink-0">
-        {pendingIsMine ? (
-          <WaitingState label={t("firing.waitingForOpponent")} />
-        ) : pendingIsOpponents ? (
-          <WaitingState label={t("firing.resolvingYourAnswer")} />
-        ) : (
-          <p className={`font-display text-xl ${isMyTurn ? "text-accent motion-pulse" : "text-ink-muted"}`}>
-            {isMyTurn ? t("firing.yourTurn") : t("firing.opponentTurn")}
-          </p>
-        )}
+          {showingTarget ? ownBoard({ mini: true }) : targetBoard({ mini: true })}
+          <span className="block text-[0.6rem] font-bold text-ink-muted leading-tight mt-0.5">
+            {showingTarget ? t("firing.ownFleetLabel") : opponentName}
+          </span>
+        </button>
       </div>
 
-      {/* The boards sit above every control that can grow or vanish: the
-          weapon panel unmounts the instant you fire and remounts when your
-          turn comes back, and used to shove both boards up and down by its
-          full height every turn. Anything that resizes now only pushes what
-          is underneath it, and the board stays put under the player's
-          thumb — which also puts the controls within thumb reach. */}
-      {layout === "stacked" && (
-        <>
-          {targetBoard}
-          {ownBoard}
-        </>
-      )}
+      {announcementSlot}
 
-      {layout === "side-by-side" && (
-        <div className="flex flex-row gap-3 w-full justify-center items-start">
-          <div className="flex-1 min-w-0">{targetBoard}</div>
-          <div className="flex-1 min-w-0">{ownBoard}</div>
-        </div>
-      )}
+      <div className="w-full space-y-1">
+        <p className="text-sm font-bold text-ink-muted text-center">
+          {showingTarget ? t("firing.rivalBoardLabel", { name: opponentName }) : t("firing.ownFleetLabel")}
+        </p>
+        {showingTarget ? targetBoard() : ownBoard()}
+      </div>
 
-      {layout === "one-at-a-time" && (
-        <>
-          <KeyRow
-            label={t("firing.boardChoiceLabel")}
-            value={singleBoardView}
-            onChange={setSingleBoardView}
-            options={[
-              { value: "target", label: t("firing.targetBoardLabel") },
-              { value: "own", label: t("firing.yourBoardLabel") },
-            ]}
-          />
-          {singleBoardView === "target" ? targetBoard : ownBoard}
-        </>
-      )}
+      {/* The dock only while it's mine to shoot; on the rival's turn the
+          screen is theirs to watch. */}
+      {isMyTurn &&
+        (showingTarget ? (
+          dock(false)
+        ) : (
+          <Button variant="primary" onClick={() => setView("target")} className="text-xl">
+            {t("firing.showRivalBoard", { name: opponentName })}
+          </Button>
+        ))}
 
-      {isMyTurn && !state.pendingShot && (
-        <div className="w-full space-y-3 bg-surface-sunken rounded-2xl px-3 py-3 text-center">
-          <p className="font-display text-lg text-ink">{t("firing.chargesLabel", { count: myCharges })}</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button
-              variant="secondary"
-              fullWidth={false}
-              active={selectedWeapon === null}
-              onClick={() => selectWeapon(null)}
-              className="px-4 text-base"
-            >
-              {t("firing.plainShotButton")}
-            </Button>
-            {myWeapons.map(({ weapon }) => (
-              <Button
-                key={weapon}
-                variant="secondary"
-                fullWidth={false}
-                active={selectedWeapon === weapon}
-                disabled={myCharges < WEAPON_COST[weapon]}
-                onClick={() => selectWeapon(weapon)}
-                className="px-4 text-base"
-              >
-                {t(`firing.weapon.${weapon}`)} ({WEAPON_COST[weapon]})
-              </Button>
-            ))}
-          </div>
-
-          {selectedWeapon === "triple" && (
-            <Button
-              variant="ghost"
-              fullWidth={false}
-              onClick={() => setWeaponOrientation((o) => (o === "horizontal" ? "vertical" : "horizontal"))}
-              className="px-4 text-base mx-auto"
-            >
-              {weaponOrientation === "horizontal" ? t("placing.orientationHorizontal") : t("placing.orientationVertical")}
-            </Button>
-          )}
-
-          {selectedWeapon && !aimGhostCells && <p className="text-base text-ink-muted">{t("firing.aimHint")}</p>}
-
-          {selectedWeapon && aimGhostCells && (
-            <Button variant="primary" onClick={confirmWeaponShot} disabled={!aimGhostValid}>
-              {t("firing.confirmShotButton", { cost: aimCost })}
-            </Button>
-          )}
-        </div>
-      )}
-
-      <KeyRow
-        label={t("firing.layoutLabel")}
-        value={layout}
-        onChange={setLayout}
-        options={[
-          { value: "stacked", label: t("firing.layoutStacked") },
-          { value: "side-by-side", label: t("firing.layoutSideBySide") },
-          { value: "one-at-a-time", label: t("firing.layoutOneAtATime") },
-        ]}
-      />
+      <div className="w-full flex flex-col items-center gap-1">
+        <Button
+          variant="ghost"
+          fullWidth={false}
+          onClick={async () => {
+            const locked = await requestLandscape();
+            setRotateHint(!locked);
+          }}
+          className="px-4 text-base"
+        >
+          {t("firing.playLandscape")}
+        </Button>
+        {rotateHint && <p className="text-sm font-bold text-ink-muted text-center">{t("firing.rotatePhoneHint")}</p>}
+      </div>
     </div>
   );
 }
