@@ -2,8 +2,18 @@
 @import "./tokens.css";
 @import "./motion.css";
 
+/* BDR-0002 §1: the page is a toy-blue baseplate with a subtle stud
+   pattern — the table pieces sit on. Text never sits directly on it except
+   short white titles/labels; reading happens on white plastic panels. */
 body {
-  background-color: var(--color-surface);
+  background-color: var(--color-ground);
+  background-image: radial-gradient(
+    circle at 50% 44%,
+    var(--color-ground-stud) 0 6px,
+    color-mix(in srgb, var(--color-edge-ground) 18%, transparent) 6.5px 7.5px,
+    transparent 8px
+  );
+  background-size: 24px 24px;
   color: var(--color-ink);
   min-height: 100vh;
 }

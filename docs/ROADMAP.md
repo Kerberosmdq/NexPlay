@@ -543,6 +543,38 @@ into the `"playing"` phase (detected via a ref, not just "still null"),
 verified live by replaying the tournament's second round and confirming a
 genuinely new character each time. Zero console errors throughout.
 
+## M6.5 — Redesign: Juguetería — ✅ Code complete (pending a real-phone pass)
+Inserted ahead of M7 at the founder's request (2026-10-06): "improve
+absolutely everything — visual design, UX/UI, animation, gameplay — in a
+style outside what AI normally makes." Same precedent as M3.5: a milestone
+placed out of the original sequence for a real, stated reason. An audit of
+the shipped app plus four mocked directions led to `BDR-0002` (Juguetería,
+molded plastic toy), superseding `BDR-0001`.
+- **Phase 1 — UX flow fixes (`TASK-0039`, PR #61):** pass-and-play reveal
+  gating, one way back and one way out, remembered family names, how to play
+  for every game, voseo. Independent of the look.
+- **Phase 0 — decision (`TASK-0040`):** `BDR-0002`, `FEEL.md` rewritten,
+  `ADR-0004` amended (1.1.0).
+- **Phase 2 — visual system:** split in two.
+  - **2a (`TASK-0041`):** tokens, fonts, baseplate, molded-edge
+    primitives, the capsule reveal, hex token mark and icon set, per-game
+    pictograms; platform screens (entry, game picker, waiting lobby)
+    restyled.
+  - **2b:** each game's own views restyled, one task per game (boards,
+    setup screens, emoji illustrations replaced). Impostor done
+    (`TASK-0042`, which also fixed a single-device privacy leak in the
+    discussion phase), Who Am I (`TASK-0043`), Connect 4 (`TASK-0044`) and
+    Guess Who (`TASK-0045`, which also gave each single-device player their
+    own board) and Battleship (`TASK-0046`, split out of one 1105-line
+    view, built on PR #60) done — **phase 2 complete**.
+- **Phase 3 — motion, sound, haptics (`TASK-0047`):** phase transitions,
+  toy-physics gestures (pop, drop, flip, confetti), a synthesized plastic
+  sound kit and Android vibration behind one switch that starts off. Done.
+
+**Done when:** every screen of all five games is on `BDR-0002`'s system
+(no Paper & Felt token left), and pressing, dropping, revealing and winning
+each have their motion, sound and vibration — verified on a real phone.
+
 ## M7 — Presentable
 Ready to show people outside the family. Its "visual polish pass" was
 originally scoped here; M3.5 moved the foundational part of that work

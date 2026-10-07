@@ -1,52 +1,87 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { playCue } from "@/lib/feedback";
 
 export interface RevealCardProps {
   hidden: ReactNode;
   revealed: ReactNode;
   className?: string;
+  /** Fires each time the card is pressed open — lets a pass-and-play flow
+   * keep its "next player" step locked until the secret was actually seen
+   * (TASK-0039). */
+  onReveal?: () => void;
 }
 
-/** ADR-0004 §2 + §3, BDR-0001: the press-and-hold secret reveal (a role, a
- * word). This is the one place NexPlay goes dark — the screen dims to
- * penumbra and a warm glow gathers around the card while it's held, "as
- * if someone cupped a hand around it." `revealed` content should use the
- * `--color-on-penumbra*`/`--color-penumbra-*` tokens (not the light-theme
- * ones), since it's read against this dark ground, not the parchment
- * surface. Applies the `motion-reveal` gesture — the direct fix for the
- * audit's top finding: the previous version referenced `animate-in
- * fade-in zoom-in` from `tailwindcss-animate`, a package that was never
- * installed, so the reveal never actually animated. */
-export function RevealCard({ hidden, revealed, className = "" }: RevealCardProps) {
+/** ADR-0004 §2 + §3, BDR-0002 §9: the press-and-hold secret reveal (a role,
+ * a word) — a prize-machine capsule. While it's held, the lid pops off, the
+ * card inside rises out, and everything else on screen is covered by bare
+ * baseplate so nothing competes with (or leaks next to) the secret. Let go
+ * and it snaps shut. `revealed` content is read on the white card, so it
+ * uses the normal ink/action tokens.
+ *
+ * Keyboard: Space/Enter held down is the same as a press-and-hold —
+ * required since pass-and-play flows wait for `onReveal`. */
+export function RevealCard({ hidden, revealed, className = "", onReveal }: RevealCardProps) {
   const [isRevealed, setIsRevealed] = useState(false);
+
+  const open = () => {
+    setIsRevealed(true);
+    playCue("pop");
+    onReveal?.();
+  };
+  const close = () => setIsRevealed(false);
 
   return (
     <>
-      {/* Penumbra scrim: fixed so it dims the whole screen regardless of
-          where this card sits in the layout, not just the card itself. */}
+      {/* Privacy cover: bare baseplate over the whole screen while open. */}
       <div
         aria-hidden="true"
-        className={`fixed inset-0 z-40 pointer-events-none ${isRevealed ? "opacity-95" : "opacity-0"}`}
-        style={{ backgroundColor: "var(--color-penumbra-ground)" }}
+        className={`fixed inset-0 z-40 pointer-events-none transition-opacity duration-150 motion-reduce:transition-none ${
+          isRevealed ? "opacity-100" : "opacity-0"
+        }`}
+        style={{
+          backgroundColor: "var(--color-ground)",
+          backgroundImage:
+            "radial-gradient(circle at 50% 44%, var(--color-ground-stud) 0 6px, transparent 6.5px)",
+          backgroundSize: "24px 24px",
+        }}
       />
       <button
-        onPointerDown={() => setIsRevealed(true)}
-        onPointerUp={() => setIsRevealed(false)}
-        onPointerLeave={() => setIsRevealed(false)}
-        className={`relative z-50 w-full rounded-3xl p-10 flex flex-col items-center justify-center min-h-[300px] touch-none select-none border-2 ${
-          isRevealed ? "border-transparent bg-transparent" : "border-line active:border-focus bg-surface-raised"
-        } ${className}`}
-        style={
-          isRevealed
-            ? {
-                backgroundColor: "var(--color-penumbra-ground)",
-                boxShadow: "0 0 70px 12px color-mix(in srgb, var(--color-penumbra-glow) 40%, transparent)",
-              }
-            : undefined
-        }
+        onPointerDown={open}
+        onPointerUp={close}
+        onPointerLeave={close}
+        onKeyDown={(e) => {
+          if ((e.key === " " || e.key === "Enter") && !e.repeat) {
+            e.preventDefault();
+            open();
+          }
+        }}
+        onKeyUp={(e) => {
+          if (e.key === " " || e.key === "Enter") close();
+        }}
+        onBlur={close}
+        className={`relative z-50 w-full flex flex-col items-center gap-5 py-4 touch-none select-none rounded-[1.75rem] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-focus ${className}`}
       >
-        {!isRevealed ? hidden : <div className="motion-reveal">{revealed}</div>}
+        {/* The capsule: a tall yellow lid with a molded rim on a white
+            base — egg-shaped like a prize-machine capsule (and deliberately
+            not a red-over-white ball). Open, the lid flies up and aside. */}
+        <div aria-hidden="true" className="relative w-32 h-44">
+          <div
+            className={`absolute left-0 right-0 top-0 h-[6.5rem] rounded-t-[4rem] bg-action-secondary shadow-[inset_0_-8px_0_var(--color-edge-secondary)] origin-bottom-left transition-transform duration-300 ease-[cubic-bezier(0.3,1.5,0.5,1)] motion-reduce:transition-none ${
+              isRevealed ? "-translate-x-12 -translate-y-14 -rotate-[38deg]" : ""
+            }`}
+          />
+          <div className="absolute left-0 right-0 bottom-0 h-[4.25rem] rounded-b-[4rem] bg-surface-raised border-2 border-line shadow-[0_var(--edge-md)_0_var(--color-edge-raised)]" />
+        </div>
+
+        {isRevealed ? (
+          <div className="motion-reveal w-full bg-surface-raised rounded-[1.75rem] px-6 py-8 shadow-[0_var(--edge-lg)_0_var(--color-edge-raised)]">
+            {revealed}
+          </div>
+        ) : (
+          <div className="w-full">{hidden}</div>
+        )}
       </button>
     </>
   );

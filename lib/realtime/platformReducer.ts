@@ -64,6 +64,19 @@ export interface PlatformState {
   activeGameId: string | null;
   gameState: unknown; // The state of the currently active game
   tournament: TournamentState | null;
+  /** Counts every match the platform has started in this room, so devices
+   * can tell "a new match began" apart from "the same match changed". It
+   * exists because `usePrivateState` keys a device's secret slice by
+   * (room, game, player) — no match identity — so a tournament's second
+   * match reused the first one's key and silently inherited its secret.
+   * Reproduced live (2026-08-15): a Battleship player advancing to the
+   * next round arrived at "coloca tu flota" already showing "¡FLOTA
+   * LISTA!", still holding the exact layout their previous opponent had
+   * just spent a match mapping out. Deliberately a plain counter, not a
+   * random id: every device derives the same key from the same shared
+   * state, and `Math.random()` stays out of the reducer (same rule as
+   * `randomFleetPlacement`/`pickRound.ts`). */
+  matchNumber: number;
 }
 
 export type PlatformAction =
@@ -85,6 +98,7 @@ export function createInitialPlatformState(): PlatformState {
     activeGameId: null,
     gameState: null,
     tournament: null,
+    matchNumber: 0,
   };
 }
 
@@ -108,6 +122,7 @@ export function platformReducer(state: PlatformState, action: PlatformAction): P
         activeGameId: action.gameId,
         gameState: startMatch(gameModule, action.players),
         tournament: null,
+        matchNumber: state.matchNumber + 1,
       };
     }
 
@@ -138,6 +153,7 @@ export function platformReducer(state: PlatformState, action: PlatformAction): P
         activeGameId: action.gameId,
         gameState: startMatch(gameModule, playersFor(firstMatch, action.shuffledPlayers)),
         tournament,
+        matchNumber: state.matchNumber + 1,
       };
     }
 
@@ -168,6 +184,7 @@ export function platformReducer(state: PlatformState, action: PlatformAction): P
         ...state,
         gameState: startMatch(gameModule, playersFor(nextMatch, action.players)),
         tournament: { ...state.tournament, rounds },
+        matchNumber: state.matchNumber + 1,
       };
     }
 

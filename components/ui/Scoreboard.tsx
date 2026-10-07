@@ -20,10 +20,10 @@ export function Scoreboard({ title, entries }: ScoreboardProps) {
   return (
     <div className="w-full space-y-2">
       {title && (
-        <h3 className="text-xl font-bold text-ink-muted mb-2 border-b border-line pb-2">{title}</h3>
+        <h3 className="font-display text-xl text-ink mb-2">{title}</h3>
       )}
       {entries.map((entry) => (
-        <div key={entry.id} className="flex justify-between items-center bg-surface-sunken p-3 rounded-xl">
+        <div key={entry.id} className="flex justify-between items-center bg-surface-sunken px-4 py-3 rounded-2xl">
           <div className="flex items-center space-x-3">
             {entry.icon}
             {entry.label}

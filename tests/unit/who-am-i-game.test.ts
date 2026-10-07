@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { whoAmIReducer, type WhoAmIState } from "@/games/who-am-i/reducer";
+import { whoAmIReducer, parseTimerSeconds, type WhoAmIState } from "@/games/who-am-i/reducer";
 import type { WhoAmIWord } from "@/games/who-am-i/content";
 
 const W1: WhoAmIWord = { id: "a1", word: "Dog", emoji: "🐶" };
@@ -203,5 +203,19 @@ describe("whoAmIReducer — invalid actions are ignored, not crashes", () => {
     // @ts-expect-error deliberately invalid action for the robustness check
     const next = whoAmIReducer(state, { type: "NOT_A_REAL_ACTION" });
     expect(next).toBe(state);
+  });
+});
+
+describe("parseTimerSeconds", () => {
+  it("turns the schema's string values into seconds", () => {
+    expect(parseTimerSeconds("300")).toBe(300);
+    expect(parseTimerSeconds(420)).toBe(420);
+    expect(parseTimerSeconds("0")).toBe(0);
+  });
+
+  it("falls back to unlimited for anything unparseable", () => {
+    expect(parseTimerSeconds("abc")).toBe(0);
+    expect(parseTimerSeconds(undefined)).toBe(0);
+    expect(parseTimerSeconds(-5)).toBe(0);
   });
 });

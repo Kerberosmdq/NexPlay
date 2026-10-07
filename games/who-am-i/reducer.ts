@@ -133,3 +133,13 @@ export function whoAmIReducer(state: WhoAmIState, action: WhoAmIAction): WhoAmIS
       return state;
   }
 }
+
+/** The config schema's select options (and so its default) are strings,
+ * while the state holds a number of seconds. `setup` runs every incoming
+ * value through this so the state never carries "300" where 300 belongs —
+ * a mismatch that only worked by accident through numeric coercion.
+ * Anything unparseable falls back to unlimited (0). */
+export function parseTimerSeconds(value: unknown): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}

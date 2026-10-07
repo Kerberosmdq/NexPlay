@@ -8,6 +8,7 @@ import { otherSide } from "../reducer";
 import { GUESS_WHO_CHARACTERS } from "../content/characters";
 import { CharacterCard } from "./CharacterCard";
 import { Button, WaitingState, ConfirmDialog } from "@/components/ui";
+import { CharacterBoard, FacePicto, ResultBlock, toggleCrossedOut } from "./parts";
 
 interface PlayerProps {
   state: GuessWhoState;
@@ -81,9 +82,10 @@ export function PlayerView({ state, players, playerId, dispatch, privateState, s
     }
 
     return (
-      <div className="flex flex-col items-center space-y-6 w-full max-w-2xl mx-auto mt-4 px-4">
-        <h2 className="font-display text-2xl text-ink text-center">{t("selectingTitle")}</h2>
-        <p className="text-sm text-ink-muted text-center">{t("selectingHint")}</p>
+      <div className="flex flex-col items-center gap-4 w-full">
+        <FacePicto size={56} className="text-game-guess-who" />
+        <h2 className="font-display text-3xl text-ink text-center">{t("selectingTitle")}</h2>
+        <p className="text-base text-ink-muted text-center">{t("selectingHint")}</p>
 
         <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 w-full">
           {GUESS_WHO_CHARACTERS.map((character) => (
@@ -100,7 +102,6 @@ export function PlayerView({ state, players, playerId, dispatch, privateState, s
           variant="primary"
           disabled={!privateState?.myCharacterId}
           onClick={() => mySide && dispatch({ type: "CONFIRM_CHARACTER", side: mySide })}
-          className="max-w-xs"
         >
           {t("confirmCharacterButton")}
         </Button>
@@ -115,18 +116,16 @@ export function PlayerView({ state, players, playerId, dispatch, privateState, s
     const opponentCharacter = opponentSide ? state.revealedCharacters[opponentSide] : undefined;
 
     return (
-      <div className="flex flex-col items-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
-        <h2 className={`font-display text-4xl text-center leading-tight motion-celebrate ${won ? "text-action-primary" : "text-ink"}`}>
-          {won ? t("youWon") : t("youLost")}
-        </h2>
+      <div className="flex flex-col items-center gap-6 w-full">
+        <ResultBlock title={won ? t("youWon") : t("youLost")} cue={won ? "win" : "lose"} />
 
         <div className="flex gap-6 justify-center flex-wrap">
           <div className="flex flex-col items-center gap-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-ink-muted">{t("yourCharacterLabel")}</p>
+            <p className="text-base font-bold text-ink-muted">{t("yourCharacterLabel")}</p>
             {myCharacter ? <CharacterCard character={characterById(myCharacter)!} size="large" /> : <WaitingState label="..." />}
           </div>
           <div className="flex flex-col items-center gap-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-ink-muted">{t("opponentCharacterLabel")}</p>
+            <p className="text-base font-bold text-ink-muted">{t("opponentCharacterLabel")}</p>
             {opponentCharacter ? (
               <CharacterCard character={characterById(opponentCharacter)!} size="large" />
             ) : (
@@ -136,7 +135,7 @@ export function PlayerView({ state, players, playerId, dispatch, privateState, s
         </div>
 
         {isHost && (
-          <Button variant="ghost" onClick={() => dispatch({ type: "PLAY_AGAIN" })} className="mt-4 max-w-xs">
+          <Button variant="primary" onClick={() => dispatch({ type: "PLAY_AGAIN" })}>
             {t("playAgainButton")}
           </Button>
         )}
@@ -151,55 +150,36 @@ export function PlayerView({ state, players, playerId, dispatch, privateState, s
   const guessPending = state.pendingGuess !== null;
 
   return (
-    <div className="flex flex-col items-center space-y-6 w-full max-w-2xl mx-auto mt-4 px-4">
-      <h2 className="font-display text-2xl text-ink text-center">{t("title")}</h2>
-      <p className="text-sm text-ink-muted text-center">{t("askAloudHint", { name: opponentName })}</p>
-
-      {myCharacter && (
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-xs font-bold uppercase tracking-widest text-ink-muted">{t("yourCharacterLabel")}</p>
-          <CharacterCard character={myCharacter} size="large" />
+    <div className="flex flex-col items-center gap-5 w-full">
+      <div className="w-full flex items-center gap-4 bg-surface-sunken rounded-2xl px-4 py-3">
+        {myCharacter && (
+          <div className="w-16 shrink-0">
+            <CharacterCard character={myCharacter} />
+          </div>
+        )}
+        <div className="min-w-0 text-left">
+          {myCharacter && <p className="text-base font-bold text-ink-muted">{t("yourCharacterLabel")}</p>}
+          <p className="text-lg font-bold text-ink">{t("askAloudHint", { name: opponentName })}</p>
         </div>
-      )}
+      </div>
 
       {guessPending ? (
         <WaitingState label={t("resolvingGuess")} />
       ) : (
-        <Button
-          variant={guessing ? "danger" : "secondary"}
-          fullWidth={false}
-          onClick={() => setGuessing((g) => !g)}
-          className="px-8"
-        >
+        <Button variant={guessing ? "ghost" : "primary"} onClick={() => setGuessing((g) => !g)}>
           {guessing ? t("cancelGuessButton") : t("startGuessButton")}
         </Button>
       )}
 
-      <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 w-full">
-        {GUESS_WHO_CHARACTERS.map((character) => (
-          <CharacterCard
-            key={character.id}
-            character={character}
-            crossedOut={crossedOut.has(character.id)}
-            onClick={
-              guessPending
-                ? undefined
-                : () => {
-                    if (guessing) {
-                      setGuessCandidateId(character.id);
-                    } else {
-                      setCrossedOut((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(character.id)) next.delete(character.id);
-                        else next.add(character.id);
-                        return next;
-                      });
-                    }
-                  }
-            }
-          />
-        ))}
-      </div>
+      <CharacterBoard
+        crossedOut={crossedOut}
+        guessing={guessing}
+        disabled={guessPending}
+        onCardClick={(characterId) => {
+          if (guessing) setGuessCandidateId(characterId);
+          else setCrossedOut((prev) => toggleCrossedOut(prev, characterId));
+        }}
+      />
 
       {guessCandidate && mySide && (
         <ConfirmDialog

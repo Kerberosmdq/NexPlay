@@ -1,18 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { playCue } from "@/lib/feedback";
 import { lowestEmptyRow, COLUMNS, ROWS, type Cell } from "../winCheck";
 import type { Connect4Side } from "../reducer";
 
-const SIDE_COLOR: Record<Connect4Side, string> = {
-  A: "var(--color-action-primary)",
-  B: "var(--color-action-secondary)",
-};
-
-// The same hexagon the NexPlay mark itself uses — a token, not a plain
-// circle, is what makes this board feel like this app's rather than a
-// generic reskin (docs/09_ai/tasks/TASK-0037-connect4.md, "Option B").
-const HEX_CLIP = "polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)";
+import { Disc, HEX_CLIP } from "./parts";
 
 interface BoardProps {
   cells: Cell<Connect4Side>[];
@@ -33,6 +27,7 @@ interface BoardProps {
  * only that one plays the drop animation, not a full re-render replay) and
  * which column is currently hovered/pressed (the ghost-token preview). */
 export function Board({ cells, turnSide, winningLine, resolved, disabled, onColumnClick }: BoardProps) {
+  const t = useTranslations("Connect4");
   const prevCellsRef = useRef(cells);
   const [justPlacedIndex, setJustPlacedIndex] = useState<number | null>(null);
   const [activeColumn, setActiveColumn] = useState<number | null>(null);
@@ -40,15 +35,20 @@ export function Board({ cells, turnSide, winningLine, resolved, disabled, onColu
   useEffect(() => {
     const prev = prevCellsRef.current;
     const changedIndex = cells.findIndex((cell, i) => cell !== null && prev[i] === null);
-    if (changedIndex >= 0) setJustPlacedIndex(changedIndex);
+    if (changedIndex >= 0) {
+      setJustPlacedIndex(changedIndex);
+      playCue("drop");
+    }
     prevCellsRef.current = cells;
   }, [cells]);
 
   const winningSet = new Set(winningLine ?? []);
 
+  // BDR-0002: the classic plastic Connect 4 frame, in the game's green, on
+  // its molded edge; empty slots are dark sockets cut into it.
   return (
     <div
-      className="grid gap-1.5 bg-surface-sunken rounded-2xl p-2 w-full"
+      className="grid gap-1.5 bg-game-connect4 rounded-[1.5rem] p-2.5 w-full shadow-[0_var(--edge-lg)_0_var(--color-edge-game-connect4)]"
       style={{ gridTemplateColumns: `repeat(${COLUMNS}, minmax(0, 1fr))` }}
     >
       {Array.from({ length: COLUMNS }, (_, col) => {
@@ -60,8 +60,8 @@ export function Board({ cells, turnSide, winningLine, resolved, disabled, onColu
             key={col}
             type="button"
             disabled={disabled || columnFull}
-            aria-label={`Columna ${col + 1}`}
-            className="grid gap-1.5 disabled:cursor-not-allowed w-full"
+            aria-label={t("columnLabel", { n: col + 1 })}
+            className="grid gap-1.5 disabled:cursor-not-allowed w-full rounded-xl focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
             style={{ gridTemplateRows: `repeat(${ROWS}, auto)` }}
             onPointerEnter={() => !disabled && !columnFull && setActiveColumn(col)}
             onPointerLeave={() => setActiveColumn((c) => (c === col ? null : c))}
@@ -77,25 +77,36 @@ export function Board({ cells, turnSide, winningLine, resolved, disabled, onColu
               const isWinning = winningSet.has(index);
               const isGhost = previewRow === row && side === null;
 
-              const cellClasses =
-                "absolute inset-0.5 " +
-                (side && index === justPlacedIndex ? "motion-strike " : "") +
-                (isWinning ? "motion-celebrate " : "");
+              const isLastMove = side !== null && index === justPlacedIndex;
 
               return (
                 <div key={row} className="relative w-full aspect-square">
+                  {/* The socket cut into the frame. */}
                   <div
-                    className={cellClasses}
-                    style={{
-                      clipPath: HEX_CLIP,
-                      background: side
-                        ? SIDE_COLOR[side]
-                        : isGhost
-                          ? SIDE_COLOR[turnSide]
-                          : "var(--color-surface-well)",
-                      opacity: isGhost ? 0.4 : !resolved || isWinning || !side ? 1 : 0.35,
-                    }}
+                    className="absolute inset-0.5"
+                    style={{ clipPath: HEX_CLIP, background: "var(--color-edge-game-connect4)" }}
                   />
+                  {(side || isGhost) && (
+                    <div
+                      className={
+                        "absolute inset-0.5 " +
+                        (isLastMove ? "motion-drop " : "") +
+                        (isWinning ? "motion-celebrate " : "")
+                      }
+                      // The disc falls from above the top row down to where
+                      // it lands, and bounces (M6.5 phase 3).
+                      style={
+                        {
+                          opacity: !resolved || isWinning ? 1 : 0.35,
+                          "--drop-rows": row + 1,
+                        } as React.CSSProperties
+                      }
+                    >
+                      {/* The last disc dropped carries a dot, so the player
+                          whose turn it is can see what the other just did. */}
+                      <Disc side={side ?? turnSide} ghost={isGhost} marked={isLastMove && !resolved} />
+                    </div>
+                  )}
                 </div>
               );
             })}

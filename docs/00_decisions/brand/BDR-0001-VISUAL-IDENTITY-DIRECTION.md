@@ -1,8 +1,9 @@
 ---
 id: BDR-0001
 title: Visual Identity Direction — Paper & Felt, with Penumbra Reveals
-status: Accepted
-version: 1.0.0
+status: Superseded
+version: 1.1.0
+superseded_by: BDR-0002
 category: Brand Decision Record
 
 authors:
@@ -10,7 +11,7 @@ authors:
   - Claude (AI Design Lead)
 
 created: 2026-07-24
-updated: 2026-07-24
+updated: 2026-10-07
 
 language: English
 
@@ -32,7 +33,9 @@ tags:
 # BDR-0001 — Visual Identity Direction: Paper & Felt, with Penumbra Reveals
 
 ## Status
-Accepted.
+Superseded by `BDR-0002` (Juguetería) on 2026-10-07. Kept for the record:
+the reasoning below explains the M3.5 design system, whose contract
+(`ADR-0004`) still stands; only the look it describes was replaced.
 
 ## Context
 A full UX/UI audit of the shipped app (M0–M3) found that NexPlay currently
@@ -176,6 +179,11 @@ fiction calls for secrecy.
 - `docs/ROADMAP.md` — M3.5, the milestone this record opens
 
 ## Changelog
+### Version 1.1.0
+- Superseded by `BDR-0002`. A 2026-10-06 audit found this direction had
+  landed on the palette AI-generated interfaces most often default to;
+  the founder chose Direction C (Juguetería) from four new mocked options.
+
 ### Version 1.0.0
 - Initial accepted version, following a full UX/UI audit and three mocked
   directions (Paper & Felt, Carnival Neon, Blocks) compared side by side.

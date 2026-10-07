@@ -22,7 +22,9 @@ import {
   type RoomSession,
 } from "@/lib/realtime/session";
 import { useWakeLock } from "@/lib/hooks/useWakeLock";
-import { Button, Screen } from "@/components/ui";
+import { Button, PhaseTransition, Screen } from "@/components/ui";
+import { HowToPlayButton } from "@/components/platform/HowToPlay";
+import { GameIcon, gameBlockClasses } from "@/components/platform/GameIcon";
 
 // Mirrors MultiDeviceRoom's TERMINAL_PHASE_BY_GAME — see the comment there
 // for why this per-game lookup exists instead of a generic contract field.
@@ -176,6 +178,13 @@ export default function HomePage() {
         onExit={handleExit}
         exitLabel={t("exitLabel")}
         exitConfirmMessage={session.mode === "single-device" ? t("exitConfirmMessageSingleDevice") : undefined}
+        onBack={
+          session.mode === "single-device" && platformState.status !== "LOBBY"
+            ? () => dispatchAction({ type: "PLATFORM_RETURN_LOBBY" })
+            : undefined
+        }
+        backLabel={t("backToGamesButton")}
+        backAriaLabel={t("backToGamesLabel")}
       >
         {session.mode === "single-device" && (
           <SingleDeviceGamePicker
@@ -212,25 +221,60 @@ function SingleDeviceGamePicker({
 
   if (platformState.status === "LOBBY") {
     // Not every game supports single-device pass-and-play (Battleship can't —
-    // there's no way to hide a board between turns on one phone), so this
-    // list must filter by meta.supportedModes rather than listing every
-    // registered game unconditionally.
-    const singleDeviceGames = Object.values(AVAILABLE_GAMES).filter((game) =>
-      game.meta.supportedModes.includes("single-device")
-    );
+    // there's no way to hide a board between turns on one phone). Those are
+    // still listed, disabled with the reason, so the family knows the game
+    // exists and what it needs instead of wondering where it went.
     return (
-      <div className="w-full max-w-md space-y-4">
-        <h3 className="font-display text-2xl text-ink text-center">{t("gamesLabel")}</h3>
-        {singleDeviceGames.map((game) => (
-          <Button
-            key={game.id}
-            variant="primary"
-            onClick={() => dispatch({ type: "PLATFORM_START_GAME", gameId: game.id, players: [] })}
-            className="text-xl"
-          >
-            {tGame(game.meta.name)}
-          </Button>
-        ))}
+      <div className="w-full space-y-4">
+        <h3 className="font-display text-3xl text-ink text-center">{t("gamesLabel")}</h3>
+        <ul className="space-y-5">
+          {[...Object.values(AVAILABLE_GAMES)]
+            // Playable games first; the unavailable ones trail at the end.
+            .sort(
+              (a, b) =>
+                Number(b.meta.supportedModes.includes("single-device")) -
+                Number(a.meta.supportedModes.includes("single-device"))
+            )
+            .map((game) => {
+            const playable = game.meta.supportedModes.includes("single-device");
+            const { minPlayers, maxPlayers } = game.meta;
+            return (
+              // BDR-0002 §6: each game is its own colored block with its
+              // pictogram — recognizable before it can be read.
+              <li key={game.id} className={playable ? "" : "opacity-60"}>
+                <div className={`flex items-center gap-3 rounded-t-2xl px-4 py-3 ${gameBlockClasses(game.id)}`}>
+                  <GameIcon gameId={game.id} size={44} className="shrink-0" />
+                  <div className="min-w-0">
+                    <h4 className="font-display text-2xl leading-tight">{tGame(game.meta.name)}</h4>
+                    <p className="text-base font-bold">
+                      {minPlayers === maxPlayers
+                        ? t("playersExact", { n: minPlayers })
+                        : t("playersRange", { min: minPlayers, max: maxPlayers })}
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-surface-sunken rounded-b-2xl px-4 pt-3 pb-1 space-y-3">
+                  <p className="text-base text-ink-muted">
+                    {tGame(`games.${game.id}.description`)}
+                    {!playable && <span className="block font-bold text-ink">{t("needsSeveralPhones")}</span>}
+                  </p>
+                  <div className="flex gap-2 items-center">
+                    {playable && (
+                      <Button
+                        variant="primary"
+                        onClick={() => dispatch({ type: "PLATFORM_START_GAME", gameId: game.id, players: [] })}
+                        className="flex-1"
+                      >
+                        {t("playThisButton")}
+                      </Button>
+                    )}
+                    <HowToPlayButton gameId={game.id} compact />
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     );
   }
@@ -243,23 +287,17 @@ function SingleDeviceGamePicker({
   const View = activeGame.views.singleDevice;
   return (
     <div className="w-full flex flex-col items-center gap-2">
-      <div className="w-full max-w-md flex justify-end px-2">
-        <Button
-          variant="ghost"
-          fullWidth={false}
-          className="px-4"
-          onClick={() => dispatch({ type: "PLATFORM_RETURN_LOBBY" })}
-        >
-          {t("returnToLobbyButton")}
-        </Button>
-      </div>
       <MatchResolvedModal
         gameState={platformState.gameState}
         winners={getActiveMatchWinners(platformState)}
         canContinue={true}
         onContinue={() => dispatch({ type: "PLATFORM_RETURN_LOBBY" })}
       />
-      <View state={platformState.gameState} players={[]} dispatch={gameDispatch} onExit={onExit} />
+      {/* Every game state carries a `phase`; the platform reads it only to
+          know when to play the screen-change slide. */}
+      <PhaseTransition phaseKey={String((platformState.gameState as { phase?: string } | null)?.phase ?? "")}>
+        <View state={platformState.gameState} players={[]} dispatch={gameDispatch} onExit={onExit} />
+      </PhaseTransition>
     </div>
   );
 }

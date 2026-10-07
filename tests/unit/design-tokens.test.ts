@@ -55,6 +55,15 @@ describe("design tokens — WCAG AA contrast (ADR-0004 §4)", () => {
     ["action-danger", "color-action-danger", "color-on-danger"],
     ["success-surface", "color-success-surface", "color-on-success-surface"],
     ["danger-surface", "color-danger-surface", "color-on-danger-surface"],
+    ["success", "color-success", "color-on-success"],
+    ["success-hover", "color-success-hover", "color-on-success"],
+    ["ground", "color-ground", "color-on-ground"],
+    ["game-impostor", "color-game-impostor", "color-on-game-impostor"],
+    ["game-who-am-i", "color-game-who-am-i", "color-on-game-who-am-i"],
+    ["game-connect4", "color-game-connect4", "color-on-game-connect4"],
+    ["game-guess-who", "color-game-guess-who", "color-on-game-guess-who"],
+    ["game-battleship", "color-game-battleship", "color-on-game-battleship"],
+    ["water", "color-water", "color-on-water"],
   ];
 
   it.each(actionPairs)("%s bg/on pair meets AA (>=4.5:1)", (_name, bgKey, fgKey) => {
@@ -74,10 +83,15 @@ describe("design tokens — WCAG AA contrast (ADR-0004 §4)", () => {
     ["ink-muted on surface-well", "color-ink-muted", "color-surface-well"],
     ["gold on surface", "color-gold", "color-surface"],
     ["gold on surface-raised", "color-gold", "color-surface-raised"],
-    ["on-penumbra on penumbra-ground", "color-on-penumbra", "color-penumbra-ground"],
-    ["on-penumbra-muted on penumbra-ground", "color-on-penumbra-muted", "color-penumbra-ground"],
-    ["penumbra-danger on penumbra-ground", "color-penumbra-danger", "color-penumbra-ground"],
-    ["penumbra-success on penumbra-ground", "color-penumbra-success", "color-penumbra-ground"],
+    ["gold on surface-sunken", "color-gold", "color-surface-sunken"],
+    ["ink on surface-sunken", "color-ink", "color-surface-sunken"],
+    ["accent on surface", "color-accent", "color-surface"],
+    ["accent on surface-sunken", "color-accent", "color-surface-sunken"],
+    // Red and green are also used as text on white (an impostor reveal, a
+    // correct answer), not only as button backgrounds.
+    ["action-primary as text on surface", "color-action-primary", "color-surface"],
+    ["success as text on surface", "color-success", "color-surface"],
+    ["action-danger as text on surface", "color-action-danger", "color-surface"],
   ];
 
   it.each(textOnSurfaces)("%s meets AA (>=4.5:1)", (_name, fgKey, bgKey) => {
@@ -85,4 +99,39 @@ describe("design tokens — WCAG AA contrast (ADR-0004 §4)", () => {
     const bg = tokens[bgKey];
     expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(AA_MIN);
   });
+
+  // Battleship's board is unreadable if its three cell states look alike —
+  // the founder reported exactly that (2026-08-15): every shot rendered red,
+  // so water and a hit were indistinguishable. These are the board's whole
+  // feedback vocabulary, so guard that they stay tellable apart by
+  // *lightness*, not only hue — hue alone is the first thing to fail in
+  // sunlight or with red-green color blindness. The first draft of
+  // --color-water was a navy that paired beautifully with white but sat at
+  // 1.11:1 against the wine red, which is what this assertion caught.
+  const boardStates: Array<[string, string, string]> = [
+    ["water vs hit", "color-water", "color-action-danger"],
+    ["water vs unfired cell", "color-water", "color-surface-sunken"],
+    ["hit vs unfired cell", "color-action-danger", "color-surface-sunken"],
+  ];
+
+  it.each(boardStates)("%s are distinguishable by lightness (>=2:1)", (_name, aKey, bKey) => {
+    const a = tokens[aKey];
+    const b = tokens[bKey];
+    expect(a, `${aKey} missing from app/tokens.css`).toBeDefined();
+    expect(b, `${bKey} missing from app/tokens.css`).toBeDefined();
+    expect(a).not.toBe(b);
+    expect(contrastRatio(a, b)).toBeGreaterThanOrEqual(2);
+  });
 });
+
+// ADR-0004 1.1.0: the focus ring is non-text UI and must reach 3:1 against
+// both things it can sit on — white plastic and the blue ground.
+describe("design tokens — focus ring visibility (WCAG 1.4.11)", () => {
+  it.each([
+    ["on surface", "color-surface"],
+    ["on ground", "color-ground"],
+  ])("focus %s meets 3:1", (_name, bgKey) => {
+    expect(contrastRatio(tokens["color-focus"], tokens[bgKey])).toBeGreaterThanOrEqual(3);
+  });
+});
+

@@ -2,7 +2,7 @@
 id: ADR-0004
 title: Design System Contract — Semantic Tokens, UI Primitives, Motion Vocabulary
 status: Accepted
-version: 1.0.0
+version: 1.1.0
 category: Architecture Decision Record
 
 authors:
@@ -10,13 +10,13 @@ authors:
   - Claude (AI Architect)
 
 created: 2026-07-24
-updated: 2026-07-24
+updated: 2026-10-07
 
 language: English
 
 depends_on:
   - ADR-0001 (§1 styling clause)
-  - BDR-0001
+  - BDR-0002 (from 1.1.0; BDR-0001 before)
 
 required_by:
   - all future game and platform UI work
@@ -67,6 +67,7 @@ shipped (M0–M3) found the gap precisely:
 This ADR turns the unenforced intent in `ADR-0001` §1 into a checkable
 contract, and gives `BDR-0001`'s chosen direction (Paper & Felt, with a
 penumbra treatment reserved for reveals) a concrete implementation shape.
+(Since 1.1.0 the direction is `BDR-0002`'s; see the amendment below.)
 
 ## Decision
 
@@ -133,6 +134,29 @@ tracked debt — ported as `docs/ROADMAP.md` M3.5's second code task, not
 grandfathered indefinitely and not fixed opportunistically inside unrelated
 feature branches.
 
+## Amendment 1.1.0 — the direction changed, the contract didn't (2026-10-07)
+`BDR-0002` (Juguetería) supersedes `BDR-0001` (Paper & Felt). Sections 1–5
+above stand unchanged: semantic paired tokens, the primitive set, a named
+motion vocabulary with reduced-motion fallbacks, and tested contrast are
+exactly what make a change of look a token-and-primitive change. What
+changes, implemented in redesign phase 2 (visual) and phase 3 (motion):
+
+- **Token values** move to `BDR-0002`'s palette anchors (toy-blue baseplate,
+  white plastic panels, ink text, red/yellow/green/purple actions). Every
+  text/background pair keeps its unit test at ≥4.5:1; `BDR-0002` lists the
+  measured values.
+- **Elevation is a solid edge, not a shadow.** A new paired `edge` token per
+  surface/action color (its darker molded bottom edge) replaces any
+  blurred shadow. A blurred `box-shadow` on a primitive is a contract
+  violation, the same way a raw hex literal is.
+- **The penumbra token set is retired.** `--color-penumbra-*` and the
+  dimming scrim in `RevealCard` are replaced by `BDR-0002`'s capsule
+  reveal; `RevealCard` remains the single place the secret moment is
+  implemented.
+- **The motion vocabulary grows** with toy-physics gestures (press, drop,
+  snap) next to reveal/deal/celebrate/pulse, each defined once in
+  `app/motion.css` with its reduced-motion fallback.
+
 ## Consequences
 - **Positive:** changing NexPlay's palette, a button's tap target, or how
   a reveal animates becomes a change in one place, provably correct,
@@ -171,12 +195,18 @@ feature branches.
 - `ADR-0001` §1 (the styling clause this ADR enforces)
 - `ADR-0002` — GameModule Contract (the pattern followed here: a shared
   contract gets its own ADR before parallel work builds against it)
-- `BDR-0001` — Visual Identity Direction (the direction this contract
-  implements)
+- `BDR-0002` — Visual Identity Direction (the direction this contract
+  implements since 1.1.0)
+- `BDR-0001` — the superseded direction this contract was first written for
 - `docs/04_design/FEEL.md`
 - `docs/ROADMAP.md` — M3.5
 
 ## Changelog
+### Version 1.1.0
+- Amendment: implements `BDR-0002` (Juguetería) instead of `BDR-0001`;
+  solid-edge elevation tokens, penumbra set retired, motion vocabulary
+  extended. Sections 1–5 unchanged.
+
 ### Version 1.0.0
 - Initial accepted version, following the UX/UI audit that motivated
   `BDR-0001`.

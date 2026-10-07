@@ -3,137 +3,322 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: Hotfix (unnumbered) — founder feedback while playtesting Guess
-  Who, not a roadmap milestone.
-- **Title**: Guess Who — portraits no longer cropped by a circular frame
-  (hats were invisible); 8 characters renamed to match their art's gender; a
-  neighbouring-character crop-bleed cleanup added to the asset script.
+- **Task ID**: `TASK-0047` — M6.5 phase 3 (M6.5 code-complete).
+- **Title**: Motion, sound and haptics for the Juguetería system.
+- **Previous tasks**: `TASK-0046` (Battleship, PR #68) back to `TASK-0039`
+  (#61). Notes below.
 
 ## Current Branch
-- `fix/guess-who-portrait-framing-and-names`, branched off `main` after PR #58
-  (character selection + match-resolved modal) merged.
+- `feat/jugueteria-feel`, stacked on `feat/jugueteria-battleship` (#68) →
+  #67 → … → #61 (+ #60). Merge oldest first.
 
-## What's in this change
+## What TASK-0047 changed
+- **`lib/feedback/index.ts`** (new): `playCue(cue)` synthesizes each sound
+  with Web Audio (oscillators + noise bursts, fast attack, exponential decay
+  — the "clack" of hard plastic) and vibrates with a short pattern where
+  `navigator.vibrate` exists (Android). One setting for both in
+  localStorage (`nexplay:feedback:v1`), **off by default**. Safe without Web
+  Audio/vibration. `lib/feedback/react.ts`: `useFeedbackEnabled`,
+  `useCueOnMount`. 7 unit tests.
+- **`components/ui`**: `SoundToggle` (top bar + entry screen), `ToyConfetti`,
+  `PhaseTransition` (Web Animations replay on phase change — deliberately
+  not a `key` remount, which would wipe the game view's local state);
+  `Button` gets a `sound` prop (default "press", on pointerdown);
+  `KeyRow` → "select"; `RevealCard` → "pop".
+- **`app/motion.css`**: `motion-pop`, `motion-drop` (`--drop-rows`),
+  `motion-flip`, `motion-confetti`, with reduced-motion fallbacks.
+- **Games**: Impostor `OutcomeBlock` (`cue`, `confetti`); Who Am I
+  correct/wrong button sounds, `RoundClock` ticks the last 5 s,
+  `RoundOverBlock`; Connect 4 drop motion + clack, result cues; Guess Who
+  `CharacterCard` `sound` (flip on the board, select elsewhere) + flip
+  animation, result cues; Battleship splash/hit/sunk in `useShotFeedback`,
+  a clack per placed ship, result cues.
 
-Three defects, all in Guess Who's character art layer. The founder reported
-the first two; the third is a latent one the first fix exposed.
+## Warnings (TASK-0047)
+- **Nobody has *heard* it yet.** The browser pane can't play audio to a
+  person; verification counted synthesized notes and checked classes,
+  storage, confetti and animation calls. Tune volumes and sounds on a real
+  phone (`SOUNDS` / `HAPTICS` in `lib/feedback/index.ts` are plain data).
+- **Dev-server cache gotcha:** after the #60 merge conflict, Turbopack's
+  persistent cache in `.next` kept serving the conflicted `tokens.css`
+  even though the file on disk was clean. Deleting `.next` fixed it. If a
+  "conflict marker" build error appears with a clean tree, do that.
+- Both devices in a multi-device match play the same shot/drop sounds —
+  intended (everyone at the table hears the splash).
 
-### 1. Portraits were cropped — hats were invisible
-`games/guess-who/views/CharacterCard.tsx` framed every portrait as a circle
-with `object-cover`. The art is head-and-shoulders at roughly 2:3, so filling
-a *square* box scaled it to width and pushed ~25% of its height out of view
-top and bottom; the circular clip then trimmed the corners of what remained.
-The top of every hat was the casualty — the worst possible trait to lose in a
-game whose mechanic is asking "¿tiene sombrero?".
+## What TASK-0046 changed
+- **#60 merged in first** so the split builds on its fixes. Conflicts
+  resolved: tokens/contrast test keep the Juguetería versions (#60's water
+  token and board-state test kept, the duplicate water test dropped); the
+  Battleship view keeps #60's layout; #60's CURRENT_STATE entry kept.
+- **Split**, behavior unchanged: `BoardGrid.tsx`, `useShotFeedback.ts`,
+  `TeamSetup.tsx`, `Placement.tsx`, `Firing.tsx`, `Resolution.tsx`;
+  `Player.tsx` is now identity + fleet channel + cross-phase effects + the
+  phase switch. Placement/firing UI state moved into their phase files (it
+  resets on phase entry, which nothing relied on).
+- **Restyle**: navy plastic board with white peg holes (`EMPTY_CELL`), water
+  blue, hits red; plastic panels for placement info, weapons, sunk modal and
+  result; `KeyRow`s for layout and one-at-a-time board choice; placement
+  tools as wrapping natural-width keys.
+- **e2e fix** (committed on #63's branch and merged up through #64–#67 and
+  here): `battleship-multi-device.spec.ts` read the room code from
+  `.font-mono.text-7xl`, which the #63 lobby restyle removed; it now reads
+  the keycap group's accessible name.
 
-Fixed with a portrait-shaped box (`w-full aspect-[2/3]`, `rounded-xl`) and
-`object-contain`. Nothing is cropped at any size now. Note this made the cards
-*bigger*, not smaller — matching the art's own aspect ratio and tightening the
-grid card's padding took the mobile grid portrait from a 48×48 circle to
-62×93, and `size="large"` from 96×96 to 112×168.
+## Warnings (TASK-0046)
+- **Stacked PRs don't run the full CI.** Only PRs targeting `main` get
+  lint/typecheck/unit/e2e; #62–#67 only got Vercel. That is how the broken
+  e2e selector slipped through #63. Everything was re-verified locally (all
+  5 e2e specs, real Supabase) before pushing.
+- **#61's CI e2e failed on Supabase Realtime "transport failure"** in the CI
+  runner, twice; the same spec passes locally on #61's code. A rerun was
+  requested. If it recurs, it's the CI-to-Supabase connection, not the code.
+- **The in-app browser can't reach Supabase** (ERR_NAME_NOT_RESOLVED), but
+  the shell and Playwright can — multi-device checks go through Playwright
+  specs/scripts, not the browser pane.
+- **From #60, still open:** the founder's reported tournament freeze was
+  never reproduced. Suspects: `advanceTournament` resolves the *first*
+  unresolved match rather than the one that just ended; and a shot resolves
+  only on the defending captain's device, so if that device is gone,
+  `pendingShot` never clears. Ask the founder for player count, round, and
+  whether anyone left or reloaded.
 
-One thing that needed a second pass: the cross-out strike (`w-[150%]
-rotate-45`) was being clamped back to the frame's width by its centering flex
-parent, so the slash stopped short of the edges on the now-taller frame.
-`shrink-0` fixes it. Measured, not eyeballed — the rotated bounding box is
-67×67 against a 62×93 frame.
+## What TASK-0045 changed
+- `CharacterCard.tsx`: white plastic holder on a molded edge, yellow border
+  when selected, presses down when tapped; crossed out = flipped down to the
+  purple back with a "?" (name kept), `aria-pressed` reflects it. Placeholder
+  trait overlays hidden while flipped.
+- `views/parts.tsx` (new): `FacePicto`, `CharacterBoard` (grid + remaining
+  counter + "what a tap does" hint, red outline while guessing),
+  `toggleCrossedOut`, `ResultBlock` (purple).
+- `Player.tsx`: own character as a small card beside the ask-aloud hint,
+  primary "Adivinar", board via `CharacterBoard`, result block.
+- `SingleDevice.tsx`: **one crossed-out set per side** (`Record<Side, Set>`)
+  with a name key row to switch boards; a guess uses the visible board's
+  owner (`GuessWho.singleDevice.whoIsGuessing` removed). Local players are
+  rebuilt from names if the view remounts.
+- i18n: `remainingCount`, `guessHint`, `flipHint`,
+  `singleDevice.boardOwnerLabel`.
 
-### 2. Eight characters had a name of the opposite gender to their art
-Root cause worth remembering: the portraits were generated from the **traits**
-(hair length, facial hair, glasses…), which encode nothing about gender, so
-the generator drew whoever it liked and the pre-existing names no longer
-matched. Reviewed all 32 against their art; found exactly eight, four in each
-direction. Renamed rather than regenerating art — names are cosmetic (no rule
-reads them), so traits are untouched and `guess-who-roster.test.ts`'s balance
-guarantees are unaffected. The roster's 16/16 gender split survives because
-the corrections were 4-and-4.
+## Warnings (TASK-0045)
+- Multi-device Guess Who not seen live (Supabase unreachable).
+- Portraits are still the generic cartoon style; redrawing them is the open
+  founder decision in `BDR-0002` (the agent writes the image prompts, the
+  founder runs them).
 
-| id | was | now |
-|---|---|---|
-| c9 | Camila | Bruno |
-| c23 | Valeria | Thiago |
-| c25 | Daniela | Ramiro |
-| c27 | Constanza | Facundo |
-| c24 | Máximo | Julieta |
-| c26 | Tomás | Paulina |
-| c30 | Agustín | Amanda |
-| c32 | Ignacio | Lucía |
+## What TASK-0044 changed
+- `games/connect4/views/parts.tsx` (new): `Disc` (hex token with a molded
+  edge — an edge layer under the face, because clip-path clips shadows;
+  optional last-move dot), `TurnBanner`, `ResultBlock`, `HEX_CLIP`.
+- `Board.tsx`: green plastic frame on its edge, dark hex sockets, discs via
+  `Disc`, last move dotted until the next drop, focus ring on columns,
+  aria-label from i18n (`Connect4.columnLabel`, was hardcoded Spanish).
+- `Player.tsx` / `SingleDevice.tsx`: turn banner, result block, setup with
+  each name next to its disc; single-device turn reads "Turno de {name}".
+- Single-device `nameOf` falls back to rebuilding players from the entered
+  names (ids are deterministic) if `localPlayers` is empty after a remount.
 
-**Deliberately left alone**: c3 (Emma), c7 (Martina) and c11 (Isabella) read
-as androgynous at grid size. Compared at full resolution against a known-male
-(c9) and known-female (c31) portrait, all three carry the same drawn eyelashes
-and softer jaw as c31, so they stay female-named. If the founder disagrees on
-seeing them in play, these are the three to revisit.
+## Warnings (TASK-0044)
+- In the dev browser pane, CSS animations sometimes sit at time 0 when the
+  window isn't painting (the match-resolved modal looked transparent). It's
+  the environment, not the app — the same animation runs fine once frames
+  are drawn. Don't "fix" it by removing `motion-deal`.
+- Multi-device Connect 4 not seen live (Supabase unreachable).
 
-### 3. A latent crop defect that fix (1) exposed
-`CURRENT_STATE.md`'s art-batch entry records a neighbouring-character sliver
-judged "harmless because the circular crop trims exactly the margin the sliver
-sat in." That was true — and stopped being true the moment the card started
-showing the whole portrait. **Any future change to how these assets are
-displayed should re-check this class of assumption.**
+## What TASK-0043 changed
+- `games/who-am-i/views/Pictos.tsx` (new): head-with-question-mark,
+  phone-on-forehead, got-it, missed. Decorative emoji gone; **word emoji
+  kept on purpose** (content for the youngest player, FEEL.md).
+- `games/who-am-i/views/parts.tsx` (new): `TimerPicker` (toy keys),
+  `WordCard` (yellow forehead card), `RoundClock`, `OwnResult`,
+  `GuessIcon`, `formatTime`.
+- Both views rewritten on those pieces; "Acerté" uses the new green
+  `success` button.
+- Shared layer: `components/ui/Picto.tsx` (Impostor's pictos now use it),
+  `components/ui/KeyRow.tsx` (moved from Impostor's parts; keys use
+  `!px-1 min-w-0` so five fit at 375px), `Button` `success` variant,
+  `--color-success-hover` (+ contrast test).
+- **Bug fix:** `games/who-am-i/module.ts` `setup` stored the schema's string
+  default `"300"` in `timerSeconds: number`; now `parseTimerSeconds` in
+  `reducer.ts` (pure, unit-tested). Other games' schemas use real numbers;
+  Battleship's `boardSize` is a string union (`"8" | "10"`) on purpose.
 
-A connected-component scan over all 32 assets found three real ones (c26 on
-both edges, c29, c31 — fragments of neighbouring hat brims, ~1.4k/580/660px)
-plus five sub-100px specks. Fixed in `scripts/generate-guesswho-assets.mjs`,
-not by hand-editing PNGs: a new `removeDetachedFragments` step erases any
-opaque blob that is both disconnected from the largest blob *and* touching a
-left/right edge — the signature of bleed from the axis the sheet is sliced
-along. Requiring the edge touch is what makes it safe to run blind (a
-legitimately detached feature — an earring clear of the head, a glasses lens —
-is interior and never considered), and the largest blob is always kept so a
-character can never erase itself.
+## Warnings (TASK-0043)
+- Multi-device Who Am I not seen live (Supabase unreachable from the dev
+  machine).
 
-Because the founder-provided source sheets are **not committed to the repo**,
-the script also gained a standalone `--clean <files>` mode that re-runs only
-that step over already-generated assets; that's how the three shipped files
-were repaired. New batches get the cleanup automatically in the normal slicing
-path.
+## What TASK-0042 changed
+- `games/impostor/views/Pictos.tsx` (new): the game's own pictograms (mask,
+  bubble, ballot, tie, check, crown, worried face, star, pass-the-phone),
+  replacing every emoji.
+- `games/impostor/views/parts.tsx` (new): pieces both views share — toy
+  key rows for impostor count and clue difficulty (replacing `<select>`s),
+  the capsule's closed label and revealed content, colored outcome blocks,
+  the elimination outcome.
+- `Player.tsx` / `SingleDevice.tsx`: nested `Card`s removed (Screen's tray
+  is the panel), outcome blocks, two-column voting keys, secondary buttons
+  for "Ir a votación" / "Falló", pass-the-phone pictogram on handoffs,
+  "Vota {name}" on single-device voting.
+- **Privacy fix (single-device discussion):** the shared screen showed
+  `discussion.impostorTip` whenever the impostor was the speaker. Now every
+  speaker gets `discussion.speakerTip`. The single-device e2e spec walks all
+  three turns and asserts the impostor tip never appears.
+- `PlayerChip` roster pill is now a raised white piece (sits in a sunken
+  roster tray).
+- i18n: emoji removed from `eliminationResult.*`; new short clue labels,
+  `needsPlayersHint`, `speakerTip`, `voterTurn`. The old
+  `games.impostor.config.needsPlayers` key is now unused (kept, harmless).
 
-### Live verification
-All 32 portraits fetched through the dev server return 200 and decode; every
-one renders fully contained (drawn size ≤ box size, measured via
-`getBoundingClientRect` against `naturalWidth`/`naturalHeight`) at both grid
-and large sizes; no horizontal overflow at 375px; the cross-out strike spans
-the frame; the eight renamed characters render their new labels against the
-correct art. Played through selection → playing → guess → resolution to reach
-the `size="large"` card. Zero console errors. `lint`, `typecheck`, and all
-206 unit tests pass.
+## Warnings (TASK-0042)
+- Multi-device Impostor was restyled but not seen live (Supabase doesn't
+  resolve from the dev machine) — same caveat as #63.
 
-### Known cosmetic quirk (pre-existing, not fixed here)
-Several characters' near-white/cream clothing is fully transparent in the PNG
-— the chroma key can't distinguish it from the parchment background it was cut
-from. It reads correctly *because* the card background
-(`--color-surface-raised`, `#fbf6ec`) is itself near-white, so the clothing
-appears cream as intended. Verified by compositing the assets against that
-exact token. It would look wrong on a dark background, so anyone introducing a
-dark theme needs to regenerate these assets from the source sheets (which
-means asking the founder for them — they aren't in git).
+## What TASK-0041 changed
+- **Tokens** (`app/tokens.css`): `BDR-0002`'s palette under the existing
+  semantic names (`surface*`, `ink*`, `action-*`…), plus `ground`,
+  `accent`, `success`, per-game colors (`game-<id>` + `on-` + `edge-`),
+  and molded-edge tokens (`--color-edge-*`, `--edge-sm/md/lg`). Penumbra
+  tokens removed. `design-tokens.test.ts` now checks 31 pairs, including
+  focus ring ≥3:1 on white and on the ground, and water separation.
+- **Fonts**: Titan One (`font-display`) + Baloo 2 (`font-sans`); Space Mono
+  stays as `font-mono` for digits only — Baloo 2's tabular figures were not
+  verified yet (check before dropping it).
+- **Ground**: `body` is the studded baseplate (`app/globals.css`).
+- **Primitives**: `Button` sits on a solid edge and sinks by it on press;
+  disabled loses the edge; inactive toggles are flat sockets. `Card` and
+  `Dialog` are white plastic panels. `Field`/`CodeInput` are sunken
+  wells / yellow keycaps. `Screen` keeps the top bar on the ground and
+  wraps every screen's content in **one white tray** — that's what keeps
+  text off the blue in game views that weren't restyled yet.
+  `RevealCard` is now a yellow egg capsule (deliberately not red-over-white,
+  which read as a well-known ball from a trademarked franchise); while held,
+  a baseplate cover hides everything else.
+- **New**: `components/ui/NexMark.tsx` (hex token, default glyph = four
+  studs), `components/platform/GameIcon.tsx` (pictograms + block color
+  classes per game id; platform layer, no GameModule change).
+- **Platform screens**: entry, single-device picker (colored game blocks,
+  compact "?" how-to key), waiting lobby (code as keycaps, colored game
+  rows, single column inside the tray), match-resolved modal.
+- **Icons**: `scripts/generate-icons.mjs` now renders the hex token SVG with
+  sharp; `app/icon.png`, `app/apple-icon.png`, `public/icons/*` regenerated.
+  `public/NexPlay_Logo.png` is no longer referenced by code (kept as a
+  founder asset).
+- **Game views (class swaps only)**: penumbra text classes → ink/action/
+  success (the reveal card is white now); `text-action-secondary` used as
+  text → `text-accent` (yellow on white is 1.54:1).
 
-## Superseded context (previous handoff)
+## Warnings (TASK-0041)
+- **Waiting lobby not seen live**: multi-device needs Supabase, which
+  doesn't resolve from the dev machine. Typecheck passes; look at it on a
+  real connection before or during phase 2b.
+- **Game views look interim**: their own `Card` wrappers now sit inside
+  `Screen`'s tray (a panel inside a panel), boards keep their old layouts,
+  emoji illustrations remain. That's phase 2b, by design.
 
-The prior change on `main` was: Guess Who choose-your-own-character (a
-`"selecting"` reducer phase) plus `MatchResolvedModal` gating tournament
-auto-advance across every game with `getWinner`. See PR #58 and
-`CURRENT_STATE.md`'s entry for the detail; nothing in it was modified here.
+## What TASK-0040 changed
+- `docs/00_decisions/brand/BDR-0002-VISUAL-IDENTITY-JUGUETERIA.md` (new):
+  the decision, the four alternatives, eleven rules every screen follows,
+  and palette anchors with measured contrast. The mock-up's red (#EF3B2D)
+  and green (#1FA357) fail AA with white text (3.94:1, 3.26:1) and were
+  replaced by #D3261B (5.17:1) and #178244 (4.87:1).
+- `BDR-0001`: status Superseded (1.1.0).
+- `docs/04_design/FEEL.md`: rewritten for the toy-box world (baseplate =
+  table, depth = molded edge, pressable things move; capsule reveal).
+- `ADR-0004`: amended to 1.1.0. Sections 1–5 unchanged; adds solid-edge
+  elevation tokens (blurred shadows become a violation), retires the
+  penumbra token set, extends the motion vocabulary (press/drop/snap).
+- `docs/ROADMAP.md`: the redesign is milestone **M6.5**, ahead of M7.
+- `docs/09_ai/tasks/TASK-0040-bdr-0002-jugueteria.md` (new), state docs.
 
-## Files Modified / Added
-- `games/guess-who/views/CharacterCard.tsx` (portrait-shaped `object-contain`
-  frame replacing the circular `object-cover` one; `shrink-0` on the cross-out
-  strike; grid-size padding tightened; stale "placeholder" doc comment
-  corrected — the fallback is now the exception, not the default)
-- `games/guess-who/content/characters.ts` (8 renames; a comment recording that
-  names must agree with the art, since nothing in code enforces it)
-- `scripts/generate-guesswho-assets.mjs` (`removeDetachedFragments` wired into
-  the normal slicing path, plus a standalone `--clean <files>` mode)
-- `public/guess-who/{c11,c12,c13,c14,c26,c27,c29,c31,c32}.png` (regenerated by
-  `--clean`; alpha-only changes, dimensions unchanged)
+## Warnings (TASK-0040)
+- **The founder first said Direction A, then corrected it to C.** Every doc
+  now says C (Juguetería); PR #61 got a follow-up commit and its
+  description was edited to match. If anything still says "Cuaderno de
+  Recreo" as the chosen direction, it's stale.
+- Phase 2 must keep `ADR-0004`'s paired-token names and the contrast unit
+  test; only values change, plus the new edge tokens.
+- Guess Who portraits: open founder decision whether to redraw them in the
+  toy style (needs the external image tool). Phase 2 only frames them.
 
-No test files changed: the renames are cosmetic and `guess-who-roster.test.ts`
-asserts trait balance and name *uniqueness*, both of which still hold. The
-framing change is pure CSS in a component with no existing render tests (the
-project's Vitest environment is Node-only, no jsdom), so it was verified live
-in-browser instead — see above.
+## Context: the redesign (M6.5)
+On 2026-10-06 the founder asked for a full redesign (visual, UX, motion,
+gameplay). An audit of the shipped app plus four mocked visual directions
+(A "Cuaderno de Recreo" — school graph-paper notebook; B "Riso Club";
+C "Juguetería" — molded plastic toy; D "Teatro de Sombras") were presented;
+the founder chose **C** and **voseo** (first saying A by mistake, corrected
+to C on 2026-10-07), and asked to start with phase 1. Phases:
+- **Phase 1 — UX flow fixes** (`TASK-0039`, PR #61). Done.
+- **Phase 0 — `BDR-0002`**, `FEEL.md`, `ADR-0004` 1.1.0 (`TASK-0040`). Done.
+- **Phase 2a — shared visual system** (`TASK-0041`). Done.
+- **Phase 2b — per-game restyles**, one task per game. All five
+  games done (`TASK-0042` to `TASK-0046`).
+- **Phase 3 — motion, sound, haptics** (`TASK-0047`). Done — M6.5 is
+  code-complete.
+- Per-game gameplay ideas from the audit (who-starts coin flip in Connect 4,
+  vote-by-vote reveal in Impostor, forehead tilt mode in Who Am I, family
+  scoreboard across games, splitting Battleship's 1105-line view first)
+  are each their own later task.
 
+## What TASK-0039 changed (phase 1, PR #61)
+1. **Reveal gating (single-device).** Impostor: a handoff screen ("Pasale el
+   teléfono a Leo" → "Soy Leo") before each reveal; the next-player button
+   is disabled until the card was actually held open (`RevealCard` gained an
+   optional `onReveal`, plus Space/Enter keyboard support so the gate never
+   locks out keyboard users). Who Am I: each turn opens on a handoff screen
+   and the turn timer only starts on "Listo" (before, it ran while the phone
+   was being passed).
+2. **One way back, one way out.** In-game "Salir" links removed from all four
+   single-device views; "Volver al lobby" moved from the view into
+   `Screen`'s top bar as "← Juegos" (`onBack`/`backLabel`/`backAriaLabel`).
+   Multi-device keeps its host-only "Volver al lobby" (different meaning:
+   it returns *everyone*).
+3. **Remembered family.** `lib/family/roster.ts` stores names typed in
+   single-device setups in localStorage (device-only, same tier as
+   `lib/realtime/session.ts`, not durable server data — no ADR-0001 change)
+   and prefills every single-device setup; the entry-screen name is
+   remembered first so the phone's owner leads the list.
+4. **Entry screen.** Mode switch labels "Varios teléfonos / Un teléfono" (no
+   more clipped "MULTIDISPOSITIV" at 375px); forced uppercase + wide
+   tracking removed from the entry screen, `Field` and `CodeInput` labels.
+5. **No premature errors.** Setup screens show a neutral hint + disabled
+   start button instead of a red error box (single-device Impostor/Who Am
+   I/Connect 4/Guess Who, and multi-device Impostor/Who Am I host config).
+6. **How to play.** New `components/platform/HowToPlay.tsx` (three steps
+   from `games.<id>.howTo.step1..3`, same catalog convention as
+   `description`, no `GameModule` change), reachable from the single-device
+   picker and the multi-device lobby accordion. New `components/ui/Dialog.tsx`
+   modal shell; `ConfirmDialog` now builds on it. The single-device picker
+   lists every game with description and player count; games that can't run
+   on one phone (Battleship) are shown last, dimmed, with "Necesita varios
+   teléfonos".
+7. **Voseo + sentence case** across `i18n/es.json` (recorded in FEEL.md's
+   Voice section); English catalog also drops its ALL-CAPS strings.
+
+## Files Modified / Added (TASK-0039)
+- `app/[locale]/page.tsx`, `components/platform/{RoomLobby,RoomWaitingLobby}.tsx`,
+  `components/platform/HowToPlay.tsx` (new)
+- `components/ui/{Screen,RevealCard,ConfirmDialog,Field,CodeInput,index}.tsx|ts`,
+  `components/ui/Dialog.tsx` (new)
+- `games/{impostor,who-am-i,connect4,guess-who}/views/SingleDevice.tsx`,
+  `games/{impostor,who-am-i}/views/Player.tsx` (red error → neutral hint only)
+- `lib/family/roster.ts` (new)
+- `i18n/es.json`, `i18n/en.json`
+- `tests/unit/family-roster.test.ts` (new, 10 tests),
+  `tests/e2e/single-device-pass-and-play.spec.ts` (new),
+  `tests/e2e/{battleship-multi-device,locale-routing}.spec.ts` (copy updates)
+- `docs/04_design/FEEL.md`, `docs/09_ai/tasks/TASK-0039-ux-flow-fixes.md`
+  (new), `docs/09_ai/{CURRENT_STATE,HANDOFF}.md`
+
+## Warnings (TASK-0039)
+- **`battleship-multi-device.spec.ts` could not be run locally**: the
+  Supabase host didn't resolve from this machine (`ERR_NAME_NOT_RESOLVED`,
+  room screen shows "No se pudo conectar a la sala"). Only its copy changed
+  ("Crear sala nueva", "Entrar a la sala", "Colocá tu flota"); CI is the
+  real check for it. The new single-device spec and `locale-routing` pass
+  locally.
+- Phase 2 will restyle everything this task touched — this task kept the
+  current Paper & Felt look on purpose. Don't start phase 2 before
+  `BDR-0002` exists.
 ## External state (not in git, important for the next agent to know)
 - Same as prior handoffs: Supabase live, Vercel auto-deploying `main`, strict
   branch protection, GitHub Actions secrets configured.
@@ -152,21 +337,17 @@ before trusting a scary-looking console error — this session saw a stale
 fixed in the source, left over from a mid-edit HMR pass.
 
 ## Pending Tasks
-- A dedicated founder playtest of Battleship's full feature set (M4a–M4d —
-  weapons, 2-vs-2 teams, tournament) on real phones specifically is still
-  worth doing — every verification in this repo's history so far has used
-  up to four browser contexts on one machine, not a dedicated real-device
-  pass.
+- Phases 2 and 3 of the redesign (see "Context" above).
+- A dedicated founder playtest of Battleship's full feature set on real
+  phones (carried forward).
 - Migrating Impostor's and Who Am I's secrets onto `ADR-0005`'s private
-  slice — the latent leak the ADR documents is real but not urgent.
-- The two remaining games from `BACKLOG.md`'s prioritized list (Ludo, a
-  dice-and-track race game) — each its own future milestone, not yet
-  started.
+  slice (carried forward, latent, not urgent).
+- Ludo and the dice-and-track race game from `BACKLOG.md` (carried forward).
 
 ## Next Suggested Task
-- The founder's call: **M7 (presentable)** per `docs/ROADMAP.md`, or the
-  next game from `BACKLOG.md`'s prioritized list (Ludo is next). Follow
-  the same pattern used for every game so far: a design conversation with
-  the founder (exploring distinct directions per `PROJECT_CONSTITUTION.md`
-  Article 10 whenever there's a real visual/UX decision to make) before
-  any code.
+- Merge the M6.5 stack oldest first (#60/#61 → … → the phase 3 PR), then a
+  real-phone family session: multi-device in every game, Battleship 2-vs-2
+  and a tournament (watch for the unreproduced freeze from #60), and sound +
+  vibration on Android. Tune `SOUNDS`/`HAPTICS` from what the family says.
+- After that: M7 — Presentable, or the Guess Who portrait redraw (the agent
+  writes the image prompts; the founder runs them).

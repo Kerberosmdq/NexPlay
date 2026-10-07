@@ -18,9 +18,11 @@ test("two players join a room, place fleets, and fire a shot in Battleship", asy
 
     await hostPage.goto("/es");
     await hostPage.getByPlaceholder("Ej. Mateo, Sofía, Papá").fill("Host");
-    await hostPage.getByRole("button", { name: "Crear nueva sala" }).click();
+    await hostPage.getByRole("button", { name: "Crear sala nueva" }).click();
 
-    const roomCode = await hostPage.locator(".font-mono.text-7xl").innerText();
+    // The code renders as a row of keycap tiles grouped under one accessible
+    // name (role="img", aria-label = the code), so read it from there.
+    const roomCode = (await hostPage.getByRole("img", { name: /^[A-Z]{4}$/ }).getAttribute("aria-label")) ?? "";
     expect(roomCode).toMatch(/^[A-Z]{4}$/);
 
     await guestPage.goto("/es");
@@ -28,7 +30,7 @@ test("two players join a room, place fleets, and fire a shot in Battleship", asy
     // CodeInput's real <input> is visually hidden (sr-only) behind a row of
     // tiles — it has a label, not a placeholder.
     await guestPage.getByLabel("Código de Sala").fill(roomCode);
-    await guestPage.getByRole("button", { name: "Unirse a sala" }).click();
+    await guestPage.getByRole("button", { name: "Entrar a la sala" }).click();
 
     await expect(hostPage.getByText("Guest")).toBeVisible({ timeout: 15_000 });
 
@@ -38,8 +40,8 @@ test("two players join a room, place fleets, and fire a shot in Battleship", asy
     await hostPage.getByRole("button", { name: "Batalla Naval" }).click();
     await hostPage.getByRole("button", { name: "Jugar este" }).click();
 
-    await expect(hostPage.getByText("Coloca tu flota")).toBeVisible({ timeout: 15_000 });
-    await expect(guestPage.getByText("Coloca tu flota")).toBeVisible({ timeout: 15_000 });
+    await expect(hostPage.getByText("Colocá tu flota")).toBeVisible({ timeout: 15_000 });
+    await expect(guestPage.getByText("Colocá tu flota")).toBeVisible({ timeout: 15_000 });
 
     for (const page of [hostPage, guestPage]) {
       await page.getByRole("button", { name: "Colocar al azar" }).click();

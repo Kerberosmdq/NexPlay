@@ -1,4 +1,4 @@
-import { whoAmIReducer } from "./reducer";
+import { whoAmIReducer, parseTimerSeconds } from "./reducer";
 import { PlayerView } from "./views/Player";
 import { SingleDeviceView } from "./views/SingleDevice";
 import { whoAmIContent } from "./content";
@@ -39,7 +39,7 @@ export const whoAmIGameModule: GameModule<WhoAmIConfig, WhoAmIState, WhoAmIActio
 
   setup: (players: Player[], config: WhoAmIConfig): WhoAmIState => ({
     phase: "config",
-    timerSeconds: config.timerSeconds,
+    timerSeconds: parseTimerSeconds(config.timerSeconds),
     playerIds: players.map((p) => p.id),
     usedWordIds: [],
     wordAssignments: {},

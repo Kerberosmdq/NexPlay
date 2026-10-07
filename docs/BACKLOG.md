@@ -73,6 +73,20 @@ every prior game), not yet scoped as a task spec.
   the impostor too easy to spot. Needs a design decision (e.g. minimum
   recommended players, or a rule variant) before or during M2 — don't let it
   surface as a surprise during first real playtest.
+- **Per-game gameplay ideas from the 2026-10-06 redesign audit** (each its
+  own task, after the redesign's visual and motion phases):
+  - Connect 4: a coin flip / spinner to decide who starts; last-move marker;
+    the winning line drawn, not just highlighted.
+  - Impostor: votes revealed one by one with a pause before the result.
+  - Who Am I: a "forehead mode" — tilt the phone to mark correct/pass
+    (DeviceOrientation, needs a permission prompt on iOS).
+  - Guess Who: cards that flip down like the physical board, with a
+    "N left" counter.
+  - Platform: a family scoreboard that lasts the whole session across games.
+  - Battleship: split the 1105-line `views/Player.tsx` (board, fleet,
+    weapons, announcements) before restyling it.
+- **Quieter analytics when offline.** `recordEvent` logs a console error on
+  every call when Supabase is unreachable; one warning per session would do.
 
 ## Technical/process ideas
 - **Guess Who portraits are only correct on a light background.** The chroma

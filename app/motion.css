@@ -1,5 +1,5 @@
 /*
- * NexPlay Motion Vocabulary — ADR-0004 §3
+ * NexPlay Motion Vocabulary — ADR-0004 §3 (+ 1.1.0 toy-physics gestures)
  *
  * Four named gestures, defined once, used by name everywhere. This
  * replaces per-screen animation classes — most notably the Impostor
@@ -104,6 +104,89 @@
   }
 }
 
+/* M6.5 phase 3 — toy physics (BDR-0002 §10). */
+
+/* A piece popping into place: overshoots, then settles. */
+@keyframes nx-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* A disc falling down its column and bouncing twice. The distance comes
+ * from --drop-rows (how many cells it falls), set per disc. */
+@keyframes nx-drop {
+  0% {
+    transform: translateY(calc(var(--drop-rows, 3) * -112%));
+  }
+  55% {
+    transform: translateY(0);
+  }
+  70% {
+    transform: translateY(-22%);
+  }
+  84% {
+    transform: translateY(0);
+  }
+  92% {
+    transform: translateY(-7%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* A card turning over on its horizontal hinge. */
+@keyframes nx-flip {
+  0% {
+    transform: perspective(400px) rotateX(-90deg);
+  }
+  70% {
+    transform: perspective(400px) rotateX(12deg);
+  }
+  100% {
+    transform: perspective(400px) rotateX(0deg);
+  }
+}
+
+/* Toy confetti: a piece thrown up, spinning, falling off the bottom. */
+@keyframes nx-confetti {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    opacity: 0.9;
+    transform: translate(var(--dx, 0px), 110vh) rotate(var(--spin, 360deg));
+  }
+}
+
+.motion-pop {
+  animation: nx-pop 320ms var(--ease-bounce) both;
+}
+
+.motion-drop {
+  animation: nx-drop 560ms cubic-bezier(0.5, 0, 0.6, 1) both;
+}
+
+.motion-flip {
+  animation: nx-flip 280ms ease-out both;
+  transform-origin: top center;
+}
+
+.motion-confetti {
+  animation: nx-confetti var(--fall-ms, 1800ms) cubic-bezier(0.25, 0.4, 0.55, 1) both;
+}
+
 .motion-reveal {
   animation: nx-reveal 320ms var(--ease-bounce) both;
 }
@@ -133,8 +216,16 @@
   .motion-deal,
   .motion-celebrate,
   .motion-strike,
-  .motion-shake {
+  .motion-shake,
+  .motion-pop,
+  .motion-drop,
+  .motion-flip {
     animation: none;
+  }
+
+  /* Confetti carries no information — it simply isn't shown. */
+  .motion-confetti {
+    display: none;
   }
 
   /* A waiting state losing its motion shouldn't also lose the "this is

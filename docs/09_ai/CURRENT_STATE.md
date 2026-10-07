@@ -3,8 +3,16 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 18 - M5 (Connect 4) and M6 (Guess Who) shipped, plus a
-  platform UX hotfix
+- Sprint: Sprint 19 - M6.5 redesign (Juguetería). Phase 1 (`TASK-0039`, UX
+  flow fixes, PR #61), phase 0 (`TASK-0040`, `BDR-0002`, PR #62) and phase
+  2a (`TASK-0041`, shared visual system, PR #63) done; phase 2b under way —
+  Impostor (`TASK-0042`, PR #64), Who Am I (`TASK-0043`, PR #65) and
+  Connect 4 (`TASK-0044`, PR #66), Guess Who (`TASK-0045`, PR #67) and
+  Battleship (`TASK-0046`, PR #68) done — phase 2 complete — and phase 3
+  (`TASK-0047`, motion/sound/haptics, on `feat/jugueteria-feel`) done. M6.5
+  is code-complete; it needs the PR stack merged and a real-phone session.
+- Previous sprint: Sprint 18 - M5 (Connect 4) and M6 (Guess Who) shipped,
+  plus a platform UX hotfix
 - Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
   playtest follow-up fixes (PRs #41–#44), `TASK-0034` (M4b special weapons),
   `TASK-0035` (M4c teams), `TASK-0036` (M4d tournament), `TASK-0037` (M5
@@ -1007,6 +1015,149 @@ race game).
       renamed characters render their new labels against the correct art.
       `lint`, `typecheck`, and all 206 unit tests pass.
 
+- [x] **Hotfix (unnumbered)**: Battleship playability — founder feedback
+      (2026-08-15) after a real session. Four defects, all found by reading
+      the code and each reproduced live before fixing.
+      (1) **The screen moved on every shot.** Two separate layout shifters,
+      both above the boards in the same flex column: the hit/miss banner
+      mounted and unmounted (pushing everything down for 2.2s, then back
+      up), and — the larger one — the weapon card is gated on
+      `isMyTurn && !pendingShot`, so it vanished the instant you fired and
+      returned when your turn came back, moving both boards by its full
+      height every turn. The banner and turn-status blocks now sit in
+      fixed-height slots; the boards moved **above** the controls, since
+      reserving space for a card whose height varies with weapon count would
+      have left a permanent blank gap. Measured live: board top constant at
+      0px drift across a full fire → announce → clear cycle (it also puts
+      the controls in thumb reach on a phone).
+      (2) **Everything rendered red.** The strike branch returned
+      `bg-action-danger` regardless of the result, and a miss settled to
+      `bg-surface-well` (#ded0b4) — nearly identical to an unfired cell's
+      `bg-surface-sunken` (#e7d9c0). So a miss flashed red and then went
+      invisible. Colour now always follows the result, with the strike only
+      adding motion on top. Needed the palette's first blue (`--color-water`,
+      ADR-0004 forbids raw hex outside `tokens.css`); the first draft was a
+      navy that paired beautifully with white but sat at 1.11:1 against the
+      wine red — caught by a new test asserting the board's three cell
+      states separate by *lightness*, not just hue, since hue alone is what
+      fails in sunlight or with red-green colour blindness. Final
+      `#2d7ab8`: 4.58:1 with white, 2.09:1 vs a hit, 3.29:1 vs an unfired cell.
+      (3) **A special shot coloured one square, not its shape.** `strikeCell`
+      was a single `string | null` while the diff loop called its setter once
+      per new cell, so the last cell won. Now a `Set`, with the whole diff
+      collected before touching state. Compounded by (2): the shape's missed
+      cells were invisible anyway. Verified live — a Cross animated all 5
+      cells at once, a Double both. The announcement had the same
+      last-cell-wins flaw and now summarizes (`multiAnnouncement`, new i18n
+      key in ES+EN).
+      (4) **Secrets leaked across tournament matches.** `usePrivateState`
+      keys a device's private slice by (room, game, player) with **no match
+      identity**, so a tournament's next match silently inherited the
+      previous one's secret. Reproduced live: the winner of round 1 arrived
+      at the final already showing "¡FLOTA LISTA!", still holding the exact
+      layout their previous opponent had just spent a whole match mapping.
+      This is the same bug class `TASK-0038` fixed for Guess Who *in that
+      game's own view*; the platform-level cause was never addressed, so
+      Battleship still had it. Fixed generically: `PlatformState` gained
+      `matchNumber` (a plain counter, not a random id — every device must
+      derive the same key from the same shared state, and `Math.random()`
+      stays out of the reducer), incremented on every match the platform
+      starts, and included in the private-state key. Battleship's own
+      "Jugar de nuevo" rematch reuses the same match number, so its view
+      also clears the fleet on entering `placing` — keyed on the phase
+      *transition*, because `PLAY_AGAIN` resets shots and readySides to
+      exactly their start-of-match values and any snapshot of those is
+      identical between a first placement and a rematch.
+      **Not reproduced**: the founder also reported the tournament freezing
+      after the first match. A full 3-player tournament (round 1 played to a
+      win, host advance, final placed and firing) advanced correctly both
+      before and after these fixes, so the freeze has a cause not yet
+      identified — see `HANDOFF.md`. The stale-fleet defect is the leading
+      candidate but was not observed to hang anything.
+      Verified across three real, separately-connected browser tabs over
+      actual Supabase Realtime. `lint`, `typecheck` and 210 unit tests pass.
+      (Landed via PR #60, merged into the M6.5 Battleship branch so the
+      restyle builds on it.)
+- [x] **TASK-0039**: UX flow fixes — phase 1 of the founder-requested full
+      redesign (2026-10-06 audit; founder chose visual Direction C
+      "Juguetería" and voseo, to be recorded in `BDR-0002`). Single-
+      device pass-and-play can no longer skip a player (handoff screen +
+      next locked until the card was held; Who Am I's timer starts on
+      "Listo"), one way back ("← Juegos" in the top bar) and one way out
+      (✕), family names remembered on the device and prefilled, entry
+      screen no longer clips at 375px and drops forced caps, neutral hints
+      instead of premature red errors, a three-step "¿Cómo se juega?" for
+      every game, a richer single-device picker, and all Spanish copy on
+      voseo. `lint`, `typecheck`, 216 unit tests, and the new single-device
+      e2e spec pass; the Battleship e2e couldn't run locally (Supabase host
+      unreachable from this machine) — see `HANDOFF.md`.
+
+- [x] **TASK-0040**: `BDR-0002` — Juguetería (molded plastic toy) recorded
+      as NexPlay's visual direction, superseding `BDR-0001` (Paper & Felt).
+      Palette anchors measured for contrast (the mock-up's red and green
+      failed AA with white text and were darkened), `FEEL.md` rewritten,
+      `ADR-0004` amended to 1.1.0 (contract unchanged; solid-edge
+      elevation, penumbra retired, motion vocabulary to grow), redesign
+      added to `ROADMAP.md` as M6.5. Docs only.
+
+- [x] **TASK-0041**: M6.5 phase 2a — `BDR-0002`'s visual system at the
+      shared layer. New tokens (toy-blue baseplate, white plastic, edge
+      tokens, per-game colors; penumbra retired) with 31 contrast tests,
+      Titan One + Baloo 2, molded-edge primitives that sink when pressed,
+      a white tray around every screen's content, the capsule `RevealCard`
+      with a baseplate privacy cover, the hex token `NexMark`, per-game
+      pictograms, a regenerated icon set, and the entry screen, game
+      picker and waiting lobby restyled. Game views only got class swaps
+      the new palette required; their own restyle is phase 2b.
+
+- [x] **TASK-0042**: Impostor restyled on the Juguetería system (M6.5
+      phase 2b, game 1 of 5): nested cards removed, emoji replaced by its
+      own pictograms, toy key rows instead of `<select>`s, outcomes as
+      colored plastic blocks, shared pieces in `views/parts.tsx`. **Fixed a
+      privacy leak**: in single-device mode the shared discussion screen
+      showed the impostor's tip whenever the impostor spoke, outing them
+      to the table — now one neutral tip for everyone, guarded by the
+      single-device e2e spec.
+
+- [x] **TASK-0043**: Who Am I restyled on the Juguetería system (M6.5
+      phase 2b, game 2 of 5): forehead word card in the game's yellow,
+      dark round clock, toy keys for round length, pictograms for
+      decorative emoji (word emoji kept as content). Shared layer grew a
+      `Picto` frame, `KeyRow`, and a `success` button variant. **Fixed a
+      latent type bug**: `setup` stored the schema's string default
+      (`"300"`) in a numeric field; now parsed by a unit-tested helper.
+
+- [x] **TASK-0044**: Connect 4 restyled on the Juguetería system (M6.5
+      phase 2b, game 3 of 5): green plastic frame with dark sockets, hex
+      discs with a molded edge, a last-move dot, a turn banner with the
+      player's disc, a green result block. The column buttons' hardcoded
+      Spanish aria-label moved to i18n; single-device rebuilds local
+      players if remounted mid-match instead of showing a raw id.
+
+- [x] **TASK-0045**: Guess Who restyled on the Juguetería system (M6.5
+      phase 2b, game 4 of 5): plastic card holders, eliminated characters
+      flip down to a purple "?" back, a remaining counter, a purple result
+      block. **Fixed a gameplay bug**: in single-device mode both players
+      crossed out on one shared set; each now has their own board (picked
+      by name), and guessing uses the board's owner, removing the
+      "who is guessing?" step.
+
+- [x] **TASK-0046**: Battleship split into focused files (BoardGrid,
+      useShotFeedback, TeamSetup, Placement, Firing, Resolution; Player.tsx
+      down from 1105 to 160 lines) with behavior unchanged, and restyled on
+      the Juguetería system (navy plastic board with white peg holes).
+      Built on PR #60, merged into the branch first. The multi-device e2e
+      passes against real Supabase. Also fixed the e2e room-code selector
+      that the #63 lobby restyle had broken (propagated through #63–#67).
+
+- [x] **TASK-0047**: M6.5 phase 3 — the toy *feel*. `lib/feedback`
+      synthesizes plastic sounds (Web Audio, no files) and short Android
+      vibrations behind one switch that starts off; a `SoundToggle` key in
+      the top bar and on the entry screen; buttons click, keys select, the
+      capsule pops; discs drop and bounce, cards flip, wins throw toy
+      confetti; every phase change slides in via `PhaseTransition` without
+      remounting the game view. Each game wired to its own cues.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -1014,11 +1165,13 @@ race game).
 - None currently open.
 
 ## Next Task
-- **M7 — Presentable**, or — if the founder wants to keep prioritizing
-  games first, the same pattern M3.5/M5/M6 already followed — the two
-  remaining entries in `BACKLOG.md`'s prioritized games list (Ludo, a
-  dice-and-track race game). Neither has been discussed with the founder
-  yet as of this entry.
+- **Redesign, continued** (founder's current priority, ahead of M7's
+  remaining items and new games): merging the M6.5 PR stack (#60–#69) and a
+  real-phone family session (multi-device in every game, 2-vs-2 teams,
+  a tournament, sound + vibration on Android). Then M7 — Presentable and phase 3 (motion, sound, haptics) of M6.5. See
+  `HANDOFF.md` → "Context: the redesign this task opens".
+- After that: **M7 — Presentable**, or the two remaining entries in
+  `BACKLOG.md`'s prioritized games list (Ludo, a dice-and-track race game).
 - Still worth doing, independent of milestone sequencing: the founder
   playtesting Battleship's full feature set (M4a–M4d — weapons, 2-vs-2
   teams, and a tournament) specifically, since that family session covered
@@ -1030,5 +1183,4 @@ race game).
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-08-15 (Guess Who portrait framing, 8 name/art gender corrections, and
-  a neighbouring-character crop-bleed cleanup in the asset script)
+- 2026-10-07 (TASK-0047: motion, sound, haptics; TASK-0046 back to TASK-0039)

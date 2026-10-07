@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { playCue, type FeedbackCue } from "@/lib/feedback";
 import type { GuessWhoCharacter, HairColor } from "../content/types";
 import { CHARACTER_IDS_WITH_ART } from "../content/artManifest";
 
@@ -20,14 +21,29 @@ interface CharacterCardProps {
   onClick?: () => void;
   /** Compact for the 32-card grid; full size for "this is your character". */
   size?: "grid" | "large";
+  /** Sound + vibration on tap (M6.5 phase 3): a flip on the board, a
+   * select when choosing or guessing. */
+  sound?: FeedbackCue;
 }
 
 /** One character in the 32-card grid. Renders the real portrait when the
  * character has art, and otherwise falls back to a trait-based placeholder
  * that keeps every trait legible (docs/09_ai/tasks/TASK-0038-guess-who.md) —
  * the whole roster has art today, but the fallback stays so adding a
- * character never ships a blank card. */
-export function CharacterCard({ character, crossedOut = false, selected = false, onClick, size = "grid" }: CharacterCardProps) {
+ * character never ships a blank card.
+ *
+ * BDR-0002: each card is a white plastic holder on its molded edge. Crossed
+ * out, it flips down like the physical board's flaps — the purple back with
+ * a "?" instead of a faded, struck-through face — and flips back up on a
+ * second tap. The name stays on the back so undoing is easy. */
+export function CharacterCard({
+  character,
+  crossedOut = false,
+  selected = false,
+  onClick,
+  size = "grid",
+  sound = "select",
+}: CharacterCardProps) {
   const t = useTranslations("GuessWho.traits");
   const { traits } = character;
   const isLarge = size === "large";
@@ -40,13 +56,33 @@ export function CharacterCard({ character, crossedOut = false, selected = false,
   return (
     <Wrapper
       type={onClick ? "button" : undefined}
-      onClick={onClick}
-      className={`flex flex-col items-center gap-1 rounded-2xl border transition-opacity ${isLarge ? "p-2" : "p-1"} ${
-        selected ? "border-focus bg-surface-raised" : "border-line bg-surface-sunken"
-      } ${crossedOut ? "opacity-30" : "opacity-100"} ${onClick ? "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus" : ""}`}
+      onClick={
+        onClick
+          ? () => {
+              playCue(sound);
+              onClick();
+            }
+          : undefined
+      }
+      aria-pressed={onClick ? selected || crossedOut : undefined}
+      className={`flex flex-col items-center gap-1 rounded-2xl border-[3px] ${isLarge ? "p-2" : "p-1"} ${
+        crossedOut
+          ? "bg-game-guess-who border-transparent shadow-[0_var(--edge-sm)_0_var(--color-edge-game-guess-who)]"
+          : selected
+            ? "bg-surface-raised border-action-secondary shadow-[0_var(--edge-sm)_0_var(--color-edge-secondary)]"
+            : "bg-surface-raised border-transparent shadow-[0_var(--edge-sm)_0_var(--color-edge-raised)]"
+      } ${onClick ? "active:translate-y-[var(--edge-sm)] active:shadow-none transition-transform duration-75 focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus" : ""}`}
     >
       <div className={`relative ${isLarge ? "w-28" : "w-full"}`}>
-        {hasArt ? (
+        {crossedOut ? (
+          // Flipped down: the card's back.
+          // `motion-flip` plays as the back appears: the card turning down.
+          <div className="motion-flip w-full aspect-[2/3] rounded-xl bg-edge-game-guess-who flex items-center justify-center">
+            <span className="font-display text-on-game-guess-who text-3xl" aria-hidden="true">
+              ?
+            </span>
+          </div>
+        ) : hasArt ? (
           // Portraits are head-and-shoulders at roughly 2:3, so a circular
           // `object-cover` frame (what this used to be) cut the top of every
           // hat off — the one trait a player most needs to see. A portrait-
@@ -56,7 +92,7 @@ export function CharacterCard({ character, crossedOut = false, selected = false,
             src={`/guess-who/${character.id}.png`}
             alt=""
             aria-hidden="true"
-            className="w-full aspect-[2/3] object-contain rounded-xl bg-surface-raised"
+            className="w-full aspect-[2/3] object-contain rounded-xl bg-surface-sunken"
           />
         ) : (
           <div
@@ -71,37 +107,31 @@ export function CharacterCard({ character, crossedOut = false, selected = false,
         {/* Real art already depicts these traits directly — the emoji
             overlays exist only to make the placeholder's plain circle
             legible, so they'd be redundant clutter once art lands. */}
-        {!hasArt && traits.glasses && (
+        {!hasArt && !crossedOut && traits.glasses && (
           <span className={`absolute ${isLarge ? "text-2xl -top-1 -left-1" : "text-sm -top-0.5 -left-0.5"}`} aria-hidden="true">
             👓
           </span>
         )}
-        {!hasArt && traits.hat && (
+        {!hasArt && !crossedOut && traits.hat && (
           <span className={`absolute ${isLarge ? "text-3xl -top-4 left-1/2 -translate-x-1/2" : "text-base -top-2 left-1/2 -translate-x-1/2"}`} aria-hidden="true">
             🎩
           </span>
         )}
-        {!hasArt && traits.earrings && (
+        {!hasArt && !crossedOut && traits.earrings && (
           <span className={`absolute ${isLarge ? "text-xl -bottom-1 -right-1" : "text-xs -bottom-0.5 -right-0.5"}`} aria-hidden="true">
             💎
           </span>
         )}
-        {crossedOut && (
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            aria-hidden="true"
-          >
-            {/* Wider than the box so the 45° strike still spans the whole
-                taller-than-wide portrait frame; `shrink-0` because the
-                centering flex parent would otherwise clamp it back to the
-                frame's width and leave the slash short of the edges. */}
-            <div className="w-[150%] shrink-0 h-0.5 bg-action-danger rotate-45" />
-          </div>
-        )}
       </div>
-      <p className={`font-bold text-ink text-center leading-tight ${isLarge ? "text-lg" : "text-xs"}`}>{character.name}</p>
+      <p
+        className={`font-bold text-center leading-tight ${crossedOut ? "text-on-game-guess-who" : "text-ink"} ${
+          isLarge ? "text-lg" : "text-xs"
+        }`}
+      >
+        {character.name}
+      </p>
       {isLarge && (
-        <p className="text-xs text-ink-muted text-center">
+        <p className="text-sm text-ink-muted text-center">
           {t("hairSummary", { color: t(`hairColor.${traits.hairColor}`), length: t(`hairLength.${traits.hairLength}`) })}
           {facialHairLabel ? ` · ${facialHairLabel}` : ""}
         </p>
