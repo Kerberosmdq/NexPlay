@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { playCue, type FeedbackCue } from "@/lib/feedback";
 import type { GuessWhoCharacter, HairColor } from "../content/types";
 import { CHARACTER_IDS_WITH_ART } from "../content/artManifest";
 
@@ -20,6 +21,9 @@ interface CharacterCardProps {
   onClick?: () => void;
   /** Compact for the 32-card grid; full size for "this is your character". */
   size?: "grid" | "large";
+  /** Sound + vibration on tap (M6.5 phase 3): a flip on the board, a
+   * select when choosing or guessing. */
+  sound?: FeedbackCue;
 }
 
 /** One character in the 32-card grid. Renders the real portrait when the
@@ -32,7 +36,14 @@ interface CharacterCardProps {
  * out, it flips down like the physical board's flaps — the purple back with
  * a "?" instead of a faded, struck-through face — and flips back up on a
  * second tap. The name stays on the back so undoing is easy. */
-export function CharacterCard({ character, crossedOut = false, selected = false, onClick, size = "grid" }: CharacterCardProps) {
+export function CharacterCard({
+  character,
+  crossedOut = false,
+  selected = false,
+  onClick,
+  size = "grid",
+  sound = "select",
+}: CharacterCardProps) {
   const t = useTranslations("GuessWho.traits");
   const { traits } = character;
   const isLarge = size === "large";
@@ -45,7 +56,14 @@ export function CharacterCard({ character, crossedOut = false, selected = false,
   return (
     <Wrapper
       type={onClick ? "button" : undefined}
-      onClick={onClick}
+      onClick={
+        onClick
+          ? () => {
+              playCue(sound);
+              onClick();
+            }
+          : undefined
+      }
       aria-pressed={onClick ? selected || crossedOut : undefined}
       className={`flex flex-col items-center gap-1 rounded-2xl border-[3px] ${isLarge ? "p-2" : "p-1"} ${
         crossedOut
@@ -58,7 +76,8 @@ export function CharacterCard({ character, crossedOut = false, selected = false,
       <div className={`relative ${isLarge ? "w-28" : "w-full"}`}>
         {crossedOut ? (
           // Flipped down: the card's back.
-          <div className="w-full aspect-[2/3] rounded-xl bg-edge-game-guess-who flex items-center justify-center">
+          // `motion-flip` plays as the back appears: the card turning down.
+          <div className="motion-flip w-full aspect-[2/3] rounded-xl bg-edge-game-guess-who flex items-center justify-center">
             <span className="font-display text-on-game-guess-who text-3xl" aria-hidden="true">
               ?
             </span>

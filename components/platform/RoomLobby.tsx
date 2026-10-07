@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { generateRoomCode, isValidRoomCode } from "@/lib/realtime";
 import { rememberFamilyNames } from "@/lib/family/roster";
-import { Button, Card, CodeInput, Field, LanguageSwitcher, NexMark } from "@/components/ui";
+import { Button, Card, CodeInput, Field, LanguageSwitcher, NexMark, SoundToggle } from "@/components/ui";
 
 export interface RoomLobbyProps {
   onStartSingleDevice: (displayName: string) => void;
@@ -55,8 +55,9 @@ export function RoomLobby({
 
   return (
     <div className="w-full max-w-lg mx-auto flex flex-col gap-6">
-      <div className="flex justify-end">
+      <div className="flex justify-end items-start gap-2">
         <LanguageSwitcher />
+        <SoundToggle />
       </div>
 
       {/* Brand header — on the baseplate itself: the hex token mark and a

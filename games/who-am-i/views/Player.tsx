@@ -6,7 +6,7 @@ import type { Player } from "@/lib/types/room";
 import type { WhoAmIState, WhoAmIAction } from "../reducer";
 import { pickAssignments, pickReplacementWord } from "../pickRound";
 import { Button, Scoreboard, WaitingState } from "@/components/ui";
-import { GuessIcon, OwnResult, RoundClock, TimerPicker, WordCard, formatTime } from "./parts";
+import { GuessIcon, OwnResult, RoundClock, TimerPicker, WordCard, formatTime, RoundOverBlock } from "./parts";
 import { WhoPicto } from "./Pictos";
 
 interface PlayerProps {
@@ -96,7 +96,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
 
     return (
       <div className="flex flex-col items-center gap-5 w-full text-center">
-        <RoundClock label={timeLeft === null ? "∞" : formatTime(timeLeft)} />
+        <RoundClock label={timeLeft === null ? "∞" : formatTime(timeLeft)} secondsLeft={timeLeft} />
 
         {hasGuessed || hasLost ? (
           <OwnResult guessed={hasGuessed} word={myWord} />
@@ -107,10 +107,10 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             <WordCard word={myWord} />
 
             <div className="flex gap-3 w-full">
-              <Button variant="success" onClick={() => dispatch({ type: "GUESS_CORRECT", playerId })}>
+              <Button variant="success" sound="correct" onClick={() => dispatch({ type: "GUESS_CORRECT", playerId })}>
                 {t("playing.correctButton")}
               </Button>
-              <Button variant="ghost" onClick={() => dispatch({ type: "GUESS_WRONG", playerId })}>
+              <Button variant="ghost" sound="wrong" onClick={() => dispatch({ type: "GUESS_WRONG", playerId })}>
                 {t("playing.wrongButton")}
               </Button>
             </div>
@@ -141,10 +141,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
   if (state.phase === "resolution") {
     return (
       <div className="flex flex-col items-center gap-5 w-full">
-        <div className="motion-celebrate w-full rounded-[1.75rem] bg-game-who-am-i text-on-game-who-am-i px-5 py-6 flex flex-col items-center gap-2 shadow-[0_var(--edge-lg)_0_var(--color-edge-game-who-am-i)]">
-          <WhoPicto size={64} />
-          <h2 className="font-display text-3xl text-center">{t("resolution.title")}</h2>
-        </div>
+        <RoundOverBlock />
 
         <Scoreboard
           title={t("resolution.scoresTitle")}

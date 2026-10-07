@@ -17,6 +17,7 @@ import {
   type Orientation,
 } from "../placement";
 import { Button, WaitingState } from "@/components/ui";
+import { playCue } from "@/lib/feedback";
 import { BoardGrid, EMPTY_CELL } from "./BoardGrid";
 
 /** The "placing" phase. A side's captain drags each ship onto the board; a
@@ -123,6 +124,7 @@ export function Placement({
     }
     if (!nextShip || !ghostCells || !ghostValid || !setPrivateState) return;
     setPrivateState((prev) => ({ fleet: [...prev.fleet, { type: nextShip.type, cells: ghostCells }] }));
+    playCue("drop");
     setPreviewCell(null);
   };
 

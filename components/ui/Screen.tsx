@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "./Button";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { SoundToggle } from "./SoundToggle";
 
 export interface ScreenProps {
   displayName?: string;
@@ -58,17 +59,20 @@ export function Screen({
           ) : (
             <span className="font-display text-lg text-on-ground">{displayName}</span>
           )}
-          {onExit && (
-            <Button
-              variant="ghost"
-              fullWidth={false}
-              onClick={() => setConfirmingExit(true)}
-              aria-label={exitLabel}
-              className="px-4"
-            >
-              ✕
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <SoundToggle />
+            {onExit && (
+              <Button
+                variant="ghost"
+                fullWidth={false}
+                onClick={() => setConfirmingExit(true)}
+                aria-label={exitLabel}
+                className="px-4"
+              >
+                ✕
+              </Button>
+            )}
+          </div>
         </div>
       )}
       {/* BDR-0002 §1–2: the blue baseplate is the table, never a surface to

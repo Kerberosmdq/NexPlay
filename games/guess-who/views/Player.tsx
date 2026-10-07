@@ -117,7 +117,7 @@ export function PlayerView({ state, players, playerId, dispatch, privateState, s
 
     return (
       <div className="flex flex-col items-center gap-6 w-full">
-        <ResultBlock title={won ? t("youWon") : t("youLost")} />
+        <ResultBlock title={won ? t("youWon") : t("youLost")} cue={won ? "win" : "lose"} />
 
         <div className="flex gap-6 justify-center flex-wrap">
           <div className="flex flex-col items-center gap-2">

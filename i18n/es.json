@@ -59,7 +59,10 @@
     "howToPlayCloseButton": "Entendido",
     "playersRange": "{min}–{max} jugadores",
     "playersExact": "{n} jugadores",
-    "needsSeveralPhones": "Necesita varios teléfonos"
+    "needsSeveralPhones": "Necesita varios teléfonos",
+    "soundToggleLabel": "Sonido y vibración",
+    "soundOn": "Sonido y vibración: activados",
+    "soundOff": "Sonido y vibración: apagados"
   },
   "games": {
     "impostor": {

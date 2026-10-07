@@ -15,7 +15,7 @@ import {
   type PlatformAction,
 } from "@/lib/realtime/platformReducer";
 import { recordEvent, recordGameResult } from "@/lib/analytics";
-import { Button, WaitingState } from "@/components/ui";
+import { Button, WaitingState, PhaseTransition } from "@/components/ui";
 
 /** Fisher-Yates — `Math.random()` stays out of the reducer, same rule as
  * `games/battleship/placement.ts`'s `randomFleetPlacement`; the shuffled
@@ -267,15 +267,17 @@ export function MultiDeviceRoom({ roomCode, userId, displayName, role }: MultiDe
         canContinue={isHost}
         onContinue={handleContinueAfterMatch}
       />
-      <View
-        state={gameState.gameState}
-        players={players}
-        playerId={userId}
-        roomCode={roomCode}
-        dispatch={gameDispatch}
-        privateState={privateState}
-        setPrivateState={setPrivateState}
-      />
+      <PhaseTransition phaseKey={String((gameState.gameState as { phase?: string } | null)?.phase ?? "")}>
+        <View
+          state={gameState.gameState}
+          players={players}
+          playerId={userId}
+          roomCode={roomCode}
+          dispatch={gameDispatch}
+          privateState={privateState}
+          setPrivateState={setPrivateState}
+        />
+      </PhaseTransition>
     </div>
   );
 }

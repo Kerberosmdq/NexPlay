@@ -7,7 +7,7 @@ import type { WhoAmIState, WhoAmIAction } from "../reducer";
 import { pickAssignments, pickReplacementWord } from "../pickRound";
 import { Button, Scoreboard } from "@/components/ui";
 import { loadFamilyRoster, prefillNames, rememberFamilyNames } from "@/lib/family/roster";
-import { GuessIcon, RoundClock, TimerPicker, WordCard, formatTime } from "./parts";
+import { GuessIcon, RoundClock, TimerPicker, WordCard, formatTime, RoundOverBlock } from "./parts";
 import { ForeheadPicto, WhoPicto } from "./Pictos";
 
 export interface WhoAmISingleDeviceProps {
@@ -167,7 +167,10 @@ export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
 
     return (
       <div className="flex flex-col items-center gap-5 w-full text-center">
-        <RoundClock label={state.timerSeconds <= 0 ? "∞" : formatTime(turnSecondsLeft)} />
+        <RoundClock
+          label={state.timerSeconds <= 0 ? "∞" : formatTime(turnSecondsLeft)}
+          secondsLeft={state.timerSeconds <= 0 ? null : turnSecondsLeft}
+        />
 
         <p className="text-lg font-bold text-ink-muted">{t("singleDevice.holdFor", { name })}</p>
 
@@ -176,6 +179,7 @@ export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
         <div className="flex gap-3 w-full">
           <Button
             variant="success"
+            sound="correct"
             onClick={() => {
               if (current) dispatch({ type: "GUESS_CORRECT", playerId: current.id });
               nextTurn();
@@ -185,6 +189,7 @@ export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
           </Button>
           <Button
             variant="ghost"
+            sound="wrong"
             onClick={() => {
               if (current) dispatch({ type: "GUESS_WRONG", playerId: current.id });
               nextTurn();
@@ -213,10 +218,7 @@ export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
   if (state.phase === "resolution") {
     return (
       <div className="flex flex-col items-center gap-5 w-full">
-        <div className="motion-celebrate w-full rounded-[1.75rem] bg-game-who-am-i text-on-game-who-am-i px-5 py-6 flex flex-col items-center gap-2 shadow-[0_var(--edge-lg)_0_var(--color-edge-game-who-am-i)]">
-          <WhoPicto size={64} />
-          <h2 className="font-display text-3xl text-center">{t("resolution.title")}</h2>
-        </div>
+        <RoundOverBlock />
         <Scoreboard
           title={t("resolution.scoresTitle")}
           entries={roundPlayers.map((p) => {

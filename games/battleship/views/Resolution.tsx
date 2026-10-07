@@ -3,7 +3,8 @@
 import { useTranslations } from "next-intl";
 import type { BattleshipAction, BattleshipSide, BattleshipState } from "../reducer";
 import { shipTypeAt } from "../placement";
-import { Button, Picto, WaitingState } from "@/components/ui";
+import { Button, Picto, ToyConfetti, WaitingState } from "@/components/ui";
+import { useCueOnMount } from "@/lib/feedback/react";
 import { BoardGrid, EMPTY_CELL } from "./BoardGrid";
 
 /** An anchor: the game's pictogram for the end of a match. */
@@ -35,10 +36,12 @@ export function Resolution({
   const won = state.winner === mySide;
   const loserSide = state.winner ? (state.winner === "A" ? "B" : "A") : null;
   const revealedFleet = loserSide ? state.revealedFleets[loserSide] : undefined;
+  useCueOnMount(won ? "win" : "lose");
 
   return (
     <div className="flex flex-col items-center gap-6 w-full">
       <div className="motion-celebrate w-full rounded-[1.75rem] bg-water text-on-water px-5 py-6 flex flex-col items-center gap-2 shadow-[0_var(--edge-lg)_0_var(--color-edge-ground)]">
+        {won && <ToyConfetti />}
         <AnchorPicto size={64} />
         <h2 className="font-display text-3xl text-center leading-tight">
           {won ? t("resolution.youWon") : t("resolution.youLost")}

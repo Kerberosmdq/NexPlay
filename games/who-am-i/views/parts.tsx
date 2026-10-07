@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { KeyRow } from "@/components/ui";
+import { KeyRow, ToyConfetti } from "@/components/ui";
+import { playCue } from "@/lib/feedback";
+import { useCueOnMount } from "@/lib/feedback/react";
 import type { WhoAmIWord } from "../content/types";
-import { GotItPicto, MissedPicto } from "./Pictos";
+import { GotItPicto, MissedPicto, WhoPicto } from "./Pictos";
 
 /** Pieces shared by the multi-device (`Player.tsx`) and pass-and-play
  * (`SingleDevice.tsx`) views, so both read as the same game (BDR-0002). */
@@ -44,8 +47,12 @@ export function WordCard({ word }: { word?: WhoAmIWord }) {
   );
 }
 
-/** The round clock, as a dark display with tabular digits. */
-export function RoundClock({ label }: { label: string }) {
+/** The round clock, as a dark display with tabular digits. It ticks
+ * through the last five seconds (M6.5 phase 3). */
+export function RoundClock({ label, secondsLeft }: { label: string; secondsLeft?: number | null }) {
+  useEffect(() => {
+    if (secondsLeft != null && secondsLeft > 0 && secondsLeft <= 5) playCue("tick");
+  }, [secondsLeft]);
   return (
     <div className="font-mono text-3xl font-bold tabular-nums text-on-ground bg-ink rounded-2xl px-6 py-2 shadow-[0_var(--edge-sm)_0_var(--color-edge-ground)]">
       {label}
@@ -82,5 +89,19 @@ export function GuessIcon({ guessed }: { guessed: boolean }) {
     <GotItPicto size={28} className="text-success shrink-0" />
   ) : (
     <MissedPicto size={28} className="text-action-danger shrink-0" />
+  );
+}
+
+/** The end of a round: a yellow block with the game's pictogram, a short
+ * fanfare and a burst of toy confetti. */
+export function RoundOverBlock() {
+  const t = useTranslations("WhoAmI");
+  useCueOnMount("win");
+  return (
+    <div className="motion-celebrate w-full rounded-[1.75rem] bg-game-who-am-i text-on-game-who-am-i px-5 py-6 flex flex-col items-center gap-2 shadow-[0_var(--edge-lg)_0_var(--color-edge-game-who-am-i)]">
+      <ToyConfetti />
+      <WhoPicto size={64} />
+      <h2 className="font-display text-3xl text-center">{t("resolution.title")}</h2>
+    </div>
   );
 }

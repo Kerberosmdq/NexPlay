@@ -28,6 +28,7 @@ export function KeyRow<T extends string | number>({
             variant="secondary"
             active={option.value === value}
             disabled={option.disabled}
+            sound="select"
             onClick={() => onChange(option.value)}
             className="flex-1 min-w-0 !px-1 text-base !mb-0"
           >

@@ -43,6 +43,7 @@ export function PlayerView({ state, players, playerId, dispatch }: PlayerProps) 
         <ResultBlock
           winnerSide={state.isDraw ? null : (state.winnerSide as Connect4Side)}
           title={state.isDraw ? t("draw") : won ? t("youWon") : t("youLost")}
+          cue={state.isDraw ? "pop" : won ? "win" : "lose"}
         />
 
         <Board

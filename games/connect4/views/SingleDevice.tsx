@@ -105,6 +105,7 @@ export function SingleDeviceView({ state, dispatch }: Connect4SingleDeviceProps)
       <div className="flex flex-col items-center gap-6 w-full">
         <ResultBlock
           winnerSide={state.isDraw ? null : (state.winnerSide as Connect4Side)}
+          cue={state.isDraw ? "pop" : "win"}
           title={
             state.isDraw
               ? t("draw")

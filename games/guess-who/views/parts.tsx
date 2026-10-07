@@ -2,7 +2,9 @@
 
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { Picto, type PictoProps } from "@/components/ui";
+import { Picto, ToyConfetti, type PictoProps } from "@/components/ui";
+import type { FeedbackCue } from "@/lib/feedback";
+import { useCueOnMount } from "@/lib/feedback/react";
 import { GUESS_WHO_CHARACTERS } from "../content/characters";
 import { CharacterCard } from "./CharacterCard";
 
@@ -55,6 +57,7 @@ export function CharacterBoard({
             key={character.id}
             character={character}
             crossedOut={crossedOut.has(character.id)}
+            sound={guessing ? "select" : "flip"}
             onClick={disabled ? undefined : () => onCardClick(character.id)}
           />
         ))}
@@ -72,9 +75,20 @@ export function toggleCrossedOut(prev: Set<string>, characterId: string): Set<st
 }
 
 /** The end of a match as a purple plastic block. */
-export function ResultBlock({ title, children }: { title: string; children?: ReactNode }) {
+export function ResultBlock({
+  title,
+  cue = "win",
+  children,
+}: {
+  title: string;
+  /** "win" (with confetti) for the winner's screen, "lose" on the loser's. */
+  cue?: FeedbackCue;
+  children?: ReactNode;
+}) {
+  useCueOnMount(cue);
   return (
     <div className="motion-celebrate w-full rounded-[1.75rem] bg-game-guess-who text-on-game-guess-who px-5 py-6 flex flex-col items-center gap-2 shadow-[0_var(--edge-lg)_0_var(--color-edge-game-guess-who)]">
+      {cue === "win" && <ToyConfetti />}
       <FacePicto size={64} />
       <h2 className="font-display text-3xl text-center leading-tight">{title}</h2>
       {children}

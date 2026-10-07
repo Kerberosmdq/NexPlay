@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { playCue } from "@/lib/feedback";
 
 export interface RevealCardProps {
   hidden: ReactNode;
@@ -26,6 +27,7 @@ export function RevealCard({ hidden, revealed, className = "", onReveal }: Revea
 
   const open = () => {
     setIsRevealed(true);
+    playCue("pop");
     onReveal?.();
   };
   const close = () => setIsRevealed(false);

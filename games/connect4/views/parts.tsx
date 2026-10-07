@@ -1,4 +1,9 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { ToyConfetti } from "@/components/ui";
+import type { FeedbackCue } from "@/lib/feedback";
+import { useCueOnMount } from "@/lib/feedback/react";
 import type { Connect4Side } from "../reducer";
 
 /** BDR-0002 pieces shared by both Connect 4 views. */
@@ -58,9 +63,20 @@ export function TurnBanner({ side, children }: { side: Connect4Side; children: R
 
 /** The end of a match as a plastic block: the winner's token (or both, for
  * a draw) on the game's green. */
-export function ResultBlock({ winnerSide, title }: { winnerSide: Connect4Side | null; title: string }) {
+export function ResultBlock({
+  winnerSide,
+  title,
+  cue = "win",
+}: {
+  winnerSide: Connect4Side | null;
+  title: string;
+  /** "win" for whoever won, "lose" on the losing device, "pop" for a draw. */
+  cue?: FeedbackCue;
+}) {
+  useCueOnMount(cue);
   return (
     <div className="motion-celebrate w-full rounded-[1.75rem] bg-game-connect4 text-on-game-connect4 px-5 py-6 flex flex-col items-center gap-3 shadow-[0_var(--edge-lg)_0_var(--color-edge-game-connect4)]">
+      {cue === "win" && <ToyConfetti />}
       <div className="flex gap-2">
         {(winnerSide ? [winnerSide] : (["A", "B"] as Connect4Side[])).map((side) => (
           <div key={side} className="w-14 h-14">

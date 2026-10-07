@@ -286,7 +286,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
   if (state.phase === "guess_word") {
     return (
       <div className="flex flex-col items-center gap-6 w-full">
-        <OutcomeBlock tone="impostor" picto={<MaskPicto size={72} />} title={t("guessWord.title")}>
+        <OutcomeBlock tone="impostor" cue="pop" picto={<MaskPicto size={72} />} title={t("guessWord.title")}>
           <p className="text-lg font-semibold">
             {isImpostor ? t("guessWord.impostorPrompt") : t("guessWord.innocentsPrompt")}
           </p>
@@ -320,13 +320,13 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
     return (
       <div className="flex flex-col items-center gap-5 w-full">
         {impostorSurvived ? (
-          <OutcomeBlock tone="impostor" picto={<CrownPicto size={64} />} title={t("resolution.impostorSurvived")}>
+          <OutcomeBlock tone="impostor" confetti picto={<CrownPicto size={64} />} title={t("resolution.impostorSurvived")}>
             <p className="text-lg font-semibold">{t("resolution.survivedCelebration", { names: impostorNames })}</p>
           </OutcomeBlock>
         ) : res?.impostorGuessedWord ? (
-          <OutcomeBlock tone="impostor" picto={<MaskPicto size={72} />} title={t("resolution.impostorStoleVictory")} />
+          <OutcomeBlock tone="impostor" confetti picto={<MaskPicto size={72} />} title={t("resolution.impostorStoleVictory")} />
         ) : (
-          <OutcomeBlock tone="innocent" picto={<StarPicto size={64} />} title={t("resolution.innocentVictory")} />
+          <OutcomeBlock tone="innocent" confetti picto={<StarPicto size={64} />} title={t("resolution.innocentVictory")} />
         )}
 
         <p className="text-lg text-ink-muted text-center">

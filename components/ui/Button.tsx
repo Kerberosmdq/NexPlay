@@ -2,6 +2,7 @@
 
 import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { playCue, type FeedbackCue } from "@/lib/feedback";
 
 export type ButtonVariant = "primary" | "secondary" | "success" | "danger" | "ghost";
 
@@ -10,6 +11,9 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Toggle-style rendering (e.g. a segmented mode switch), not a size. */
   active?: boolean;
   fullWidth?: boolean;
+  /** The sound + vibration this button makes when pressed (M6.5 phase
+   * 3). Defaults to a plastic click; `null` for silence. */
+  sound?: FeedbackCue | null;
   children: ReactNode;
 }
 
@@ -42,7 +46,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
  * function component would make React reject the ref.
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = "primary", active, fullWidth = true, className = "", children, ...rest },
+  { variant = "primary", active, fullWidth = true, sound = "press", className = "", children, onPointerDown, ...rest },
   ref
 ) {
   const variantClasses =
@@ -57,6 +61,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         fullWidth ? "w-full" : ""
       } ${className}`}
       aria-pressed={typeof active === "boolean" ? active : undefined}
+      // On press, not on click: the click lands when the piece comes back
+      // up, but the sound belongs to the moment it goes down.
+      onPointerDown={(e) => {
+        if (sound && !rest.disabled) playCue(sound);
+        onPointerDown?.(e);
+      }}
       {...rest}
     >
       {children}

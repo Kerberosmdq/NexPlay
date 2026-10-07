@@ -14,3 +14,6 @@ export { Dialog, type DialogProps } from "./Dialog";
 export { NexMark, type NexMarkProps } from "./NexMark";
 export { Picto, type PictoProps } from "./Picto";
 export { KeyRow } from "./KeyRow";
+export { SoundToggle } from "./SoundToggle";
+export { ToyConfetti } from "./ToyConfetti";
+export { PhaseTransition } from "./PhaseTransition";

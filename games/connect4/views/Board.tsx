@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { playCue } from "@/lib/feedback";
 import { lowestEmptyRow, COLUMNS, ROWS, type Cell } from "../winCheck";
 import type { Connect4Side } from "../reducer";
 
@@ -34,7 +35,10 @@ export function Board({ cells, turnSide, winningLine, resolved, disabled, onColu
   useEffect(() => {
     const prev = prevCellsRef.current;
     const changedIndex = cells.findIndex((cell, i) => cell !== null && prev[i] === null);
-    if (changedIndex >= 0) setJustPlacedIndex(changedIndex);
+    if (changedIndex >= 0) {
+      setJustPlacedIndex(changedIndex);
+      playCue("drop");
+    }
     prevCellsRef.current = cells;
   }, [cells]);
 
@@ -86,10 +90,17 @@ export function Board({ cells, turnSide, winningLine, resolved, disabled, onColu
                     <div
                       className={
                         "absolute inset-0.5 " +
-                        (isLastMove ? "motion-strike " : "") +
+                        (isLastMove ? "motion-drop " : "") +
                         (isWinning ? "motion-celebrate " : "")
                       }
-                      style={{ opacity: !resolved || isWinning ? 1 : 0.35 }}
+                      // The disc falls from above the top row down to where
+                      // it lands, and bounces (M6.5 phase 3).
+                      style={
+                        {
+                          opacity: !resolved || isWinning ? 1 : 0.35,
+                          "--drop-rows": row + 1,
+                        } as React.CSSProperties
+                      }
                     >
                       {/* The last disc dropped carries a dot, so the player
                           whose turn it is can see what the other just did. */}

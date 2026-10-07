@@ -22,7 +22,7 @@ import {
   type RoomSession,
 } from "@/lib/realtime/session";
 import { useWakeLock } from "@/lib/hooks/useWakeLock";
-import { Button, Screen } from "@/components/ui";
+import { Button, PhaseTransition, Screen } from "@/components/ui";
 import { HowToPlayButton } from "@/components/platform/HowToPlay";
 import { GameIcon, gameBlockClasses } from "@/components/platform/GameIcon";
 
@@ -293,7 +293,11 @@ function SingleDeviceGamePicker({
         canContinue={true}
         onContinue={() => dispatch({ type: "PLATFORM_RETURN_LOBBY" })}
       />
-      <View state={platformState.gameState} players={[]} dispatch={gameDispatch} onExit={onExit} />
+      {/* Every game state carries a `phase`; the platform reads it only to
+          know when to play the screen-change slide. */}
+      <PhaseTransition phaseKey={String((platformState.gameState as { phase?: string } | null)?.phase ?? "")}>
+        <View state={platformState.gameState} players={[]} dispatch={gameDispatch} onExit={onExit} />
+      </PhaseTransition>
     </div>
   );
 }

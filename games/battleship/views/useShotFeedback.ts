@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { BattleshipSide, BattleshipState, CellResult } from "../reducer";
+import { playCue } from "@/lib/feedback";
 
 export interface ShotAnnouncement {
   text: string;
@@ -90,6 +91,9 @@ export function useShotFeedback(state: BattleshipState, mySide: BattleshipSide |
       sunk: Boolean(sunkType),
       shipType: sunkType,
     });
+    // Sound + vibration follow the same outcome the banner names (M6.5
+    // phase 3): a splash, a hit, or a ship going down.
+    playCue(sunkType ? "sunk" : hits > 0 ? "hit" : "miss");
     strikeTimerRef.current = setTimeout(() => {
       setStrikeCells(new Set());
       setAnnouncement(null);

@@ -2,7 +2,9 @@
 
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { KeyRow } from "@/components/ui";
+import { KeyRow, ToyConfetti } from "@/components/ui";
+import type { FeedbackCue } from "@/lib/feedback";
+import { useCueOnMount } from "@/lib/feedback/react";
 import type { ImpostorState } from "../reducer";
 import { MaskPicto, BubblePicto, TiePicto, OopsPicto } from "./Pictos";
 
@@ -106,13 +108,20 @@ export function OutcomeBlock({
   tone,
   picto,
   title,
+  cue = "win",
+  confetti = false,
   children,
 }: {
   tone: "impostor" | "innocent" | "neutral";
   picto: ReactNode;
   title: string;
+  /** Sound + vibration when the block appears (M6.5 phase 3). */
+  cue?: FeedbackCue | null;
+  /** Throw toy confetti — for the end of a round, not mid-round news. */
+  confetti?: boolean;
   children?: ReactNode;
 }) {
+  useCueOnMount(cue);
   const toneClasses = {
     impostor: "bg-game-impostor text-on-game-impostor shadow-[0_var(--edge-lg)_0_var(--color-edge-game-impostor)]",
     innocent: "bg-success text-on-success shadow-[0_var(--edge-lg)_0_var(--color-edge-success)]",
@@ -120,6 +129,7 @@ export function OutcomeBlock({
   }[tone];
   return (
     <div className={`motion-celebrate w-full rounded-[1.75rem] px-5 py-6 flex flex-col items-center gap-3 text-center ${toneClasses}`}>
+      {confetti && <ToyConfetti />}
       {picto}
       <h2 className="font-display text-3xl leading-tight">{title}</h2>
       {children}
@@ -137,12 +147,13 @@ export function EliminationOutcome({
 }) {
   const t = useTranslations("Impostor");
   if (!elimination?.eliminatedId) {
-    return <OutcomeBlock tone="neutral" picto={<TiePicto size={64} />} title={t("eliminationResult.tie")} />;
+    return <OutcomeBlock tone="neutral" cue="pop" picto={<TiePicto size={64} />} title={t("eliminationResult.tie")} />;
   }
   if (elimination.wasImpostor) {
     return (
       <OutcomeBlock
         tone="impostor"
+        cue="correct"
         picto={<MaskPicto size={72} />}
         title={t("eliminationResult.wasImpostor", { name })}
       >
@@ -151,7 +162,7 @@ export function EliminationOutcome({
     );
   }
   return (
-    <OutcomeBlock tone="neutral" picto={<OopsPicto size={64} />} title={t("eliminationResult.wasInnocent", { name })}>
+    <OutcomeBlock tone="neutral" cue="wrong" picto={<OopsPicto size={64} />} title={t("eliminationResult.wasInnocent", { name })}>
       <p className="text-lg text-ink-muted font-semibold">{t("eliminationResult.gameContinues")}</p>
     </OutcomeBlock>
   );
