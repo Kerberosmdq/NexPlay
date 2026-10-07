@@ -5,8 +5,8 @@ Living status document tracking the current sprint, objectives, completed tasks,
 ## Current Sprint
 - Sprint: Sprint 19 - M6.5 redesign (Juguetería). Phase 1 (`TASK-0039`, UX
   flow fixes, PR #61), phase 0 (`TASK-0040`, `BDR-0002`, PR #62) and phase
-  2a (`TASK-0041`, shared visual system, on `feat/jugueteria-primitives`)
-  done; phase 2b (per-game restyles) next.
+  2a (`TASK-0041`, shared visual system, PR #63) done; phase 2b under way —
+  Impostor done (`TASK-0042`, on `feat/jugueteria-impostor`).
 - Previous sprint: Sprint 18 - M5 (Connect 4) and M6 (Guess Who) shipped,
   plus a platform UX hotfix
 - Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
@@ -1043,6 +1043,15 @@ race game).
       picker and waiting lobby restyled. Game views only got class swaps
       the new palette required; their own restyle is phase 2b.
 
+- [x] **TASK-0042**: Impostor restyled on the Juguetería system (M6.5
+      phase 2b, game 1 of 5): nested cards removed, emoji replaced by its
+      own pictograms, toy key rows instead of `<select>`s, outcomes as
+      colored plastic blocks, shared pieces in `views/parts.tsx`. **Fixed a
+      privacy leak**: in single-device mode the shared discussion screen
+      showed the impostor's tip whenever the impostor spoke, outing them
+      to the table — now one neutral tip for everyone, guarded by the
+      single-device e2e spec.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -1051,8 +1060,8 @@ race game).
 
 ## Next Task
 - **Redesign, continued** (founder's current priority, ahead of M7's
-  remaining items and new games): phase 2b (restyle each game's own views,
-  one task per game) and phase 3 (motion, sound, haptics) of M6.5. See
+  remaining items and new games): phase 2b for the remaining games (Who Am I,
+  Connect 4, Guess Who, Battleship — one task each) and phase 3 (motion, sound, haptics) of M6.5. See
   `HANDOFF.md` → "Context: the redesign this task opens".
 - After that: **M7 — Presentable**, or the two remaining entries in
   `BACKLOG.md`'s prioritized games list (Ludo, a dice-and-track race game).
@@ -1067,4 +1076,4 @@ race game).
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-10-07 (TASK-0041: Juguetería shared visual system; TASK-0040; TASK-0039)
+- 2026-10-07 (TASK-0042: Impostor on Juguetería; TASK-0041; TASK-0040; TASK-0039)

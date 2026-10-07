@@ -3,16 +3,42 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: `TASK-0041` — M6.5 phase 2a.
-- **Title**: Juguetería visual system at the shared layer — tokens, fonts,
-  primitives, brand mark, icons, and the platform screens.
-- **Previous tasks**: `TASK-0040` (`BDR-0002`, PR #62) and `TASK-0039`
-  (UX flow fixes, PR #61). Their notes are kept below.
+- **Task ID**: `TASK-0042` — M6.5 phase 2b, game 1 of 5.
+- **Title**: Impostor restyled on the Juguetería system, plus a single-device
+  privacy fix.
+- **Previous tasks**: `TASK-0041` (shared visual system, PR #63),
+  `TASK-0040` (`BDR-0002`, PR #62), `TASK-0039` (UX flow fixes, PR #61).
+  Their notes are kept below.
 
 ## Current Branch
-- `feat/jugueteria-primitives`, stacked on `docs/bdr-0002-jugueteria`
-  (PR #62), itself stacked on `feat/ux-flow-fixes` (PR #61). Merge order:
-  #61 → #62 → this one; GitHub retargets each to `main` as its base merges.
+- `feat/jugueteria-impostor`, stacked on `feat/jugueteria-primitives`
+  (PR #63) → #62 → #61. Merge order: #61 → #62 → #63 → this one.
+
+## What TASK-0042 changed
+- `games/impostor/views/Pictos.tsx` (new): the game's own pictograms (mask,
+  bubble, ballot, tie, check, crown, worried face, star, pass-the-phone),
+  replacing every emoji.
+- `games/impostor/views/parts.tsx` (new): pieces both views share — toy
+  key rows for impostor count and clue difficulty (replacing `<select>`s),
+  the capsule's closed label and revealed content, colored outcome blocks,
+  the elimination outcome.
+- `Player.tsx` / `SingleDevice.tsx`: nested `Card`s removed (Screen's tray
+  is the panel), outcome blocks, two-column voting keys, secondary buttons
+  for "Ir a votación" / "Falló", pass-the-phone pictogram on handoffs,
+  "Vota {name}" on single-device voting.
+- **Privacy fix (single-device discussion):** the shared screen showed
+  `discussion.impostorTip` whenever the impostor was the speaker. Now every
+  speaker gets `discussion.speakerTip`. The single-device e2e spec walks all
+  three turns and asserts the impostor tip never appears.
+- `PlayerChip` roster pill is now a raised white piece (sits in a sunken
+  roster tray).
+- i18n: emoji removed from `eliminationResult.*`; new short clue labels,
+  `needsPlayersHint`, `speakerTip`, `voterTurn`. The old
+  `games.impostor.config.needsPlayers` key is now unused (kept, harmless).
+
+## Warnings (TASK-0042)
+- Multi-device Impostor was restyled but not seen live (Supabase doesn't
+  resolve from the dev machine) — same caveat as #63.
 
 ## What TASK-0041 changed
 - **Tokens** (`app/tokens.css`): `BDR-0002`'s palette under the existing
@@ -91,7 +117,8 @@ to C on 2026-10-07), and asked to start with phase 1. Phases:
 - **Phase 1 — UX flow fixes** (`TASK-0039`, PR #61). Done.
 - **Phase 0 — `BDR-0002`**, `FEEL.md`, `ADR-0004` 1.1.0 (`TASK-0040`). Done.
 - **Phase 2a — shared visual system** (`TASK-0041`). Done.
-- **Phase 2b — per-game restyles**, one task per game. Next.
+- **Phase 2b — per-game restyles**, one task per game. Impostor done
+  (`TASK-0042`); four to go.
 - **Phase 3 — motion, sound, haptics** (phase transitions, toy-physics
   gestures, a plastic Web Audio kit with mute, `navigator.vibrate` on
   Android).
@@ -186,6 +213,6 @@ fixed in the source, left over from a mid-edit HMR pass.
 - Ludo and the dice-and-track race game from `BACKLOG.md` (carried forward).
 
 ## Next Suggested Task
-- M6.5 phase 2b — restyle each game's own views on the new primitives, one
-  task per game. Suggested order: Impostor (the capsule's main user), Who
-  Am I, Connect 4, Guess Who, Battleship (split its 1105-line view first).
+- M6.5 phase 2b — next game: Who Am I (its handoff/forehead flow pairs
+  naturally with Impostor's pieces), then Connect 4, Guess Who, Battleship
+  (split its 1105-line view first).
