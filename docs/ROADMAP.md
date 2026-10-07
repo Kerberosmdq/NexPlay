@@ -565,7 +565,8 @@ molded plastic toy), superseding `BDR-0001`.
     (`TASK-0042`, which also fixed a single-device privacy leak in the
     discussion phase), Who Am I (`TASK-0043`), Connect 4 (`TASK-0044`) and
     Guess Who (`TASK-0045`, which also gave each single-device player their
-    own board) done; Battleship next.
+    own board) and Battleship (`TASK-0046`, split out of one 1105-line
+    view, built on PR #60) done — **phase 2 complete**.
 - **Phase 3 — motion, sound, haptics:** phase transitions, toy-physics
   gestures, a plastic sound kit with mute, vibration on Android.
 

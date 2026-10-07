@@ -7,8 +7,9 @@ Living status document tracking the current sprint, objectives, completed tasks,
   flow fixes, PR #61), phase 0 (`TASK-0040`, `BDR-0002`, PR #62) and phase
   2a (`TASK-0041`, shared visual system, PR #63) done; phase 2b under way —
   Impostor (`TASK-0042`, PR #64), Who Am I (`TASK-0043`, PR #65) and
-  Connect 4 (`TASK-0044`, PR #66) and Guess Who (`TASK-0045`, on
-  `feat/jugueteria-guess-who`) done.
+  Connect 4 (`TASK-0044`, PR #66), Guess Who (`TASK-0045`, PR #67) and
+  Battleship (`TASK-0046`, on `feat/jugueteria-battleship`) done — phase 2
+  complete; phase 3 (motion, sound, haptics) next.
 - Previous sprint: Sprint 18 - M5 (Connect 4) and M6 (Guess Who) shipped,
   plus a platform UX hotfix
 - Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
@@ -1140,6 +1141,14 @@ race game).
       by name), and guessing uses the board's owner, removing the
       "who is guessing?" step.
 
+- [x] **TASK-0046**: Battleship split into focused files (BoardGrid,
+      useShotFeedback, TeamSetup, Placement, Firing, Resolution; Player.tsx
+      down from 1105 to 160 lines) with behavior unchanged, and restyled on
+      the Juguetería system (navy plastic board with white peg holes).
+      Built on PR #60, merged into the branch first. The multi-device e2e
+      passes against real Supabase. Also fixed the e2e room-code selector
+      that the #63 lobby restyle had broken (propagated through #63–#67).
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -1148,8 +1157,9 @@ race game).
 
 ## Next Task
 - **Redesign, continued** (founder's current priority, ahead of M7's
-  remaining items and new games): phase 2b for the last game, Battleship (split
-  its 1105-line view first) and phase 3 (motion, sound, haptics) of M6.5. See
+  remaining items and new games): phase 3 of M6.5 — motion, sound and haptics
+  (phase transitions, toy-physics gestures, a plastic sound kit with mute,
+  vibration on Android) and phase 3 (motion, sound, haptics) of M6.5. See
   `HANDOFF.md` → "Context: the redesign this task opens".
 - After that: **M7 — Presentable**, or the two remaining entries in
   `BACKLOG.md`'s prioritized games list (Ludo, a dice-and-track race game).
@@ -1164,4 +1174,4 @@ race game).
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-10-07 (TASK-0045: Guess Who on Juguetería; TASK-0044; TASK-0043; TASK-0042; TASK-0041; TASK-0040; TASK-0039)
+- 2026-10-07 (TASK-0046: Battleship split + Juguetería; TASK-0045 back to TASK-0039)
