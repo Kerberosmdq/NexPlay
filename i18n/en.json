@@ -374,9 +374,12 @@
       "selectingGateTitle": "Choose your secret character",
       "selectingGateButton": "It's me, choose my character",
       "dontLetOthersLook": "Don't let anyone else see your screen!",
-      "whoIsGuessing": "Who's guessing?",
       "wins": "{name} wins!",
-      "bothNamesHint": "Type both names to start."
-    }
+      "bothNamesHint": "Type both names to start.",
+      "boardOwnerLabel": "Whose board is this?"
+    },
+    "remainingCount": "{n} left",
+    "guessHint": "Tap the character you think it is.",
+    "flipHint": "Tap a character to flip it down."
   }
 }

@@ -374,9 +374,12 @@
       "selectingGateTitle": "Elegí tu personaje secreto",
       "selectingGateButton": "Soy yo, elegir mi personaje",
       "dontLetOthersLook": "¡Que nadie más mire tu pantalla!",
-      "whoIsGuessing": "¿Quién está adivinando?",
       "wins": "¡Ganó {name}!",
-      "bothNamesHint": "Escribí los dos nombres para empezar."
-    }
+      "bothNamesHint": "Escribí los dos nombres para empezar.",
+      "boardOwnerLabel": "¿De quién es este tablero?"
+    },
+    "remainingCount": "Quedan {n}",
+    "guessHint": "Tocá el personaje que creés que es.",
+    "flipHint": "Tocá un personaje para darlo vuelta."
   }
 }

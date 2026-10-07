@@ -7,8 +7,9 @@ import type { GuessWhoState, GuessWhoAction, Side } from "../reducer";
 import { otherSide } from "../reducer";
 import { GUESS_WHO_CHARACTERS } from "../content/characters";
 import { CharacterCard } from "./CharacterCard";
-import { Button, Card, WaitingState, ConfirmDialog } from "@/components/ui";
+import { Button, KeyRow, WaitingState, ConfirmDialog } from "@/components/ui";
 import { loadFamilyRoster, prefillNames, rememberFamilyNames } from "@/lib/family/roster";
+import { CharacterBoard, FacePicto, ResultBlock, toggleCrossedOut } from "./parts";
 
 export interface GuessWhoSingleDeviceProps {
   state: GuessWhoState;
@@ -31,6 +32,8 @@ function characterById(id: string) {
   return GUESS_WHO_CHARACTERS.find((c) => c.id === id);
 }
 
+const EMPTY_BOARDS: Record<Side, Set<string>> = { A: new Set(), B: new Set() };
+
 export function SingleDeviceView({ state, dispatch }: GuessWhoSingleDeviceProps) {
   const t = useTranslations("GuessWho");
 
@@ -50,9 +53,14 @@ export function SingleDeviceView({ state, dispatch }: GuessWhoSingleDeviceProps)
   // side changes, so the next player gets their own privacy gate too.
   const [unlockedForPick, setUnlockedForPick] = useState(false);
   const [pendingPick, setPendingPick] = useState<string | null>(null);
-  const [crossedOut, setCrossedOut] = useState<Set<string>>(new Set());
+  // Each player keeps their own board of flipped-down cards, like the
+  // physical game's two boards. One shared set (what this used to be)
+  // mixed both players' eliminations together on a single grid.
+  const [crossedOut, setCrossedOut] = useState<Record<Side, Set<string>>>(EMPTY_BOARDS);
+  // Whose board is on screen. A guess is made from your own board, so it is
+  // also who is guessing — no separate "who is guessing?" step.
+  const [boardSide, setBoardSide] = useState<Side>("A");
   const [guessing, setGuessing] = useState(false);
-  const [guesserSide, setGuesserSide] = useState<Side | null>(null);
   const [guessCandidateId, setGuessCandidateId] = useState<string | null>(null);
 
   // This device plays both roles at once (there is no second device to
@@ -83,7 +91,8 @@ export function SingleDeviceView({ state, dispatch }: GuessWhoSingleDeviceProps)
     const canStart = validNames[0].length > 0 && validNames[1].length > 0;
 
     return (
-      <Card className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto">
+      <div className="flex flex-col items-center gap-6 w-full">
+        <FacePicto size={64} className="text-game-guess-who" />
         <h2 className="font-display text-3xl text-ink text-center">{t("title")}</h2>
 
         <div className="w-full space-y-3">
@@ -91,19 +100,20 @@ export function SingleDeviceView({ state, dispatch }: GuessWhoSingleDeviceProps)
             <input
               key={i}
               value={name}
+              aria-label={t("singleDevice.playerNamePlaceholder", { n: i + 1 })}
               onChange={(e) => {
                 const next: [string, string] = [...names];
                 next[i] = e.target.value;
                 setNames(next);
               }}
               placeholder={t("singleDevice.playerNamePlaceholder", { n: i + 1 })}
-              className="w-full bg-surface-sunken border-2 border-line text-ink p-3 rounded-xl font-semibold outline-none focus-visible:border-focus"
+              className="w-full bg-surface-sunken border-2 border-transparent text-ink text-xl px-5 py-3 rounded-2xl font-bold placeholder:text-ink-muted placeholder:font-semibold outline-none shadow-[inset_0_3px_0_var(--color-edge-sunken)] focus-visible:border-focus"
             />
           ))}
         </div>
 
         <div className="w-full space-y-2">
-          {!canStart && <p className="text-sm text-ink-muted text-center">{t("singleDevice.bothNamesHint")}</p>}
+          {!canStart && <p className="text-base text-ink-muted text-center">{t("singleDevice.bothNamesHint")}</p>}
           <Button
             variant="primary"
             disabled={!canStart}
@@ -113,16 +123,20 @@ export function SingleDeviceView({ state, dispatch }: GuessWhoSingleDeviceProps)
               setLocalPlayers(players);
               dispatch({ type: "START_MATCH", playerIds: [players[0].id, players[1].id] });
             }}
-            className="text-xl py-5"
+            className="text-2xl py-5"
           >
             {t("singleDevice.startButton")}
           </Button>
         </div>
-      </Card>
+      </div>
     );
   }
 
-  const nameOf = (side: Side): string => localPlayers.find((p) => p.id === state.sides[side])?.displayName ?? "";
+  // `localPlayers` is set when the match starts; if this view remounts mid-
+  // match it comes back empty. The ids are derived from the names, so
+  // rebuild them rather than losing every name on screen.
+  const knownPlayers = localPlayers.length > 0 ? localPlayers : makeLocalPlayers(names.map((n) => n.trim()));
+  const nameOf = (side: Side): string => knownPlayers.find((p) => p.id === state.sides[side])?.displayName ?? "";
 
   // Founder feedback (2026-07-28): each player now actively chooses their
   // own character instead of being handed a random one. Since single-device
@@ -137,11 +151,12 @@ export function SingleDeviceView({ state, dispatch }: GuessWhoSingleDeviceProps)
 
     if (!unlockedForPick) {
       return (
-        <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-4">
-          <p className="text-ink-muted font-bold uppercase tracking-widest text-sm">{nameOf(side)}</p>
-          <h2 className="font-display text-2xl text-ink text-center">{t("singleDevice.selectingGateTitle")}</h2>
-          <p className="text-xs text-ink-muted text-center">{t("singleDevice.dontLetOthersLook")}</p>
-          <Button variant="primary" onClick={() => setUnlockedForPick(true)} className="max-w-xs">
+        <div className="flex flex-col items-center gap-5 w-full text-center py-6">
+          <FacePicto size={72} className="text-game-guess-who" />
+          <p className="font-display text-2xl text-ink-muted">{nameOf(side)}</p>
+          <h2 className="font-display text-3xl text-ink leading-tight">{t("singleDevice.selectingGateTitle")}</h2>
+          <p className="text-lg text-ink-muted">{t("singleDevice.dontLetOthersLook")}</p>
+          <Button variant="primary" onClick={() => setUnlockedForPick(true)} className="text-xl">
             {t("singleDevice.selectingGateButton")}
           </Button>
         </div>
@@ -149,10 +164,10 @@ export function SingleDeviceView({ state, dispatch }: GuessWhoSingleDeviceProps)
     }
 
     return (
-      <div className="flex flex-col items-center space-y-6 w-full max-w-2xl mx-auto mt-4 px-4">
-        <p className="text-ink-muted font-bold uppercase tracking-widest text-sm">{nameOf(side)}</p>
-        <h2 className="font-display text-2xl text-ink text-center">{t("selectingTitle")}</h2>
-        <p className="text-sm text-ink-muted text-center">{t("selectingHint")}</p>
+      <div className="flex flex-col items-center gap-4 w-full">
+        <p className="font-display text-2xl text-ink-muted">{nameOf(side)}</p>
+        <h2 className="font-display text-3xl text-ink text-center">{t("selectingTitle")}</h2>
+        <p className="text-base text-ink-muted text-center">{t("selectingHint")}</p>
 
         <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 w-full">
           {GUESS_WHO_CHARACTERS.map((character) => (
@@ -174,7 +189,6 @@ export function SingleDeviceView({ state, dispatch }: GuessWhoSingleDeviceProps)
             setPendingPick(null);
             setUnlockedForPick(false);
           }}
-          className="max-w-xs"
         >
           {t("confirmCharacterButton")}
         </Button>
@@ -186,17 +200,15 @@ export function SingleDeviceView({ state, dispatch }: GuessWhoSingleDeviceProps)
     const winnerName = state.winnerSide ? nameOf(state.winnerSide) : "";
 
     return (
-      <div className="flex flex-col items-center space-y-6 w-full max-w-md mx-auto mt-4 px-4">
-        <h2 className="font-display text-4xl text-ink text-center leading-tight motion-celebrate">
-          {t("singleDevice.wins", { name: winnerName })}
-        </h2>
+      <div className="flex flex-col items-center gap-6 w-full">
+        <ResultBlock title={t("singleDevice.wins", { name: winnerName })} />
 
         <div className="flex gap-6 justify-center flex-wrap">
           {(["A", "B"] as Side[]).map((side) => {
             const charId = state.revealedCharacters[side];
             return (
               <div key={side} className="flex flex-col items-center gap-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-ink-muted">{nameOf(side)}</p>
+                <p className="text-base font-bold text-ink-muted">{nameOf(side)}</p>
                 {charId ? <CharacterCard character={characterById(charId)!} size="large" /> : <WaitingState label="..." />}
               </div>
             );
@@ -204,13 +216,14 @@ export function SingleDeviceView({ state, dispatch }: GuessWhoSingleDeviceProps)
         </div>
 
         <Button
-          variant="ghost"
+          variant="primary"
           onClick={() => {
             setAssignments(null);
             setUnlockedForPick(false);
             setPendingPick(null);
-            setCrossedOut(new Set());
-            setGuesserSide(null);
+            setCrossedOut(EMPTY_BOARDS);
+            setBoardSide("A");
+            setGuessing(false);
             dispatch({ type: "PLAY_AGAIN" });
           }}
         >
@@ -224,67 +237,41 @@ export function SingleDeviceView({ state, dispatch }: GuessWhoSingleDeviceProps)
   const guessPending = state.pendingGuess !== null;
 
   return (
-    <div className="flex flex-col items-center space-y-6 w-full max-w-2xl mx-auto mt-4 px-4">
-      <h2 className="font-display text-2xl text-ink text-center">{t("title")}</h2>
+    <div className="flex flex-col items-center gap-5 w-full">
+      <KeyRow
+        label={t("singleDevice.boardOwnerLabel")}
+        value={boardSide}
+        onChange={(side) => {
+          setBoardSide(side);
+          setGuessing(false);
+        }}
+        options={(["A", "B"] as Side[]).map((side) => ({ value: side, label: nameOf(side) }))}
+      />
+
+      <p className="text-lg font-bold text-ink text-center">
+        {t("askAloudHint", { name: nameOf(otherSide(boardSide)) })}
+      </p>
 
       {guessPending ? (
         <WaitingState label={t("resolvingGuess")} />
-      ) : guessing && guesserSide === null ? (
-        <div className="flex flex-col items-center gap-3">
-          <p className="text-sm text-ink-muted text-center">{t("singleDevice.whoIsGuessing")}</p>
-          <div className="flex gap-3">
-            <Button variant="secondary" fullWidth={false} onClick={() => setGuesserSide("A")}>
-              {nameOf("A")}
-            </Button>
-            <Button variant="secondary" fullWidth={false} onClick={() => setGuesserSide("B")}>
-              {nameOf("B")}
-            </Button>
-          </div>
-          <button onClick={() => setGuessing(false)} className="text-xs text-ink-muted underline">
-            {t("cancelGuessButton")}
-          </button>
-        </div>
       ) : (
-        <Button
-          variant={guessing ? "danger" : "secondary"}
-          fullWidth={false}
-          onClick={() => {
-            setGuessing((g) => !g);
-            setGuesserSide(null);
-          }}
-          className="px-8"
-        >
+        <Button variant={guessing ? "ghost" : "primary"} onClick={() => setGuessing((g) => !g)}>
           {guessing ? t("cancelGuessButton") : t("startGuessButton")}
         </Button>
       )}
 
-      <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 w-full">
-        {GUESS_WHO_CHARACTERS.map((character) => (
-          <CharacterCard
-            key={character.id}
-            character={character}
-            crossedOut={crossedOut.has(character.id)}
-            onClick={
-              guessPending
-                ? undefined
-                : () => {
-                    if (guessing && guesserSide) {
-                      setGuessCandidateId(character.id);
-                    } else if (!guessing) {
-                      setCrossedOut((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(character.id)) next.delete(character.id);
-                        else next.add(character.id);
-                        return next;
-                      });
-                    }
-                  }
-            }
-          />
-        ))}
-      </div>
+      <CharacterBoard
+        crossedOut={crossedOut[boardSide]}
+        guessing={guessing}
+        disabled={guessPending}
+        onCardClick={(characterId) => {
+          if (guessing) setGuessCandidateId(characterId);
+          else
+            setCrossedOut((prev) => ({ ...prev, [boardSide]: toggleCrossedOut(prev[boardSide], characterId) }));
+        }}
+      />
 
-      {guessCandidate && guesserSide && (
+      {guessCandidate && (
         <ConfirmDialog
           title={t("confirmGuessTitle")}
           message={t("confirmGuessMessage", { name: guessCandidate.name })}
@@ -292,7 +279,7 @@ export function SingleDeviceView({ state, dispatch }: GuessWhoSingleDeviceProps)
           cancelLabel={t("confirmGuessCancelButton")}
           onCancel={() => setGuessCandidateId(null)}
           onConfirm={() => {
-            dispatch({ type: "GUESS", guesserSide, characterId: guessCandidate.id });
+            dispatch({ type: "GUESS", guesserSide: boardSide, characterId: guessCandidate.id });
             setGuessCandidateId(null);
             setGuessing(false);
           }}
