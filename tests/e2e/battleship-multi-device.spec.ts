@@ -20,7 +20,9 @@ test("two players join a room, place fleets, and fire a shot in Battleship", asy
     await hostPage.getByPlaceholder("Ej. Mateo, Sofía, Papá").fill("Host");
     await hostPage.getByRole("button", { name: "Crear sala nueva" }).click();
 
-    const roomCode = await hostPage.locator(".font-mono.text-7xl").innerText();
+    // The code renders as a row of keycap tiles grouped under one accessible
+    // name (role="img", aria-label = the code), so read it from there.
+    const roomCode = (await hostPage.getByRole("img", { name: /^[A-Z]{4}$/ }).getAttribute("aria-label")) ?? "";
     expect(roomCode).toMatch(/^[A-Z]{4}$/);
 
     await guestPage.goto("/es");
