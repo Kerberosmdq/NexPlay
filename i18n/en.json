@@ -13,18 +13,18 @@
     "connecting": "Connecting to the room...",
     "connectionError": "Couldn't connect to the room.",
     "retryButton": "Retry",
-    "tagline": "Join the game!",
-    "multiDeviceButton": "Multi-device",
-    "singleDeviceButton": "1 Phone",
+    "tagline": "Games to play as a family",
+    "multiDeviceButton": "Several phones",
+    "singleDeviceButton": "One phone",
     "nameLabel": "Your name",
     "namePlaceholder": "E.g. Mateo, Sophie, Dad",
     "defaultHostName": "Host",
     "defaultPlayerName": "Player",
     "defaultSingleDeviceName": "Player 1",
-    "joinButton": "Join party",
-    "orCreateNew": "Or create a new one",
-    "createButton": "Create room",
-    "startSingleDeviceButton": "Start 1-phone mode",
+    "joinButton": "Join room",
+    "orCreateNew": "or create a new one",
+    "createButton": "Create new room",
+    "startSingleDeviceButton": "Start with one phone",
     "invalidCodeError": "Enter a 4-letter code (e.g. ABCD)",
     "exitLabel": "Exit",
     "copyCodeButton": "Copy code",
@@ -51,7 +51,15 @@
     "matchResolvedMessage": "Do you want to keep looking at the board, or continue?",
     "matchResolvedViewButton": "View board",
     "matchResolvedContinueButton": "Leave the match",
-    "matchResolvedWaitingHint": "Waiting for the host to continue"
+    "matchResolvedWaitingHint": "Waiting for the host to continue",
+    "backToGamesButton": "Games",
+    "backToGamesLabel": "Back to the games list",
+    "howToPlayButton": "How to play",
+    "howToPlayTitle": "How to play: {game}",
+    "howToPlayCloseButton": "Got it",
+    "playersRange": "{min}–{max} players",
+    "playersExact": "{n} players",
+    "needsSeveralPhones": "Needs several phones"
   },
   "games": {
     "impostor": {
@@ -65,6 +73,11 @@
         "hintHard": "Hard clue (word's category)",
         "hintEasy": "Easy clue (related word)",
         "needsPlayers": "{n} (needs {min}+ players)"
+      },
+      "howTo": {
+        "step1": "Everyone secretly checks their role: all share the same word, except the impostor.",
+        "step2": "Taking turns, each player says a related word. The impostor has to blend in.",
+        "step3": "Vote for who you think the impostor is. If caught, they can still win by guessing the word."
       }
     },
     "who-am-i": {
@@ -77,6 +90,11 @@
         "time7min": "7 minutes",
         "time10min": "10 minutes",
         "timeUnlimited": "No time limit"
+      },
+      "howTo": {
+        "step1": "Each player has a secret word that everyone can see except them.",
+        "step2": "Ask yes-or-no questions to work out your word.",
+        "step3": "When you think you know it, say it out loud. Guess right to score."
       }
     },
     "battleship": {
@@ -86,35 +104,55 @@
         "boardSize": "Board size",
         "boardSize8": "8x8 (fast)",
         "boardSize10": "10x10 (classic)"
+      },
+      "howTo": {
+        "step1": "Each side places its fleet on its own board, hidden from the rival.",
+        "step2": "Taking turns, fire at a cell on the rival's board: miss, hit or sunk.",
+        "step3": "The first to sink every rival ship wins."
       }
     },
     "connect4": {
       "name": "Connect 4",
-      "description": "Connect 4 tokens in a row before your opponent does."
+      "description": "Connect 4 tokens in a row before your opponent does.",
+      "howTo": {
+        "step1": "Taking turns, each player drops a disc into a column.",
+        "step2": "The disc falls to the lowest free slot.",
+        "step3": "The first to make a line of 4 wins: across, down or diagonal."
+      }
     },
     "guess-who": {
       "name": "Guess Who?",
-      "description": "Guess your opponent's secret character by asking yes/no questions."
+      "description": "Guess your opponent's secret character by asking yes/no questions.",
+      "howTo": {
+        "step1": "Each player secretly picks a character from the board.",
+        "step2": "Ask each other yes-or-no questions out loud and cross out who it can't be.",
+        "step3": "When you're sure, make a guess. Guess wrong and you lose on the spot."
+      }
     }
   },
   "Impostor": {
     "config": {
-      "title": "SET UP THE MATCH",
-      "notEnoughPlayersFor": "Not enough players. Minimum {min} required.",
-      "startButton": "START GAME!",
+      "title": "Set up the match",
+      "startButton": "Start!",
       "waitingForHost": "Waiting for the host to set up the match...",
       "playerNamePlaceholder": "Player {n}",
       "addPlayerButton": "Add player",
-      "exitButton": "Exit"
+      "minPlayersHint": "Add at least {min} players to start.",
+      "notEnoughPlayersFor": "At least {min} players need to be in the room."
     },
     "roleReveal": {
       "title": "Your Secret Role",
       "holdToReveal": "Hold to reveal",
       "dontLetOthersLook": "Don't let anyone else see your screen!",
-      "youAreImpostor": "YOU ARE THE IMPOSTOR!",
+      "youAreImpostor": "You are the impostor!",
       "yourClue": "Your clue:",
       "secretWordIs": "The secret word is:",
-      "continueButton": "Continue (everyone ready)"
+      "continueButton": "Seen it · start talking",
+      "passTo": "Pass the phone to {name}",
+      "passToHint": "Nobody else should look at the screen.",
+      "imReadyButton": "I'm {name}",
+      "seenNextButton": "Seen it · {name}'s turn",
+      "revealFirstHint": "Check your role first."
     },
     "discussion": {
       "title": "Discussion Time",
@@ -149,7 +187,7 @@
       "continueButton": "Continue"
     },
     "guessWord": {
-      "title": "THE IMPOSTOR WAS CAUGHT!",
+      "title": "The impostor was caught!",
       "impostorPrompt": "Say the secret word out loud. It's your last chance to steal the points!",
       "innocentsPrompt": "The impostor must say the secret word out loud. Will they know it?",
       "hostControls": "Host controls",
@@ -157,9 +195,9 @@
       "guessedWrong": "Got it wrong"
     },
     "resolution": {
-      "impostorStoleVictory": "THE IMPOSTOR STOLE THE VICTORY!",
-      "innocentVictory": "INNOCENT VICTORY!",
-      "impostorSurvived": "THE IMPOSTOR SURVIVED!",
+      "impostorStoleVictory": "The impostor stole the victory!",
+      "innocentVictory": "The innocents win!",
+      "impostorSurvived": "The impostor survived!",
       "survivedCelebration": "{names} fooled everyone and walks away with the points. Well played!",
       "secretWordWas": "The secret word was:",
       "scoresTitle": "Scores",
@@ -168,13 +206,13 @@
   },
   "WhoAmI": {
     "config": {
-      "title": "SET UP THE MATCH",
-      "notEnoughPlayers": "Not enough players. Minimum 3 required.",
-      "startButton": "START GAME!",
+      "title": "Set up the match",
+      "startButton": "Start!",
       "waitingForHost": "Waiting for the host to set up the match...",
       "playerNamePlaceholder": "Player {n}",
       "addPlayerButton": "Add player",
-      "exitButton": "Exit"
+      "minPlayersHint": "Add at least 3 players to start.",
+      "notEnoughPlayers": "At least 3 players need to be in the room."
     },
     "playing": {
       "showEveryoneElse": "Show this to everyone but you — don't look at the screen",
@@ -189,7 +227,10 @@
     "singleDevice": {
       "holdFor": "Show everyone but {name}",
       "guessedButton": "Guessed it!",
-      "failedButton": "Didn't get it"
+      "failedButton": "Didn't get it",
+      "handoffTitle": "{name}'s turn",
+      "handoffHint": "Hold the phone on your forehead, screen facing the others, then tap “Ready”.",
+      "readyButton": "Ready"
     },
     "resolution": {
       "title": "Round over!",
@@ -257,7 +298,7 @@
       "confirmShotButton": "Fire! ({cost} charges)"
     },
     "resolution": {
-      "youWon": "YOU WON!",
+      "youWon": "You won!",
       "youLost": "You lost this time",
       "revealedFleetLabel": "Your opponent's fleet was",
       "waitingForReveal": "Revealing the fleet...",
@@ -268,17 +309,17 @@
     "title": "Connect 4",
     "yourTurn": "Your turn — pick a column",
     "opponentTurn": "{name}'s turn",
-    "youWon": "YOU WON!",
+    "youWon": "You won!",
     "youLost": "You lost this time",
     "draw": "It's a draw!",
     "playAgainButton": "Play again",
     "waitingForOpponent": "Waiting for your opponent...",
     "singleDevice": {
       "playerNamePlaceholder": "Player {n}",
-      "startButton": "START!",
-      "exitButton": "Exit",
+      "startButton": "Start!",
       "passPhoneTo": "Pass the phone to {name}",
-      "wins": "{name} wins!"
+      "wins": "{name} wins!",
+      "bothNamesHint": "Type both names to start."
     }
   },
   "GuessWho": {
@@ -298,7 +339,7 @@
     "confirmGuessMessage": "You're guessing your opponent is {name}. If you're wrong, you lose the match right away.",
     "confirmGuessConfirmButton": "Yes, guess",
     "confirmGuessCancelButton": "Not yet",
-    "youWon": "YOU WON!",
+    "youWon": "You won!",
     "youLost": "You lost this time",
     "playAgainButton": "Play again",
     "traits": {
@@ -321,13 +362,13 @@
     },
     "singleDevice": {
       "playerNamePlaceholder": "Player {n}",
-      "startButton": "START!",
-      "exitButton": "Exit",
+      "startButton": "Start!",
       "selectingGateTitle": "Choose your secret character",
       "selectingGateButton": "It's me, choose my character",
       "dontLetOthersLook": "Don't let anyone else see your screen!",
       "whoIsGuessing": "Who's guessing?",
-      "wins": "{name} wins!"
+      "wins": "{name} wins!",
+      "bothNamesHint": "Type both names to start."
     }
   }
 }

@@ -6,6 +6,10 @@ export interface RevealCardProps {
   hidden: ReactNode;
   revealed: ReactNode;
   className?: string;
+  /** Fires each time the card is pressed open — lets a pass-and-play flow
+   * keep its "next player" step locked until the secret was actually seen
+   * (TASK-0039). */
+  onReveal?: () => void;
 }
 
 /** ADR-0004 §2 + §3, BDR-0001: the press-and-hold secret reveal (a role, a
@@ -18,7 +22,7 @@ export interface RevealCardProps {
  * audit's top finding: the previous version referenced `animate-in
  * fade-in zoom-in` from `tailwindcss-animate`, a package that was never
  * installed, so the reveal never actually animated. */
-export function RevealCard({ hidden, revealed, className = "" }: RevealCardProps) {
+export function RevealCard({ hidden, revealed, className = "", onReveal }: RevealCardProps) {
   const [isRevealed, setIsRevealed] = useState(false);
 
   return (
@@ -31,9 +35,25 @@ export function RevealCard({ hidden, revealed, className = "" }: RevealCardProps
         style={{ backgroundColor: "var(--color-penumbra-ground)" }}
       />
       <button
-        onPointerDown={() => setIsRevealed(true)}
+        onPointerDown={() => {
+          setIsRevealed(true);
+          onReveal?.();
+        }}
         onPointerUp={() => setIsRevealed(false)}
         onPointerLeave={() => setIsRevealed(false)}
+        // Keyboard equivalent of press-and-hold: Space/Enter held down.
+        // Required now that the next-player step waits for onReveal.
+        onKeyDown={(e) => {
+          if ((e.key === " " || e.key === "Enter") && !e.repeat) {
+            e.preventDefault();
+            setIsRevealed(true);
+            onReveal?.();
+          }
+        }}
+        onKeyUp={(e) => {
+          if (e.key === " " || e.key === "Enter") setIsRevealed(false);
+        }}
+        onBlur={() => setIsRevealed(false)}
         className={`relative z-50 w-full rounded-3xl p-10 flex flex-col items-center justify-center min-h-[300px] touch-none select-none border-2 ${
           isRevealed ? "border-transparent bg-transparent" : "border-line active:border-focus bg-surface-raised"
         } ${className}`}

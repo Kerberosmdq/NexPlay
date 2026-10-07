@@ -4,8 +4,8 @@
     "subtitle": "Estamos construyendo la base de la plataforma. Los juegos llegan pronto."
   },
   "Lobby": {
-    "roomCodeLabel": "Código de Sala",
-    "shareHint": "Comparte este código para que otros se unan.",
+    "roomCodeLabel": "Código de sala",
+    "shareHint": "Compartí este código para que los demás se sumen.",
     "playersLabel": "Jugadores",
     "gamesLabel": "Juegos",
     "playThisButton": "Jugar este",
@@ -13,24 +13,24 @@
     "connecting": "Conectando a la sala...",
     "connectionError": "No se pudo conectar a la sala.",
     "retryButton": "Reintentar",
-    "tagline": "¡Únete al juego!",
-    "multiDeviceButton": "Multidispositivo",
-    "singleDeviceButton": "1 Teléfono",
+    "tagline": "Juegos para jugar en familia",
+    "multiDeviceButton": "Varios teléfonos",
+    "singleDeviceButton": "Un teléfono",
     "nameLabel": "Tu nombre",
     "namePlaceholder": "Ej. Mateo, Sofía, Papá",
     "defaultHostName": "Anfitrión",
     "defaultPlayerName": "Jugador",
     "defaultSingleDeviceName": "Jugador 1",
-    "joinButton": "Unirse a sala",
-    "orCreateNew": "O crea una nueva",
-    "createButton": "Crear nueva sala",
-    "startSingleDeviceButton": "Iniciar modo 1 teléfono",
-    "invalidCodeError": "Ingresa un código de 4 letras (ej. ABCD)",
+    "joinButton": "Entrar a la sala",
+    "orCreateNew": "o creá una nueva",
+    "createButton": "Crear sala nueva",
+    "startSingleDeviceButton": "Empezar con un teléfono",
+    "invalidCodeError": "Escribí un código de 4 letras (por ejemplo ABCD).",
     "exitLabel": "Salir",
     "copyCodeButton": "Copiar código",
     "copiedFeedback": "¡Copiado!",
     "shareButton": "Compartir código",
-    "shareMessage": "Únete a mi sala de NexPlay con el código {code}",
+    "shareMessage": "Sumate a mi sala de NexPlay con el código {code}",
     "languageLabel": "Cambiar idioma",
     "languageSpanish": "Español",
     "languageEnglish": "Inglés",
@@ -51,12 +51,20 @@
     "matchResolvedMessage": "¿Querés seguir mirando el tablero o continuar?",
     "matchResolvedViewButton": "Ver tablero",
     "matchResolvedContinueButton": "Salir de la partida",
-    "matchResolvedWaitingHint": "Esperando a que el anfitrión continúe"
+    "matchResolvedWaitingHint": "Esperando a que el anfitrión continúe",
+    "backToGamesButton": "Juegos",
+    "backToGamesLabel": "Volver a la lista de juegos",
+    "howToPlayButton": "¿Cómo se juega?",
+    "howToPlayTitle": "Cómo se juega: {game}",
+    "howToPlayCloseButton": "Entendido",
+    "playersRange": "{min}–{max} jugadores",
+    "playersExact": "{n} jugadores",
+    "needsSeveralPhones": "Necesita varios teléfonos"
   },
   "games": {
     "impostor": {
       "name": "El Impostor",
-      "description": "Encuentra al impostor antes de que sea demasiado tarde.",
+      "description": "Encontrá al impostor antes de que sea demasiado tarde.",
       "config": {
         "impostorCount": "Cantidad de impostores",
         "votingTimeSeconds": "Tiempo de votación (segundos)",
@@ -65,10 +73,15 @@
         "hintHard": "Pista difícil (categoría de la palabra)",
         "hintEasy": "Pista fácil (palabra relacionada)",
         "needsPlayers": "{n} (necesita {min}+ jugadores)"
+      },
+      "howTo": {
+        "step1": "Cada uno mira su papel en secreto: todos tienen la misma palabra, menos el impostor.",
+        "step2": "Por turnos, cada uno dice una palabra relacionada. El impostor tiene que disimular.",
+        "step3": "Votan a quién creen que es el impostor. Si lo atrapan, todavía puede ganar adivinando la palabra."
       }
     },
     "who-am-i": {
-      "name": "¿Quién Soy?",
+      "name": "¿Quién soy?",
       "description": "Adiviná tu propia palabra secreta haciendo preguntas de sí o no.",
       "config": {
         "timerSeconds": "Tiempo de la ronda",
@@ -77,6 +90,11 @@
         "time7min": "7 minutos",
         "time10min": "10 minutos",
         "timeUnlimited": "Sin límite de tiempo"
+      },
+      "howTo": {
+        "step1": "Cada jugador tiene una palabra secreta que ven todos menos quien la tiene.",
+        "step2": "Hacé preguntas de sí o no para descubrir cuál es tu palabra.",
+        "step3": "Cuando creas saberla, decila en voz alta. Si acertás, sumás puntos."
       }
     },
     "battleship": {
@@ -86,40 +104,60 @@
         "boardSize": "Tamaño del tablero",
         "boardSize8": "8x8 (rápido)",
         "boardSize10": "10x10 (clásico)"
+      },
+      "howTo": {
+        "step1": "Cada uno coloca su flota en su tablero, sin que el rival la vea.",
+        "step2": "Por turnos, disparan a una casilla del tablero rival: agua, tocado o hundido.",
+        "step3": "Gana quien hunde primero todos los barcos del rival."
       }
     },
     "connect4": {
       "name": "Conecta 4",
-      "description": "Conectá 4 fichas en línea antes que tu rival."
+      "description": "Conectá 4 fichas en línea antes que tu rival.",
+      "howTo": {
+        "step1": "Por turnos, cada jugador suelta una ficha en una columna.",
+        "step2": "La ficha cae hasta el hueco libre más bajo.",
+        "step3": "Gana quien forma primero una línea de 4: horizontal, vertical o diagonal."
+      }
     },
     "guess-who": {
       "name": "¿Quién es Quién?",
-      "description": "Adiviná el personaje secreto de tu rival haciendo preguntas de sí o no."
+      "description": "Adiviná el personaje secreto de tu rival haciendo preguntas de sí o no.",
+      "howTo": {
+        "step1": "Cada uno elige en secreto un personaje del tablero.",
+        "step2": "Háganse preguntas de sí o no en voz alta y tachen a quienes ya no pueden ser.",
+        "step3": "Cuando estés seguro, adiviná. Si te equivocás, perdés en el acto."
+      }
     }
   },
   "Impostor": {
     "config": {
-      "title": "CONFIGURAR PARTIDA",
-      "notEnoughPlayersFor": "Faltan jugadores. Mínimo {min} necesarios.",
-      "startButton": "¡COMENZAR JUEGO!",
+      "title": "Configurar partida",
+      "startButton": "¡Empezar!",
       "waitingForHost": "Esperando que el anfitrión configure la partida...",
       "playerNamePlaceholder": "Jugador {n}",
       "addPlayerButton": "Agregar jugador",
-      "exitButton": "Salir"
+      "minPlayersHint": "Agregá al menos {min} jugadores para empezar.",
+      "notEnoughPlayersFor": "Hacen falta al menos {min} jugadores en la sala."
     },
     "roleReveal": {
-      "title": "Tu Rol Secreto",
-      "holdToReveal": "Mantén presionado para ver",
+      "title": "Tu rol secreto",
+      "holdToReveal": "Mantené apretado para ver",
       "dontLetOthersLook": "¡Que nadie más mire tu pantalla!",
-      "youAreImpostor": "¡ERES EL IMPOSTOR!",
+      "youAreImpostor": "¡Sos el impostor!",
       "yourClue": "Tu pista:",
       "secretWordIs": "La palabra secreta es:",
-      "continueButton": "Continuar (todos listos)"
+      "continueButton": "Ya lo vi · empezar a hablar",
+      "passTo": "Pasale el teléfono a {name}",
+      "passToHint": "Que nadie más mire la pantalla.",
+      "imReadyButton": "Soy {name}",
+      "seenNextButton": "Ya lo vi · le toca a {name}",
+      "revealFirstHint": "Primero mirá tu papel."
     },
     "discussion": {
-      "title": "Tiempo de Hablar",
-      "impostorTip": "¡Finge que sabes la palabra! Que no te descubran.",
-      "innocentTip": "Di una palabra o frase relacionada para probar tu inocencia.",
+      "title": "Hora de hablar",
+      "impostorTip": "¡Hacé como que sabés la palabra! Que no te descubran.",
+      "innocentTip": "Decí una palabra o frase relacionada para probar tu inocencia.",
       "yourTurn": "¡Es tu turno! Decí tu palabra en voz alta.",
       "saidMyWord": "Ya dije mi palabra",
       "waitingForTurn": "Es el turno de {name}...",
@@ -149,17 +187,17 @@
       "continueButton": "Continuar"
     },
     "guessWord": {
-      "title": "¡ATRAPARON AL IMPOSTOR!",
-      "impostorPrompt": "Di la palabra secreta en voz alta. ¡Es tu última oportunidad de robar los puntos!",
+      "title": "¡Atraparon al impostor!",
+      "impostorPrompt": "Decí la palabra secreta en voz alta. ¡Es tu última oportunidad de robar los puntos!",
       "innocentsPrompt": "El impostor debe decir la palabra secreta en voz alta. ¿La sabrá?",
       "hostControls": "Controles de host",
       "guessedCorrectly": "¡Adivinó!",
       "guessedWrong": "Falló"
     },
     "resolution": {
-      "impostorStoleVictory": "¡EL IMPOSTOR ROBÓ LA VICTORIA!",
-      "innocentVictory": "¡VICTORIA INOCENTE!",
-      "impostorSurvived": "¡EL IMPOSTOR SOBREVIVIÓ!",
+      "impostorStoleVictory": "¡El impostor robó la victoria!",
+      "innocentVictory": "¡Ganaron los inocentes!",
+      "impostorSurvived": "¡El impostor sobrevivió!",
       "survivedCelebration": "{names} engañó a todos y se lleva los puntos. ¡Bien jugado!",
       "secretWordWas": "La palabra secreta era:",
       "scoresTitle": "Puntuaciones",
@@ -168,13 +206,13 @@
   },
   "WhoAmI": {
     "config": {
-      "title": "CONFIGURAR PARTIDA",
-      "notEnoughPlayers": "Faltan jugadores. Mínimo 3 necesarios.",
-      "startButton": "¡COMENZAR JUEGO!",
+      "title": "Configurar partida",
+      "startButton": "¡Empezar!",
       "waitingForHost": "Esperando que el anfitrión configure la partida...",
       "playerNamePlaceholder": "Jugador {n}",
       "addPlayerButton": "Agregar jugador",
-      "exitButton": "Salir"
+      "minPlayersHint": "Agregá al menos 3 jugadores para empezar.",
+      "notEnoughPlayers": "Hacen falta al menos 3 jugadores en la sala."
     },
     "playing": {
       "showEveryoneElse": "Mostrale esto a todos menos a vos — no mires la pantalla",
@@ -189,7 +227,10 @@
     "singleDevice": {
       "holdFor": "Mostrale esto a todos menos a {name}",
       "guessedButton": "¡Adivinó!",
-      "failedButton": "No acertó"
+      "failedButton": "No acertó",
+      "handoffTitle": "Le toca a {name}",
+      "handoffHint": "Ponete el teléfono en la frente, con la pantalla hacia los demás, y tocá «Listo».",
+      "readyButton": "Listo"
     },
     "resolution": {
       "title": "¡Fin de la ronda!",
@@ -215,7 +256,7 @@
       "startButton": "¡Empezar!"
     },
     "placing": {
-      "title": "Coloca tu flota",
+      "title": "Colocá tu flota",
       "placingShip": "Colocando",
       "fleetComplete": "¡Flota lista!",
       "tapToMoveHint": "Tocá un barco para moverlo",
@@ -257,7 +298,7 @@
       "confirmShotButton": "¡Disparar! ({cost} cargas)"
     },
     "resolution": {
-      "youWon": "¡GANASTE!",
+      "youWon": "¡Ganaste!",
       "youLost": "Perdiste esta vez",
       "revealedFleetLabel": "La flota de tu rival era",
       "waitingForReveal": "Revelando la flota...",
@@ -268,17 +309,17 @@
     "title": "Conecta 4",
     "yourTurn": "Tu turno — elegí una columna",
     "opponentTurn": "Turno de {name}",
-    "youWon": "¡GANASTE!",
+    "youWon": "¡Ganaste!",
     "youLost": "Perdiste esta vez",
     "draw": "¡Empate!",
     "playAgainButton": "Jugar de nuevo",
     "waitingForOpponent": "Esperando a tu rival...",
     "singleDevice": {
       "playerNamePlaceholder": "Jugador {n}",
-      "startButton": "¡COMENZAR!",
-      "exitButton": "Salir",
-      "passPhoneTo": "Pásale el teléfono a {name}",
-      "wins": "¡Ganó {name}!"
+      "startButton": "¡Empezar!",
+      "passPhoneTo": "Pasale el teléfono a {name}",
+      "wins": "¡Ganó {name}!",
+      "bothNamesHint": "Escribí los dos nombres para empezar."
     }
   },
   "GuessWho": {
@@ -298,7 +339,7 @@
     "confirmGuessMessage": "Vas a adivinar que tu rival es {name}. Si te equivocás, perdés la partida en el acto.",
     "confirmGuessConfirmButton": "Sí, adivinar",
     "confirmGuessCancelButton": "Todavía no",
-    "youWon": "¡GANASTE!",
+    "youWon": "¡Ganaste!",
     "youLost": "Perdiste esta vez",
     "playAgainButton": "Jugar de nuevo",
     "traits": {
@@ -321,13 +362,13 @@
     },
     "singleDevice": {
       "playerNamePlaceholder": "Jugador {n}",
-      "startButton": "¡COMENZAR!",
-      "exitButton": "Salir",
+      "startButton": "¡Empezar!",
       "selectingGateTitle": "Elegí tu personaje secreto",
       "selectingGateButton": "Soy yo, elegir mi personaje",
       "dontLetOthersLook": "¡Que nadie más mire tu pantalla!",
       "whoIsGuessing": "¿Quién está adivinando?",
-      "wins": "¡Ganó {name}!"
+      "wins": "¡Ganó {name}!",
+      "bothNamesHint": "Escribí los dos nombres para empezar."
     }
   }
 }

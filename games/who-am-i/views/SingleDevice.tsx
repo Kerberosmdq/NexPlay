@@ -6,6 +6,7 @@ import type { Player } from "@/lib/types/room";
 import type { WhoAmIState, WhoAmIAction } from "../reducer";
 import { pickAssignments, pickReplacementWord } from "../pickRound";
 import { Button, Card, Scoreboard } from "@/components/ui";
+import { loadFamilyRoster, prefillNames, rememberFamilyNames } from "@/lib/family/roster";
 
 export interface WhoAmISingleDeviceProps {
   state: WhoAmIState;
@@ -30,7 +31,7 @@ function formatTime(totalSeconds: number): string {
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 }
 
-export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDeviceProps) {
+export function SingleDeviceView({ state, dispatch }: WhoAmISingleDeviceProps) {
   const t = useTranslations("WhoAmI");
   const tConfig = useTranslations("games.who-am-i.config");
   const locale = useLocale();
@@ -38,8 +39,18 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
   // Single-device has no realtime player roster, so names are entered
   // locally before the round starts, same pattern as Impostor's
   // single-device view.
-  const [names, setNames] = useState<string[]>(["", "", ""]);
+  const [names, setNames] = useState<string[]>(() => prefillNames(loadFamilyRoster(), 3));
   const [activeIndex, setActiveIndex] = useState(0);
+  // Each turn opens on a handoff screen (TASK-0039): the word and the turn
+  // timer only appear once the player says they're holding the phone on
+  // their forehead — before, the countdown ran (and the word showed) while
+  // the phone was still being passed.
+  const [turnReady, setTurnReady] = useState(false);
+
+  const nextTurn = () => {
+    setActiveIndex((i) => i + 1);
+    setTurnReady(false);
+  };
 
   // A single shared device can't run everyone's turn "at once" like
   // multi-device does — it's inherently sequential, Heads-Up style. Each
@@ -59,14 +70,14 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
       : makeLocalPlayers(names);
 
   useEffect(() => {
-    if (state.phase !== "playing" || state.timerSeconds <= 0) return;
+    if (state.phase !== "playing" || state.timerSeconds <= 0 || !turnReady) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTurnSecondsLeft(state.timerSeconds);
     const interval = setInterval(() => {
       setTurnSecondsLeft((prev) => Math.max(0, prev - 1));
     }, 1000);
     return () => clearInterval(interval);
-  }, [state.phase, state.timerSeconds, activeIndex]);
+  }, [state.phase, state.timerSeconds, activeIndex, turnReady]);
 
   // Safety net — GUESS_CORRECT already auto-resolves once everyone has
   // guessed, but if the last player(s) were skipped (passed) this ends the
@@ -118,18 +129,18 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
           </select>
         </div>
 
-        {notEnoughPlayers ? (
-          <div className="bg-danger-surface text-on-danger-surface p-4 rounded-xl text-center font-bold border border-action-danger/30 w-full">
-            {t("config.notEnoughPlayers")}
-          </div>
-        ) : (
+        <div className="w-full space-y-2">
+          {notEnoughPlayers && <p className="text-sm text-ink-muted text-center">{t("config.minPlayersHint")}</p>}
           <Button
             variant="primary"
+            disabled={notEnoughPlayers}
             onClick={() => {
               const players = makeLocalPlayers(validNames);
               const { assignments } = pickAssignments(players, locale, state.usedWordIds);
+              rememberFamilyNames(validNames);
               setNames(validNames);
               setActiveIndex(0);
+              setTurnReady(false);
               dispatch({
                 type: "START_GAME",
                 playerIds: players.map((p) => p.id),
@@ -141,13 +152,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
           >
             {t("config.startButton")}
           </Button>
-        )}
-
-        {onExit && (
-          <button onClick={onExit} className="text-xs text-ink-muted underline">
-            {t("config.exitButton")}
-          </button>
-        )}
+        </div>
       </Card>
     );
   }
@@ -157,12 +162,23 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
 
     const current = roundPlayers[activeIndex];
     const word = current ? state.wordAssignments[current.id] : undefined;
+    const name = current?.displayName ?? "";
+
+    if (!turnReady) {
+      return (
+        <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-10 px-4 text-center">
+          <h2 className="font-display text-3xl text-ink">{t("singleDevice.handoffTitle", { name })}</h2>
+          <p className="text-ink-muted">{t("singleDevice.handoffHint")}</p>
+          <Button variant="primary" onClick={() => setTurnReady(true)} className="text-xl py-5">
+            {t("singleDevice.readyButton")}
+          </Button>
+        </div>
+      );
+    }
 
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-md mx-auto mt-4 px-4 text-center">
-        <p className="text-ink-muted font-bold uppercase tracking-widest text-sm">
-          {t("singleDevice.holdFor", { name: current?.displayName ?? "" })}
-        </p>
+        <p className="text-ink-muted font-bold text-base">{t("singleDevice.holdFor", { name })}</p>
 
         <div className="w-full bg-surface-raised border-4 border-line rounded-3xl p-10 space-y-4">
           <div className="text-8xl">{word?.emoji}</div>
@@ -178,7 +194,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
             variant="primary"
             onClick={() => {
               if (current) dispatch({ type: "GUESS_CORRECT", playerId: current.id });
-              setActiveIndex((i) => i + 1);
+              nextTurn();
             }}
           >
             {t("singleDevice.guessedButton")}
@@ -187,7 +203,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
             variant="danger"
             onClick={() => {
               if (current) dispatch({ type: "GUESS_WRONG", playerId: current.id });
-              setActiveIndex((i) => i + 1);
+              nextTurn();
             }}
           >
             {t("singleDevice.failedButton")}
@@ -237,6 +253,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: WhoAmISingleDevice
           variant="ghost"
           onClick={() => {
             setActiveIndex(0);
+            setTurnReady(false);
             dispatch({ type: "PLAY_AGAIN" });
           }}
         >

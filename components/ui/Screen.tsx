@@ -14,6 +14,13 @@ export interface ScreenProps {
    * that's the more consequential case — pass a lighter single-device
    * message where there's no room/other players to leave behind. */
   exitConfirmMessage?: string;
+  /** Optional "back to the games list" action, shown at the left of the
+   * top bar. One way back and one way out, both in the same place on every
+   * screen, instead of extra exit buttons scattered through each game's
+   * own view (TASK-0039). */
+  onBack?: () => void;
+  backLabel?: string;
+  backAriaLabel?: string;
   children: ReactNode;
 }
 
@@ -26,15 +33,31 @@ export interface ScreenProps {
  * that tapping "✕" left the game (and, in multi-device, the whole room)
  * with zero warning. Now it opens a `ConfirmDialog` naming exactly what's
  * about to happen; `onExit` only fires once the user confirms. */
-export function Screen({ displayName, onExit, exitLabel = "Exit", exitConfirmMessage, children }: ScreenProps) {
+export function Screen({
+  displayName,
+  onExit,
+  exitLabel = "Exit",
+  exitConfirmMessage,
+  onBack,
+  backLabel,
+  backAriaLabel,
+  children,
+}: ScreenProps) {
   const t = useTranslations("Lobby");
   const [confirmingExit, setConfirmingExit] = useState(false);
 
   return (
     <div className="w-full flex flex-col items-center gap-4">
-      {(displayName || onExit) && (
-        <div className="w-full max-w-md flex justify-between items-center px-2">
-          <span className="text-xs text-ink-muted">{displayName}</span>
+      {(displayName || onExit || onBack) && (
+        <div className="w-full max-w-md flex justify-between items-center gap-3 px-2">
+          {onBack ? (
+            <Button variant="ghost" fullWidth={false} onClick={onBack} aria-label={backAriaLabel} className="px-4">
+              <span aria-hidden="true">← </span>
+              {backLabel}
+            </Button>
+          ) : (
+            <span className="text-sm text-ink-muted">{displayName}</span>
+          )}
           {onExit && (
             <Button
               variant="ghost"

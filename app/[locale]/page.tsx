@@ -23,6 +23,7 @@ import {
 } from "@/lib/realtime/session";
 import { useWakeLock } from "@/lib/hooks/useWakeLock";
 import { Button, Screen } from "@/components/ui";
+import { HowToPlayButton } from "@/components/platform/HowToPlay";
 
 // Mirrors MultiDeviceRoom's TERMINAL_PHASE_BY_GAME — see the comment there
 // for why this per-game lookup exists instead of a generic contract field.
@@ -176,6 +177,13 @@ export default function HomePage() {
         onExit={handleExit}
         exitLabel={t("exitLabel")}
         exitConfirmMessage={session.mode === "single-device" ? t("exitConfirmMessageSingleDevice") : undefined}
+        onBack={
+          session.mode === "single-device" && platformState.status !== "LOBBY"
+            ? () => dispatchAction({ type: "PLATFORM_RETURN_LOBBY" })
+            : undefined
+        }
+        backLabel={t("backToGamesButton")}
+        backAriaLabel={t("backToGamesLabel")}
       >
         {session.mode === "single-device" && (
           <SingleDeviceGamePicker
@@ -212,25 +220,54 @@ function SingleDeviceGamePicker({
 
   if (platformState.status === "LOBBY") {
     // Not every game supports single-device pass-and-play (Battleship can't —
-    // there's no way to hide a board between turns on one phone), so this
-    // list must filter by meta.supportedModes rather than listing every
-    // registered game unconditionally.
-    const singleDeviceGames = Object.values(AVAILABLE_GAMES).filter((game) =>
-      game.meta.supportedModes.includes("single-device")
-    );
+    // there's no way to hide a board between turns on one phone). Those are
+    // still listed, disabled with the reason, so the family knows the game
+    // exists and what it needs instead of wondering where it went.
     return (
       <div className="w-full max-w-md space-y-4">
         <h3 className="font-display text-2xl text-ink text-center">{t("gamesLabel")}</h3>
-        {singleDeviceGames.map((game) => (
-          <Button
-            key={game.id}
-            variant="primary"
-            onClick={() => dispatch({ type: "PLATFORM_START_GAME", gameId: game.id, players: [] })}
-            className="text-xl"
-          >
-            {tGame(game.meta.name)}
-          </Button>
-        ))}
+        <ul className="space-y-3">
+          {[...Object.values(AVAILABLE_GAMES)]
+            // Playable games first; the unavailable ones trail at the end.
+            .sort(
+              (a, b) =>
+                Number(b.meta.supportedModes.includes("single-device")) -
+                Number(a.meta.supportedModes.includes("single-device"))
+            )
+            .map((game) => {
+            const playable = game.meta.supportedModes.includes("single-device");
+            const { minPlayers, maxPlayers } = game.meta;
+            return (
+              <li
+                key={game.id}
+                className={`bg-surface-raised border-2 border-line rounded-2xl p-4 space-y-3 ${playable ? "" : "opacity-60"}`}
+              >
+                <div className="space-y-1">
+                  <h4 className="font-display text-xl text-ink">{tGame(game.meta.name)}</h4>
+                  <p className="text-sm text-ink-muted">{tGame(`games.${game.id}.description`)}</p>
+                  <p className="text-sm font-bold text-ink">
+                    {minPlayers === maxPlayers
+                      ? t("playersExact", { n: minPlayers })
+                      : t("playersRange", { min: minPlayers, max: maxPlayers })}
+                    {!playable && <> · {t("needsSeveralPhones")}</>}
+                  </p>
+                </div>
+                <div className="flex gap-2 items-center">
+                  {playable && (
+                    <Button
+                      variant="primary"
+                      onClick={() => dispatch({ type: "PLATFORM_START_GAME", gameId: game.id, players: [] })}
+                      className="flex-1"
+                    >
+                      {t("playThisButton")}
+                    </Button>
+                  )}
+                  <HowToPlayButton gameId={game.id} />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     );
   }
@@ -243,16 +280,6 @@ function SingleDeviceGamePicker({
   const View = activeGame.views.singleDevice;
   return (
     <div className="w-full flex flex-col items-center gap-2">
-      <div className="w-full max-w-md flex justify-end px-2">
-        <Button
-          variant="ghost"
-          fullWidth={false}
-          className="px-4"
-          onClick={() => dispatch({ type: "PLATFORM_RETURN_LOBBY" })}
-        >
-          {t("returnToLobbyButton")}
-        </Button>
-      </div>
       <MatchResolvedModal
         gameState={platformState.gameState}
         winners={getActiveMatchWinners(platformState)}

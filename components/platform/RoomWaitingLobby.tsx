@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { Player } from "@/lib/types/room";
 import { AVAILABLE_GAMES } from "@/lib/realtime/platformReducer";
 import { Button, Card, PlayerChip, ShareCode } from "@/components/ui";
+import { HowToPlayButton } from "./HowToPlay";
 
 interface RoomWaitingLobbyProps {
   roomCode: string;
@@ -97,7 +98,10 @@ export function RoomWaitingLobby({ roomCode, players, isHost, onStartGame, onSta
                       aria-labelledby={headerId}
                       className="motion-deal px-4 pb-4 flex flex-col"
                     >
-                      <p className="text-sm text-ink-muted mb-4">{tGame(`games.${game.id}.description`)}</p>
+                      <p className="text-sm text-ink-muted mb-3">{tGame(`games.${game.id}.description`)}</p>
+                      <div className="mb-4">
+                        <HowToPlayButton gameId={game.id} />
+                      </div>
 
                       {isHost ? (
                         <div className="flex flex-col gap-2">

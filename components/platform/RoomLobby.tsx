@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { generateRoomCode, isValidRoomCode } from "@/lib/realtime";
+import { rememberFamilyNames } from "@/lib/family/roster";
 import { Button, CodeInput, Field, LanguageSwitcher } from "@/components/ui";
 
 export interface RoomLobbyProps {
@@ -44,7 +45,11 @@ export function RoomLobby({
   };
 
   const handleSingleDevice = () => {
-    const name = displayName.trim() || t("defaultSingleDeviceName");
+    const typedName = displayName.trim();
+    const name = typedName || t("defaultSingleDeviceName");
+    // Whoever is holding the phone leads every game's prefilled player list
+    // (TASK-0039). The generic fallback name isn't worth remembering.
+    if (typedName) rememberFamilyNames([typedName]);
     setError(null);
     onStartSingleDevice(name);
   };
@@ -71,7 +76,7 @@ export function RoomLobby({
             />
             <h1 className="font-display text-5xl sm:text-6xl tracking-tight">NexPlay</h1>
           </div>
-          <p className="text-[10px] sm:text-xs font-black tracking-[0.2em] text-ink-muted uppercase pt-2">
+          <p className="text-sm sm:text-base font-semibold text-ink-muted pt-2">
             {t("tagline")}
           </p>
         </div>
@@ -85,7 +90,7 @@ export function RoomLobby({
               setMode("multi-device");
               setError(null);
             }}
-            className="text-xs sm:text-sm tracking-wider uppercase"
+            className="text-sm sm:text-base px-3 leading-tight"
           >
             {t("multiDeviceButton")}
           </Button>
@@ -96,7 +101,7 @@ export function RoomLobby({
               setMode("single-device");
               setError(null);
             }}
-            className="text-xs sm:text-sm tracking-wider uppercase"
+            className="text-sm sm:text-base px-3 leading-tight"
           >
             {t("singleDeviceButton")}
           </Button>
@@ -108,16 +113,15 @@ export function RoomLobby({
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder={t("namePlaceholder")}
-          className="uppercase tracking-wider"
         />
 
         {error && (
           <div
             role="alert"
             aria-live="assertive"
-            className="p-4 bg-danger-surface border-3 border-action-danger rounded-2xl text-xs font-black text-on-danger-surface text-center tracking-wider"
+            className="p-4 bg-danger-surface border-3 border-action-danger rounded-2xl text-sm font-bold text-on-danger-surface text-center"
           >
-            ⚠️ {error}
+            {error}
           </div>
         )}
 
@@ -125,25 +129,25 @@ export function RoomLobby({
           <div className="space-y-6 pt-2">
             <CodeInput label={t("roomCodeLabel")} value={joinCodeInput} onChange={setJoinCodeInput} />
 
-            <Button variant="primary" onClick={handleJoin} className="text-xl sm:text-2xl uppercase tracking-wider">
+            <Button variant="primary" onClick={handleJoin} className="text-xl sm:text-2xl">
               {t("joinButton")}
             </Button>
 
             <div className="relative flex py-1 items-center">
               <div className="flex-grow border-t-2 border-line"></div>
-              <span className="flex-shrink mx-4 text-xs font-black uppercase text-ink-muted tracking-widest">
+              <span className="flex-shrink mx-4 text-sm font-semibold text-ink-muted">
                 {t("orCreateNew")}
               </span>
               <div className="flex-grow border-t-2 border-line"></div>
             </div>
 
-            <Button variant="secondary" onClick={handleCreate} className="text-xl sm:text-2xl uppercase tracking-wider">
+            <Button variant="secondary" onClick={handleCreate} className="text-xl sm:text-2xl">
               {t("createButton")}
             </Button>
           </div>
         ) : (
           <div className="pt-4">
-            <Button variant="secondary" onClick={handleSingleDevice} className="text-xl sm:text-2xl uppercase tracking-wider">
+            <Button variant="secondary" onClick={handleSingleDevice} className="text-xl sm:text-2xl">
               {t("startSingleDeviceButton")}
             </Button>
           </div>

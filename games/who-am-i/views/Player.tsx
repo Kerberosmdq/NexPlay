@@ -78,7 +78,7 @@ export function PlayerView({ state, players, playerId: rawPlayerId, dispatch }: 
             </div>
 
             {notEnoughPlayers ? (
-              <div className="bg-danger-surface text-on-danger-surface p-4 rounded-xl text-center font-bold border border-action-danger/30">
+              <div className="text-ink-muted p-4 text-center font-semibold">
                 {t("config.notEnoughPlayers")}
               </div>
             ) : (

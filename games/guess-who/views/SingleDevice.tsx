@@ -8,6 +8,7 @@ import { otherSide } from "../reducer";
 import { GUESS_WHO_CHARACTERS } from "../content/characters";
 import { CharacterCard } from "./CharacterCard";
 import { Button, Card, WaitingState, ConfirmDialog } from "@/components/ui";
+import { loadFamilyRoster, prefillNames, rememberFamilyNames } from "@/lib/family/roster";
 
 export interface GuessWhoSingleDeviceProps {
   state: GuessWhoState;
@@ -30,10 +31,13 @@ function characterById(id: string) {
   return GUESS_WHO_CHARACTERS.find((c) => c.id === id);
 }
 
-export function SingleDeviceView({ state, dispatch, onExit }: GuessWhoSingleDeviceProps) {
+export function SingleDeviceView({ state, dispatch }: GuessWhoSingleDeviceProps) {
   const t = useTranslations("GuessWho");
 
-  const [names, setNames] = useState<[string, string]>(["", ""]);
+  const [names, setNames] = useState<[string, string]>(() => {
+    const [first, second] = prefillNames(loadFamilyRoster(), 2, 2);
+    return [first, second];
+  });
   const [localPlayers, setLocalPlayers] = useState<Player[]>([]);
   // Unlike multi-device, single-device has no per-device private slice at
   // all (the platform's singleDevice view contract never passes one) — one
@@ -98,24 +102,22 @@ export function SingleDeviceView({ state, dispatch, onExit }: GuessWhoSingleDevi
           ))}
         </div>
 
-        <Button
-          variant="primary"
-          disabled={!canStart}
-          onClick={() => {
-            const players = makeLocalPlayers(validNames);
-            setLocalPlayers(players);
-            dispatch({ type: "START_MATCH", playerIds: [players[0].id, players[1].id] });
-          }}
-          className="text-xl py-5"
-        >
-          {t("singleDevice.startButton")}
-        </Button>
-
-        {onExit && (
-          <button onClick={onExit} className="text-xs text-ink-muted underline">
-            {t("singleDevice.exitButton")}
-          </button>
-        )}
+        <div className="w-full space-y-2">
+          {!canStart && <p className="text-sm text-ink-muted text-center">{t("singleDevice.bothNamesHint")}</p>}
+          <Button
+            variant="primary"
+            disabled={!canStart}
+            onClick={() => {
+              const players = makeLocalPlayers(validNames);
+              rememberFamilyNames(validNames);
+              setLocalPlayers(players);
+              dispatch({ type: "START_MATCH", playerIds: [players[0].id, players[1].id] });
+            }}
+            className="text-xl py-5"
+          >
+            {t("singleDevice.startButton")}
+          </Button>
+        </div>
       </Card>
     );
   }

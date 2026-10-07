@@ -16,7 +16,7 @@ export function Field({ label, id, className = "", ...rest }: FieldProps) {
 
   return (
     <div className="space-y-2">
-      <label htmlFor={inputId} className="text-xs font-black uppercase tracking-widest text-ink-muted">
+      <label htmlFor={inputId} className="text-sm font-bold text-ink-muted">
         {label}
       </label>
       <input

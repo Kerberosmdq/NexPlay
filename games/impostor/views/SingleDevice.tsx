@@ -8,6 +8,7 @@ import { maxImpostorsFor } from "../reducer";
 import { pickWordAndImpostors } from "../pickRound";
 import { PlayerRoster } from "./PlayerRoster";
 import { Button, Card, RevealCard, Scoreboard } from "@/components/ui";
+import { loadFamilyRoster, prefillNames, rememberFamilyNames } from "@/lib/family/roster";
 
 export interface ImpostorSingleDeviceProps {
   state: ImpostorState;
@@ -27,7 +28,7 @@ function makeLocalPlayers(names: string[]): Player[] {
   }));
 }
 
-export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDeviceProps) {
+export function SingleDeviceView({ state, dispatch }: ImpostorSingleDeviceProps) {
   const t = useTranslations("Impostor");
   const tConfig = useTranslations("games.impostor.config");
   const locale = useLocale();
@@ -36,8 +37,21 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
   // locally before the round starts (NEXPLAY_PLAN §3.3: "host enters player
   // names"). Once START_GAME fires these become the round's playerIds,
   // driven through the exact same reducer as multi-device (ADR-0002 §4).
-  const [names, setNames] = useState<string[]>(["", "", ""]);
+  const [names, setNames] = useState<string[]>(() => prefillNames(loadFamilyRoster(), 3));
   const [revealIndex, setRevealIndex] = useState(0);
+  // Pass-and-play gating (TASK-0039): each player first sees a handoff
+  // screen with their own name ("I'm Leo"), and the step to the next player
+  // stays locked until this one has actually held the card open — so a
+  // stray tap can't skip someone, and the next name never sits on screen
+  // over the previous player's secret.
+  const [handoffConfirmed, setHandoffConfirmed] = useState(false);
+  const [hasSeenRole, setHasSeenRole] = useState(false);
+
+  const resetReveal = () => {
+    setRevealIndex(0);
+    setHandoffConfirmed(false);
+    setHasSeenRole(false);
+  };
   const [voterIndex, setVoterIndex] = useState(0);
 
   // The reducer only stores playerIds (strings), so once a round starts we
@@ -105,18 +119,23 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
           </select>
         </div>
 
-        {notEnoughPlayers ? (
-          <div className="bg-danger-surface text-on-danger-surface p-4 rounded-xl text-center font-bold border border-action-danger/30 w-full">
-            {t("config.notEnoughPlayersFor", { min: Math.max(3, minPlayersNeeded) })}
-          </div>
-        ) : (
+        <div className="w-full space-y-2">
+          {/* A neutral hint, not a red error: an empty setup is the normal
+              starting point, not something the user did wrong. */}
+          {notEnoughPlayers && (
+            <p className="text-sm text-ink-muted text-center">
+              {t("config.minPlayersHint", { min: Math.max(3, minPlayersNeeded) })}
+            </p>
+          )}
           <Button
             variant="primary"
+            disabled={notEnoughPlayers}
             onClick={() => {
               const players = makeLocalPlayers(validNames);
               const { word, shuffledPlayerIds } = pickWordAndImpostors(players, locale, state.usedWordIds);
+              rememberFamilyNames(validNames);
               setNames(validNames);
-              setRevealIndex(0);
+              resetReveal();
               setVoterIndex(0);
               dispatch({
                 type: "START_GAME",
@@ -129,13 +148,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
           >
             {t("config.startButton")}
           </Button>
-        )}
-
-        {onExit && (
-          <button onClick={onExit} className="text-xs text-ink-muted underline">
-            {t("config.exitButton")}
-          </button>
-        )}
+        </div>
       </Card>
     );
   }
@@ -144,15 +157,27 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
     const current = roundPlayers[revealIndex];
     const isLast = revealIndex === roundPlayers.length - 1;
     const isImpostor = current ? state.impostorIds.includes(current.id) : false;
+    const name = current?.displayName ?? "";
+
+    if (!handoffConfirmed) {
+      return (
+        <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-10 text-center">
+          <h2 className="font-display text-3xl text-ink">{t("roleReveal.passTo", { name })}</h2>
+          <p className="text-ink-muted">{t("roleReveal.passToHint")}</p>
+          <Button variant="primary" onClick={() => setHandoffConfirmed(true)} className="text-xl py-5">
+            {t("roleReveal.imReadyButton", { name })}
+          </Button>
+        </div>
+      );
+    }
 
     return (
       <div className="flex flex-col items-center justify-center space-y-6 w-full max-w-sm mx-auto mt-4">
-        <p className="text-ink-muted font-bold uppercase tracking-widest text-sm">
-          {current?.displayName}
-        </p>
+        <p className="text-ink-muted font-bold text-base">{name}</p>
         <h2 className="font-display text-2xl text-ink text-center">{t("roleReveal.title")}</h2>
 
         <RevealCard
+          onReveal={() => setHasSeenRole(true)}
           hidden={
             <div className="text-center space-y-4">
               <div className="text-6xl">👁️</div>
@@ -180,18 +205,26 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
           }
         />
 
-        <Button
-          variant="ghost"
-          onClick={() => {
-            if (isLast) {
-              dispatch({ type: "PROCEED_TO_DISCUSSION" });
-            } else {
-              setRevealIndex((i) => i + 1);
-            }
-          }}
-        >
-          {isLast ? t("roleReveal.continueButton") : `➔ ${roundPlayers[revealIndex + 1]?.displayName}`}
-        </Button>
+        <div className="w-full space-y-2">
+          {!hasSeenRole && <p className="text-sm text-ink-muted text-center">{t("roleReveal.revealFirstHint")}</p>}
+          <Button
+            variant="primary"
+            disabled={!hasSeenRole}
+            onClick={() => {
+              if (isLast) {
+                dispatch({ type: "PROCEED_TO_DISCUSSION" });
+              } else {
+                setRevealIndex((i) => i + 1);
+                setHandoffConfirmed(false);
+                setHasSeenRole(false);
+              }
+            }}
+          >
+            {isLast
+              ? t("roleReveal.continueButton")
+              : t("roleReveal.seenNextButton", { name: roundPlayers[revealIndex + 1]?.displayName ?? "" })}
+          </Button>
+        </div>
       </div>
     );
   }
@@ -375,7 +408,7 @@ export function SingleDeviceView({ state, dispatch, onExit }: ImpostorSingleDevi
         <Button
           variant="ghost"
           onClick={() => {
-            setRevealIndex(0);
+            resetReveal();
             setVoterIndex(0);
             dispatch({ type: "PLAY_AGAIN" });
           }}

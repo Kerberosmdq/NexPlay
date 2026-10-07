@@ -6,6 +6,7 @@ import type { Player } from "@/lib/types/room";
 import type { Connect4State, Connect4Action, Connect4Side } from "../reducer";
 import { Board } from "./Board";
 import { Button, Card } from "@/components/ui";
+import { loadFamilyRoster, prefillNames, rememberFamilyNames } from "@/lib/family/roster";
 
 export interface Connect4SingleDeviceProps {
   state: Connect4State;
@@ -24,7 +25,7 @@ function makeLocalPlayers(names: string[]): Player[] {
   }));
 }
 
-export function SingleDeviceView({ state, dispatch, onExit }: Connect4SingleDeviceProps) {
+export function SingleDeviceView({ state, dispatch }: Connect4SingleDeviceProps) {
   const t = useTranslations("Connect4");
 
   // No realtime room roster exists in single-device mode, so names are
@@ -33,7 +34,10 @@ export function SingleDeviceView({ state, dispatch, onExit }: Connect4SingleDevi
   // match starts and is what resolves `state.sides`' ids back to display
   // names for the rest of this view (never re-derived from the id string
   // itself, which would break on a name containing a dash).
-  const [names, setNames] = useState<[string, string]>(["", ""]);
+  const [names, setNames] = useState<[string, string]>(() => {
+    const [first, second] = prefillNames(loadFamilyRoster(), 2, 2);
+    return [first, second];
+  });
   const [localPlayers, setLocalPlayers] = useState<Player[]>([]);
 
   if (state.phase === "config") {
@@ -60,24 +64,22 @@ export function SingleDeviceView({ state, dispatch, onExit }: Connect4SingleDevi
           ))}
         </div>
 
-        <Button
-          variant="primary"
-          disabled={!canStart}
-          onClick={() => {
-            const players = makeLocalPlayers(validNames);
-            setLocalPlayers(players);
-            dispatch({ type: "START_MATCH", playerIds: [players[0].id, players[1].id] });
-          }}
-          className="text-xl py-5"
-        >
-          {t("singleDevice.startButton")}
-        </Button>
-
-        {onExit && (
-          <button onClick={onExit} className="text-xs text-ink-muted underline">
-            {t("singleDevice.exitButton")}
-          </button>
-        )}
+        <div className="w-full space-y-2">
+          {!canStart && <p className="text-sm text-ink-muted text-center">{t("singleDevice.bothNamesHint")}</p>}
+          <Button
+            variant="primary"
+            disabled={!canStart}
+            onClick={() => {
+              const players = makeLocalPlayers(validNames);
+              rememberFamilyNames(validNames);
+              setLocalPlayers(players);
+              dispatch({ type: "START_MATCH", playerIds: [players[0].id, players[1].id] });
+            }}
+            className="text-xl py-5"
+          >
+            {t("singleDevice.startButton")}
+          </Button>
+        </div>
       </Card>
     );
   }

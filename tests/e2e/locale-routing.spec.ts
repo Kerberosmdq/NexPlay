@@ -12,13 +12,13 @@ test("serves Spanish at /es", async ({ page }) => {
 
 test("language switcher navigates between locales and re-renders visible text", async ({ page }) => {
   await page.goto("/es");
-  await expect(page.getByText("¡Únete al juego!")).toBeVisible();
+  await expect(page.getByText("Juegos para jugar en familia")).toBeVisible();
 
   await page.getByRole("button", { name: "Inglés" }).click();
   await expect(page).toHaveURL(/\/en$/);
-  await expect(page.getByText("Join the game!")).toBeVisible();
+  await expect(page.getByText("Games to play as a family")).toBeVisible();
 
   await page.getByRole("button", { name: "Spanish" }).click();
   await expect(page).toHaveURL(/\/es$/);
-  await expect(page.getByText("¡Únete al juego!")).toBeVisible();
+  await expect(page.getByText("Juegos para jugar en familia")).toBeVisible();
 });

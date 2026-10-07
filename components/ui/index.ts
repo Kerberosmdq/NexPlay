@@ -10,3 +10,4 @@ export { WaitingState, type WaitingStateProps } from "./WaitingState";
 export { LanguageSwitcher } from "./LanguageSwitcher";
 export { ShareCode, type ShareCodeProps } from "./ShareCode";
 export { ConfirmDialog, type ConfirmDialogProps } from "./ConfirmDialog";
+export { Dialog, type DialogProps } from "./Dialog";

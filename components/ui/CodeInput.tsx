@@ -20,7 +20,7 @@ export function CodeInput({ label, value, onChange, length = 4, autoFocus }: Cod
 
   return (
     <div className="space-y-3">
-      <label htmlFor={inputId} className="block text-center text-xs font-black uppercase tracking-widest text-ink-muted">
+      <label htmlFor={inputId} className="block text-center text-sm font-bold text-ink-muted">
         {label}
       </label>
 
