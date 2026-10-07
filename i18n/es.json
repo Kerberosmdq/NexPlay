@@ -72,7 +72,11 @@
         "hintNone": "Sin pista (imposible)",
         "hintHard": "Pista difícil (categoría de la palabra)",
         "hintEasy": "Pista fácil (palabra relacionada)",
-        "needsPlayers": "{n} (necesita {min}+ jugadores)"
+        "needsPlayers": "{n} (necesita {min}+ jugadores)",
+        "hintNoneShort": "Sin pista",
+        "hintHardShort": "Difícil",
+        "hintEasyShort": "Fácil",
+        "needsPlayersHint": "Para {n} impostores hacen falta {min} jugadores."
       },
       "howTo": {
         "step1": "Cada uno mira su papel en secreto: todos tienen la misma palabra, menos el impostor.",
@@ -164,7 +168,8 @@
       "everyoneSpoke": "Todos hablaron. Cuando quieran, pasen a votar.",
       "goToVoteButton": "Ir a votación",
       "turnUnavailable": "No podemos mostrar de quién es el turno ahora mismo.",
-      "skipTurnButton": "Saltar este turno"
+      "skipTurnButton": "Saltar este turno",
+      "speakerTip": "Decí una palabra relacionada con la palabra secreta, sin decirla."
     },
     "voting": {
       "title": "¿Quién es el impostor?",
@@ -173,7 +178,8 @@
       "waitingForOthers": "Esperando a los demás...",
       "revealResultsButton": "Revelar resultados",
       "revealAnywayHint": "No todos votaron todavía, pero podés revelar de todas formas.",
-      "eliminatedSpectating": "Fuiste eliminado. Podés seguir mirando, pero ya no votás."
+      "eliminatedSpectating": "Fuiste eliminado. Podés seguir mirando, pero ya no votás.",
+      "voterTurn": "Vota {name}"
     },
     "roster": {
       "title": "En juego",
@@ -181,8 +187,8 @@
     },
     "eliminationResult": {
       "tie": "¡Empate! Nadie fue eliminado.",
-      "wasImpostor": "{name} era... ¡el impostor! 🎉",
-      "wasInnocent": "{name} era inocente. 😬",
+      "wasImpostor": "{name} era... ¡el impostor!",
+      "wasInnocent": "{name} era inocente.",
       "gameContinues": "El juego continúa...",
       "continueButton": "Continuar"
     },

@@ -16,8 +16,8 @@ export function PlayerRoster({ players, aliveIds }: PlayerRosterProps) {
   const t = useTranslations("Impostor.roster");
 
   return (
-    <div className="w-full max-w-sm bg-surface-sunken rounded-2xl border border-line p-3">
-      <p className="text-[10px] font-black uppercase tracking-widest text-ink-muted mb-2">{t("title")}</p>
+    <div className="w-full bg-surface-sunken rounded-2xl px-4 py-3">
+      <p className="text-base font-bold text-ink-muted mb-2">{t("title")}</p>
       <div className="flex flex-wrap gap-2">
         {players.map((p) => (
           <PlayerChip

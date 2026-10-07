@@ -72,7 +72,11 @@
         "hintNone": "No clue (impossible)",
         "hintHard": "Hard clue (word's category)",
         "hintEasy": "Easy clue (related word)",
-        "needsPlayers": "{n} (needs {min}+ players)"
+        "needsPlayers": "{n} (needs {min}+ players)",
+        "hintNoneShort": "No clue",
+        "hintHardShort": "Hard",
+        "hintEasyShort": "Easy",
+        "needsPlayersHint": "{n} impostors need {min} players."
       },
       "howTo": {
         "step1": "Everyone secretly checks their role: all share the same word, except the impostor.",
@@ -164,7 +168,8 @@
       "everyoneSpoke": "Everyone spoke. Move to voting whenever you're ready.",
       "goToVoteButton": "Go to vote",
       "turnUnavailable": "We can't show whose turn it is right now.",
-      "skipTurnButton": "Skip this turn"
+      "skipTurnButton": "Skip this turn",
+      "speakerTip": "Say a word related to the secret word, without saying it."
     },
     "voting": {
       "title": "Who is the impostor?",
@@ -173,7 +178,8 @@
       "waitingForOthers": "Waiting for the others...",
       "revealResultsButton": "Reveal results",
       "revealAnywayHint": "Not everyone has voted yet, but you can reveal anyway.",
-      "eliminatedSpectating": "You were eliminated. You can keep watching, but you no longer vote."
+      "eliminatedSpectating": "You were eliminated. You can keep watching, but you no longer vote.",
+      "voterTurn": "{name} votes"
     },
     "roster": {
       "title": "In play",
@@ -181,8 +187,8 @@
     },
     "eliminationResult": {
       "tie": "It's a tie! Nobody was eliminated.",
-      "wasImpostor": "{name} was... the impostor! 🎉",
-      "wasInnocent": "{name} was innocent. 😬",
+      "wasImpostor": "{name} was... the impostor!",
+      "wasInnocent": "{name} was innocent.",
       "gameContinues": "The game continues...",
       "continueButton": "Continue"
     },

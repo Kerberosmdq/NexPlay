@@ -41,6 +41,24 @@ test("Impostor pass-and-play gates each reveal and remembers names", async ({ pa
   await next.click();
   await expect(page.getByRole("button", { name: "Soy Leo" })).toBeVisible();
 
+  // Finish the reveals; the shared discussion screen must show the same
+  // tip whoever speaks — the impostor's tip would out them to the table.
+  for (const [name, nextLabel] of [
+    ["Leo", "Ya lo vi · le toca a Papá"],
+    ["Papá", "Ya lo vi · empezar a hablar"],
+  ]) {
+    await page.getByRole("button", { name: `Soy ${name}` }).click();
+    const nextCard = await page.getByRole("button", { name: /Mantené apretado/ }).elementHandle();
+    await nextCard!.dispatchEvent("pointerdown");
+    await nextCard!.dispatchEvent("pointerup");
+    await page.getByRole("button", { name: nextLabel }).click();
+  }
+  for (let turn = 0; turn < 3; turn++) {
+    await expect(page.getByText("Decí una palabra relacionada con la palabra secreta, sin decirla.")).toBeVisible();
+    await expect(page.getByText("¡Hacé como que sabés la palabra!", { exact: false })).toHaveCount(0);
+    await page.getByRole("button", { name: "Ya dije mi palabra" }).click();
+  }
+
   // One way back to the games list, in the top bar.
   await page.getByRole("button", { name: "Volver a la lista de juegos" }).click();
   await page.getByRole("button", { name: "Jugar este" }).first().click();

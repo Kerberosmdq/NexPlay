@@ -41,7 +41,7 @@ export function PlayerChip({
       title={alive ? undefined : eliminatedLabel}
       className={
         alive
-          ? "text-base font-bold text-ink bg-surface-sunken px-3 py-1 rounded-full"
+          ? "text-base font-bold text-ink bg-surface-raised px-3 py-1 rounded-full shadow-[0_var(--edge-sm)_0_var(--color-edge-raised)]"
           : "text-base font-bold text-ink-muted bg-surface-sunken/50 px-3 py-1 rounded-full line-through"
       }
     >
