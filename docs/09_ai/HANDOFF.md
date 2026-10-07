@@ -3,14 +3,39 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: `TASK-0044` — M6.5 phase 2b, game 3 of 5.
-- **Title**: Connect 4 restyled on the Juguetería system.
-- **Previous tasks**: `TASK-0043` (Who Am I, PR #65), `TASK-0042` (#64),
-  `TASK-0041` (#63), `TASK-0040` (#62), `TASK-0039` (#61). Notes below.
+- **Task ID**: `TASK-0045` — M6.5 phase 2b, game 4 of 5.
+- **Title**: Guess Who restyled on the Juguetería system, plus one board per
+  player in single-device mode.
+- **Previous tasks**: `TASK-0044` (Connect 4, PR #66), `TASK-0043` (#65),
+  `TASK-0042` (#64), `TASK-0041` (#63), `TASK-0040` (#62), `TASK-0039`
+  (#61). Notes below.
 
 ## Current Branch
-- `feat/jugueteria-connect4`, stacked on `feat/jugueteria-who-am-i` (#65)
-  → #64 → #63 → #62 → #61. Merge oldest first.
+- `feat/jugueteria-guess-who`, stacked on `feat/jugueteria-connect4` (#66)
+  → #65 → #64 → #63 → #62 → #61. Merge oldest first.
+
+## What TASK-0045 changed
+- `CharacterCard.tsx`: white plastic holder on a molded edge, yellow border
+  when selected, presses down when tapped; crossed out = flipped down to the
+  purple back with a "?" (name kept), `aria-pressed` reflects it. Placeholder
+  trait overlays hidden while flipped.
+- `views/parts.tsx` (new): `FacePicto`, `CharacterBoard` (grid + remaining
+  counter + "what a tap does" hint, red outline while guessing),
+  `toggleCrossedOut`, `ResultBlock` (purple).
+- `Player.tsx`: own character as a small card beside the ask-aloud hint,
+  primary "Adivinar", board via `CharacterBoard`, result block.
+- `SingleDevice.tsx`: **one crossed-out set per side** (`Record<Side, Set>`)
+  with a name key row to switch boards; a guess uses the visible board's
+  owner (`GuessWho.singleDevice.whoIsGuessing` removed). Local players are
+  rebuilt from names if the view remounts.
+- i18n: `remainingCount`, `guessHint`, `flipHint`,
+  `singleDevice.boardOwnerLabel`.
+
+## Warnings (TASK-0045)
+- Multi-device Guess Who not seen live (Supabase unreachable).
+- Portraits are still the generic cartoon style; redrawing them is the open
+  founder decision in `BDR-0002` (the agent writes the image prompts, the
+  founder runs them).
 
 ## What TASK-0044 changed
 - `games/connect4/views/parts.tsx` (new): `Disc` (hex token with a molded
@@ -157,8 +182,8 @@ to C on 2026-10-07), and asked to start with phase 1. Phases:
 - **Phase 0 — `BDR-0002`**, `FEEL.md`, `ADR-0004` 1.1.0 (`TASK-0040`). Done.
 - **Phase 2a — shared visual system** (`TASK-0041`). Done.
 - **Phase 2b — per-game restyles**, one task per game. Impostor
-  (`TASK-0042`), Who Am I (`TASK-0043`) and Connect 4 (`TASK-0044`) done;
-  two to go.
+  (`TASK-0042`), Who Am I (`TASK-0043`), Connect 4 (`TASK-0044`) and Guess
+  Who (`TASK-0045`) done; Battleship to go.
 - **Phase 3 — motion, sound, haptics** (phase transitions, toy-physics
   gestures, a plastic Web Audio kit with mute, `navigator.vibrate` on
   Android).
@@ -253,6 +278,7 @@ fixed in the source, left over from a mid-edit HMR pass.
 - Ludo and the dice-and-track race game from `BACKLOG.md` (carried forward).
 
 ## Next Suggested Task
-- M6.5 phase 2b — next game: Guess Who (portraits in white plastic card
-  holders, flip-down crossing out), then Battleship (split its 1105-line
-  view first).
+- M6.5 phase 2b — last game: Battleship. Split its 1105-line
+  `views/Player.tsx` (board, fleet placement, weapons, announcements)
+  before restyling it; it's multi-device only, so it can't be checked in
+  the dev browser without Supabase.

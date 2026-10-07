@@ -563,8 +563,9 @@ molded plastic toy), superseding `BDR-0001`.
   - **2b:** each game's own views restyled, one task per game (boards,
     setup screens, emoji illustrations replaced). Impostor done
     (`TASK-0042`, which also fixed a single-device privacy leak in the
-    discussion phase), Who Am I (`TASK-0043`) and Connect 4 (`TASK-0044`)
-    done; Guess Who and Battleship next.
+    discussion phase), Who Am I (`TASK-0043`), Connect 4 (`TASK-0044`) and
+    Guess Who (`TASK-0045`, which also gave each single-device player their
+    own board) done; Battleship next.
 - **Phase 3 — motion, sound, haptics:** phase transitions, toy-physics
   gestures, a plastic sound kit with mute, vibration on Android.
 
