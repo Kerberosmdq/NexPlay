@@ -8,8 +8,9 @@ Living status document tracking the current sprint, objectives, completed tasks,
   2a (`TASK-0041`, shared visual system, PR #63) done; phase 2b under way —
   Impostor (`TASK-0042`, PR #64), Who Am I (`TASK-0043`, PR #65) and
   Connect 4 (`TASK-0044`, PR #66), Guess Who (`TASK-0045`, PR #67) and
-  Battleship (`TASK-0046`, on `feat/jugueteria-battleship`) done — phase 2
-  complete; phase 3 (motion, sound, haptics) next.
+  Battleship (`TASK-0046`, PR #68) done — phase 2 complete — and phase 3
+  (`TASK-0047`, motion/sound/haptics, on `feat/jugueteria-feel`) done. M6.5
+  is code-complete; it needs the PR stack merged and a real-phone session.
 - Previous sprint: Sprint 18 - M5 (Connect 4) and M6 (Guess Who) shipped,
   plus a platform UX hotfix
 - Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
@@ -1149,6 +1150,14 @@ race game).
       passes against real Supabase. Also fixed the e2e room-code selector
       that the #63 lobby restyle had broken (propagated through #63–#67).
 
+- [x] **TASK-0047**: M6.5 phase 3 — the toy *feel*. `lib/feedback`
+      synthesizes plastic sounds (Web Audio, no files) and short Android
+      vibrations behind one switch that starts off; a `SoundToggle` key in
+      the top bar and on the entry screen; buttons click, keys select, the
+      capsule pops; discs drop and bounce, cards flip, wins throw toy
+      confetti; every phase change slides in via `PhaseTransition` without
+      remounting the game view. Each game wired to its own cues.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -1157,9 +1166,9 @@ race game).
 
 ## Next Task
 - **Redesign, continued** (founder's current priority, ahead of M7's
-  remaining items and new games): phase 3 of M6.5 — motion, sound and haptics
-  (phase transitions, toy-physics gestures, a plastic sound kit with mute,
-  vibration on Android) and phase 3 (motion, sound, haptics) of M6.5. See
+  remaining items and new games): merging the M6.5 PR stack (#60–#69) and a
+  real-phone family session (multi-device in every game, 2-vs-2 teams,
+  a tournament, sound + vibration on Android). Then M7 — Presentable and phase 3 (motion, sound, haptics) of M6.5. See
   `HANDOFF.md` → "Context: the redesign this task opens".
 - After that: **M7 — Presentable**, or the two remaining entries in
   `BACKLOG.md`'s prioritized games list (Ludo, a dice-and-track race game).
@@ -1174,4 +1183,4 @@ race game).
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-10-07 (TASK-0046: Battleship split + Juguetería; TASK-0045 back to TASK-0039)
+- 2026-10-07 (TASK-0047: motion, sound, haptics; TASK-0046 back to TASK-0039)

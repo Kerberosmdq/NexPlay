@@ -543,7 +543,7 @@ into the `"playing"` phase (detected via a ref, not just "still null"),
 verified live by replaying the tournament's second round and confirming a
 genuinely new character each time. Zero console errors throughout.
 
-## M6.5 — Redesign: Juguetería — 🚧 In progress
+## M6.5 — Redesign: Juguetería — ✅ Code complete (pending a real-phone pass)
 Inserted ahead of M7 at the founder's request (2026-10-06): "improve
 absolutely everything — visual design, UX/UI, animation, gameplay — in a
 style outside what AI normally makes." Same precedent as M3.5: a milestone
@@ -567,8 +567,9 @@ molded plastic toy), superseding `BDR-0001`.
     Guess Who (`TASK-0045`, which also gave each single-device player their
     own board) and Battleship (`TASK-0046`, split out of one 1105-line
     view, built on PR #60) done — **phase 2 complete**.
-- **Phase 3 — motion, sound, haptics:** phase transitions, toy-physics
-  gestures, a plastic sound kit with mute, vibration on Android.
+- **Phase 3 — motion, sound, haptics (`TASK-0047`):** phase transitions,
+  toy-physics gestures (pop, drop, flip, confetti), a synthesized plastic
+  sound kit and Android vibration behind one switch that starts off. Done.
 
 **Done when:** every screen of all five games is on `BDR-0002`'s system
 (no Paper & Felt token left), and pressing, dropping, revealing and winning

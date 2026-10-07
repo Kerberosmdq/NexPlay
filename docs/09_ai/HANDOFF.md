@@ -3,17 +3,48 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: `TASK-0046` — M6.5 phase 2b, game 5 of 5 (phase 2 complete).
-- **Title**: Battleship split out of its 1105-line view and restyled on the
-  Juguetería system, built on PR #60.
-- **Previous tasks**: `TASK-0045` (Guess Who, PR #67) back to `TASK-0039`
+- **Task ID**: `TASK-0047` — M6.5 phase 3 (M6.5 code-complete).
+- **Title**: Motion, sound and haptics for the Juguetería system.
+- **Previous tasks**: `TASK-0046` (Battleship, PR #68) back to `TASK-0039`
   (#61). Notes below.
 
 ## Current Branch
-- `feat/jugueteria-battleship`, stacked on `feat/jugueteria-guess-who` (#67)
-  → #66 → #65 → #64 → #63 → #62 → #61, **and containing PR #60**
-  (`fix/battleship-playability`) via a merge. Merge #60 first (or let this
-  PR carry it), then #61 → #62 → … → this one, oldest first.
+- `feat/jugueteria-feel`, stacked on `feat/jugueteria-battleship` (#68) →
+  #67 → … → #61 (+ #60). Merge oldest first.
+
+## What TASK-0047 changed
+- **`lib/feedback/index.ts`** (new): `playCue(cue)` synthesizes each sound
+  with Web Audio (oscillators + noise bursts, fast attack, exponential decay
+  — the "clack" of hard plastic) and vibrates with a short pattern where
+  `navigator.vibrate` exists (Android). One setting for both in
+  localStorage (`nexplay:feedback:v1`), **off by default**. Safe without Web
+  Audio/vibration. `lib/feedback/react.ts`: `useFeedbackEnabled`,
+  `useCueOnMount`. 7 unit tests.
+- **`components/ui`**: `SoundToggle` (top bar + entry screen), `ToyConfetti`,
+  `PhaseTransition` (Web Animations replay on phase change — deliberately
+  not a `key` remount, which would wipe the game view's local state);
+  `Button` gets a `sound` prop (default "press", on pointerdown);
+  `KeyRow` → "select"; `RevealCard` → "pop".
+- **`app/motion.css`**: `motion-pop`, `motion-drop` (`--drop-rows`),
+  `motion-flip`, `motion-confetti`, with reduced-motion fallbacks.
+- **Games**: Impostor `OutcomeBlock` (`cue`, `confetti`); Who Am I
+  correct/wrong button sounds, `RoundClock` ticks the last 5 s,
+  `RoundOverBlock`; Connect 4 drop motion + clack, result cues; Guess Who
+  `CharacterCard` `sound` (flip on the board, select elsewhere) + flip
+  animation, result cues; Battleship splash/hit/sunk in `useShotFeedback`,
+  a clack per placed ship, result cues.
+
+## Warnings (TASK-0047)
+- **Nobody has *heard* it yet.** The browser pane can't play audio to a
+  person; verification counted synthesized notes and checked classes,
+  storage, confetti and animation calls. Tune volumes and sounds on a real
+  phone (`SOUNDS` / `HAPTICS` in `lib/feedback/index.ts` are plain data).
+- **Dev-server cache gotcha:** after the #60 merge conflict, Turbopack's
+  persistent cache in `.next` kept serving the conflicted `tokens.css`
+  even though the file on disk was clean. Deleting `.next` fixed it. If a
+  "conflict marker" build error appears with a clean tree, do that.
+- Both devices in a multi-device match play the same shot/drop sounds —
+  intended (everyone at the table hears the splash).
 
 ## What TASK-0046 changed
 - **#60 merged in first** so the split builds on its fixes. Conflicts
@@ -221,9 +252,8 @@ to C on 2026-10-07), and asked to start with phase 1. Phases:
 - **Phase 2a — shared visual system** (`TASK-0041`). Done.
 - **Phase 2b — per-game restyles**, one task per game. All five
   games done (`TASK-0042` to `TASK-0046`).
-- **Phase 3 — motion, sound, haptics** (phase transitions, toy-physics
-  gestures, a plastic Web Audio kit with mute, `navigator.vibrate` on
-  Android).
+- **Phase 3 — motion, sound, haptics** (`TASK-0047`). Done — M6.5 is
+  code-complete.
 - Per-game gameplay ideas from the audit (who-starts coin flip in Connect 4,
   vote-by-vote reveal in Impostor, forehead tilt mode in Who Am I, family
   scoreboard across games, splitting Battleship's 1105-line view first)
@@ -315,7 +345,9 @@ fixed in the source, left over from a mid-edit HMR pass.
 - Ludo and the dice-and-track race game from `BACKLOG.md` (carried forward).
 
 ## Next Suggested Task
-- M6.5 phase 3 — motion, sound, haptics: phase transitions (View
-  Transitions), toy-physics gestures (press/drop/snap) in `app/motion.css`,
-  a short plastic sound kit with a mute control (off on first visit), and
-  `navigator.vibrate` on Android. Merge the PR stack first if possible.
+- Merge the M6.5 stack oldest first (#60/#61 → … → the phase 3 PR), then a
+  real-phone family session: multi-device in every game, Battleship 2-vs-2
+  and a tournament (watch for the unreproduced freeze from #60), and sound +
+  vibration on Android. Tune `SOUNDS`/`HAPTICS` from what the family says.
+- After that: M7 — Presentable, or the Guess Who portrait redraw (the agent
+  writes the image prompts; the founder runs them).
