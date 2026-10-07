@@ -54,6 +54,12 @@ current bilingual labels like "UNIRSE A SALA / JOIN PARTY" are a symptom
 of there being no language switcher anywhere in the app, not a style
 choice; fixing that switcher retires the bilingual labels for good.
 
+**Spanish uses vos, everywhere** (founder decision, 2026-10-07): «Mantené
+apretado», «Pasale el teléfono», «Elegí tu personaje» — never a mix with
+tú («Mantén», «Pásale»). Spanish copy is also sentence case («Tu rol
+secreto», not «Tu Rol Secreto»); the English habit of capitalising every
+word reads as foreign in Spanish.
+
 ## What NexPlay is not
 - Not glassmorphism, ever (Article 10, restated because it's tempting).
 - Not a gradient-hero SaaS landing page.

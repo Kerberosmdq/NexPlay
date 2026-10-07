@@ -3,137 +3,93 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: Hotfix (unnumbered) — founder feedback while playtesting Guess
-  Who, not a roadmap milestone.
-- **Title**: Guess Who — portraits no longer cropped by a circular frame
-  (hats were invisible); 8 characters renamed to match their art's gender; a
-  neighbouring-character crop-bleed cleanup added to the asset script.
+- **Task ID**: `TASK-0039` — UX flow fixes (redesign phase 1).
+- **Title**: Pass-and-play reveal gating, one way back + one way out,
+  remembered family names, entry-screen fixes, no premature errors,
+  "how to play" for every game, and Spanish unified on voseo.
 
 ## Current Branch
-- `fix/guess-who-portrait-framing-and-names`, branched off `main` after PR #58
-  (character selection + match-resolved modal) merged.
+- `feat/ux-flow-fixes`, branched off `main` at `ebe5d36` (after PR #59).
+  Independent of the still-open `fix/battleship-playability` (PR #60).
+
+## Context: the redesign this task opens
+On 2026-10-06 the founder asked for a full redesign (visual, UX, motion,
+gameplay). An audit of the shipped app plus four mocked visual directions
+(A "Cuaderno de Recreo" — school graph-paper notebook; B "Riso Club";
+C "Juguetería"; D "Teatro de Sombras") were presented; the founder chose
+**A** and **voseo**, and asked to start with phase 1. Planned phases:
+- **Phase 0 — `BDR-0002`** superseding `BDR-0001` (Paper & Felt) with
+  Direction A, then FEEL.md + ADR-0004 tokens rewritten for it. Not started.
+- **Phase 1 — this task.** Flow fixes that don't depend on the look.
+- **Phase 2 — visual system** (tokens, fonts, paper textures, hand-drawn
+  per-game icons replacing emoji, redrawn hexagon mark, new primitives).
+- **Phase 3 — motion, sound, haptics** (phase transitions, Web Audio kit
+  with mute, `navigator.vibrate` on Android, per-world celebrations).
+- Per-game gameplay ideas from the audit (who-starts coin flip in Connect 4,
+  vote-by-vote reveal in Impostor, forehead tilt mode in Who Am I, family
+  scoreboard across games, splitting Battleship's 1105-line view first)
+  are each their own later task.
 
 ## What's in this change
-
-Three defects, all in Guess Who's character art layer. The founder reported
-the first two; the third is a latent one the first fix exposed.
-
-### 1. Portraits were cropped — hats were invisible
-`games/guess-who/views/CharacterCard.tsx` framed every portrait as a circle
-with `object-cover`. The art is head-and-shoulders at roughly 2:3, so filling
-a *square* box scaled it to width and pushed ~25% of its height out of view
-top and bottom; the circular clip then trimmed the corners of what remained.
-The top of every hat was the casualty — the worst possible trait to lose in a
-game whose mechanic is asking "¿tiene sombrero?".
-
-Fixed with a portrait-shaped box (`w-full aspect-[2/3]`, `rounded-xl`) and
-`object-contain`. Nothing is cropped at any size now. Note this made the cards
-*bigger*, not smaller — matching the art's own aspect ratio and tightening the
-grid card's padding took the mobile grid portrait from a 48×48 circle to
-62×93, and `size="large"` from 96×96 to 112×168.
-
-One thing that needed a second pass: the cross-out strike (`w-[150%]
-rotate-45`) was being clamped back to the frame's width by its centering flex
-parent, so the slash stopped short of the edges on the now-taller frame.
-`shrink-0` fixes it. Measured, not eyeballed — the rotated bounding box is
-67×67 against a 62×93 frame.
-
-### 2. Eight characters had a name of the opposite gender to their art
-Root cause worth remembering: the portraits were generated from the **traits**
-(hair length, facial hair, glasses…), which encode nothing about gender, so
-the generator drew whoever it liked and the pre-existing names no longer
-matched. Reviewed all 32 against their art; found exactly eight, four in each
-direction. Renamed rather than regenerating art — names are cosmetic (no rule
-reads them), so traits are untouched and `guess-who-roster.test.ts`'s balance
-guarantees are unaffected. The roster's 16/16 gender split survives because
-the corrections were 4-and-4.
-
-| id | was | now |
-|---|---|---|
-| c9 | Camila | Bruno |
-| c23 | Valeria | Thiago |
-| c25 | Daniela | Ramiro |
-| c27 | Constanza | Facundo |
-| c24 | Máximo | Julieta |
-| c26 | Tomás | Paulina |
-| c30 | Agustín | Amanda |
-| c32 | Ignacio | Lucía |
-
-**Deliberately left alone**: c3 (Emma), c7 (Martina) and c11 (Isabella) read
-as androgynous at grid size. Compared at full resolution against a known-male
-(c9) and known-female (c31) portrait, all three carry the same drawn eyelashes
-and softer jaw as c31, so they stay female-named. If the founder disagrees on
-seeing them in play, these are the three to revisit.
-
-### 3. A latent crop defect that fix (1) exposed
-`CURRENT_STATE.md`'s art-batch entry records a neighbouring-character sliver
-judged "harmless because the circular crop trims exactly the margin the sliver
-sat in." That was true — and stopped being true the moment the card started
-showing the whole portrait. **Any future change to how these assets are
-displayed should re-check this class of assumption.**
-
-A connected-component scan over all 32 assets found three real ones (c26 on
-both edges, c29, c31 — fragments of neighbouring hat brims, ~1.4k/580/660px)
-plus five sub-100px specks. Fixed in `scripts/generate-guesswho-assets.mjs`,
-not by hand-editing PNGs: a new `removeDetachedFragments` step erases any
-opaque blob that is both disconnected from the largest blob *and* touching a
-left/right edge — the signature of bleed from the axis the sheet is sliced
-along. Requiring the edge touch is what makes it safe to run blind (a
-legitimately detached feature — an earring clear of the head, a glasses lens —
-is interior and never considered), and the largest blob is always kept so a
-character can never erase itself.
-
-Because the founder-provided source sheets are **not committed to the repo**,
-the script also gained a standalone `--clean <files>` mode that re-runs only
-that step over already-generated assets; that's how the three shipped files
-were repaired. New batches get the cleanup automatically in the normal slicing
-path.
-
-### Live verification
-All 32 portraits fetched through the dev server return 200 and decode; every
-one renders fully contained (drawn size ≤ box size, measured via
-`getBoundingClientRect` against `naturalWidth`/`naturalHeight`) at both grid
-and large sizes; no horizontal overflow at 375px; the cross-out strike spans
-the frame; the eight renamed characters render their new labels against the
-correct art. Played through selection → playing → guess → resolution to reach
-the `size="large"` card. Zero console errors. `lint`, `typecheck`, and all
-206 unit tests pass.
-
-### Known cosmetic quirk (pre-existing, not fixed here)
-Several characters' near-white/cream clothing is fully transparent in the PNG
-— the chroma key can't distinguish it from the parchment background it was cut
-from. It reads correctly *because* the card background
-(`--color-surface-raised`, `#fbf6ec`) is itself near-white, so the clothing
-appears cream as intended. Verified by compositing the assets against that
-exact token. It would look wrong on a dark background, so anyone introducing a
-dark theme needs to regenerate these assets from the source sheets (which
-means asking the founder for them — they aren't in git).
-
-## Superseded context (previous handoff)
-
-The prior change on `main` was: Guess Who choose-your-own-character (a
-`"selecting"` reducer phase) plus `MatchResolvedModal` gating tournament
-auto-advance across every game with `getWinner`. See PR #58 and
-`CURRENT_STATE.md`'s entry for the detail; nothing in it was modified here.
+1. **Reveal gating (single-device).** Impostor: a handoff screen ("Pasale el
+   teléfono a Leo" → "Soy Leo") before each reveal; the next-player button
+   is disabled until the card was actually held open (`RevealCard` gained an
+   optional `onReveal`, plus Space/Enter keyboard support so the gate never
+   locks out keyboard users). Who Am I: each turn opens on a handoff screen
+   and the turn timer only starts on "Listo" (before, it ran while the phone
+   was being passed).
+2. **One way back, one way out.** In-game "Salir" links removed from all four
+   single-device views; "Volver al lobby" moved from the view into
+   `Screen`'s top bar as "← Juegos" (`onBack`/`backLabel`/`backAriaLabel`).
+   Multi-device keeps its host-only "Volver al lobby" (different meaning:
+   it returns *everyone*).
+3. **Remembered family.** `lib/family/roster.ts` stores names typed in
+   single-device setups in localStorage (device-only, same tier as
+   `lib/realtime/session.ts`, not durable server data — no ADR-0001 change)
+   and prefills every single-device setup; the entry-screen name is
+   remembered first so the phone's owner leads the list.
+4. **Entry screen.** Mode switch labels "Varios teléfonos / Un teléfono" (no
+   more clipped "MULTIDISPOSITIV" at 375px); forced uppercase + wide
+   tracking removed from the entry screen, `Field` and `CodeInput` labels.
+5. **No premature errors.** Setup screens show a neutral hint + disabled
+   start button instead of a red error box (single-device Impostor/Who Am
+   I/Connect 4/Guess Who, and multi-device Impostor/Who Am I host config).
+6. **How to play.** New `components/platform/HowToPlay.tsx` (three steps
+   from `games.<id>.howTo.step1..3`, same catalog convention as
+   `description`, no `GameModule` change), reachable from the single-device
+   picker and the multi-device lobby accordion. New `components/ui/Dialog.tsx`
+   modal shell; `ConfirmDialog` now builds on it. The single-device picker
+   lists every game with description and player count; games that can't run
+   on one phone (Battleship) are shown last, dimmed, with "Necesita varios
+   teléfonos".
+7. **Voseo + sentence case** across `i18n/es.json` (recorded in FEEL.md's
+   Voice section); English catalog also drops its ALL-CAPS strings.
 
 ## Files Modified / Added
-- `games/guess-who/views/CharacterCard.tsx` (portrait-shaped `object-contain`
-  frame replacing the circular `object-cover` one; `shrink-0` on the cross-out
-  strike; grid-size padding tightened; stale "placeholder" doc comment
-  corrected — the fallback is now the exception, not the default)
-- `games/guess-who/content/characters.ts` (8 renames; a comment recording that
-  names must agree with the art, since nothing in code enforces it)
-- `scripts/generate-guesswho-assets.mjs` (`removeDetachedFragments` wired into
-  the normal slicing path, plus a standalone `--clean <files>` mode)
-- `public/guess-who/{c11,c12,c13,c14,c26,c27,c29,c31,c32}.png` (regenerated by
-  `--clean`; alpha-only changes, dimensions unchanged)
+- `app/[locale]/page.tsx`, `components/platform/{RoomLobby,RoomWaitingLobby}.tsx`,
+  `components/platform/HowToPlay.tsx` (new)
+- `components/ui/{Screen,RevealCard,ConfirmDialog,Field,CodeInput,index}.tsx|ts`,
+  `components/ui/Dialog.tsx` (new)
+- `games/{impostor,who-am-i,connect4,guess-who}/views/SingleDevice.tsx`,
+  `games/{impostor,who-am-i}/views/Player.tsx` (red error → neutral hint only)
+- `lib/family/roster.ts` (new)
+- `i18n/es.json`, `i18n/en.json`
+- `tests/unit/family-roster.test.ts` (new, 10 tests),
+  `tests/e2e/single-device-pass-and-play.spec.ts` (new),
+  `tests/e2e/{battleship-multi-device,locale-routing}.spec.ts` (copy updates)
+- `docs/04_design/FEEL.md`, `docs/09_ai/tasks/TASK-0039-ux-flow-fixes.md`
+  (new), `docs/09_ai/{CURRENT_STATE,HANDOFF}.md`
 
-No test files changed: the renames are cosmetic and `guess-who-roster.test.ts`
-asserts trait balance and name *uniqueness*, both of which still hold. The
-framing change is pure CSS in a component with no existing render tests (the
-project's Vitest environment is Node-only, no jsdom), so it was verified live
-in-browser instead — see above.
-
+## Warnings
+- **`battleship-multi-device.spec.ts` could not be run locally**: the
+  Supabase host didn't resolve from this machine (`ERR_NAME_NOT_RESOLVED`,
+  room screen shows "No se pudo conectar a la sala"). Only its copy changed
+  ("Crear sala nueva", "Entrar a la sala", "Colocá tu flota"); CI is the
+  real check for it. The new single-device spec and `locale-routing` pass
+  locally.
+- Phase 2 will restyle everything this task touched — this task kept the
+  current Paper & Felt look on purpose. Don't start phase 2 before
+  `BDR-0002` exists.
 ## External state (not in git, important for the next agent to know)
 - Same as prior handoffs: Supabase live, Vercel auto-deploying `main`, strict
   branch protection, GitHub Actions secrets configured.
@@ -152,21 +108,15 @@ before trusting a scary-looking console error — this session saw a stale
 fixed in the source, left over from a mid-edit HMR pass.
 
 ## Pending Tasks
-- A dedicated founder playtest of Battleship's full feature set (M4a–M4d —
-  weapons, 2-vs-2 teams, tournament) on real phones specifically is still
-  worth doing — every verification in this repo's history so far has used
-  up to four browser contexts on one machine, not a dedicated real-device
-  pass.
+- **Phase 0: `BDR-0002`** — record Direction A ("Cuaderno de Recreo") as
+  superseding `BDR-0001`, with B/C/D as evaluated alternatives; then
+  FEEL.md and ADR-0004 token updates.
+- Phases 2 and 3 of the redesign (see "Context" above).
+- A dedicated founder playtest of Battleship's full feature set on real
+  phones (carried forward).
 - Migrating Impostor's and Who Am I's secrets onto `ADR-0005`'s private
-  slice — the latent leak the ADR documents is real but not urgent.
-- The two remaining games from `BACKLOG.md`'s prioritized list (Ludo, a
-  dice-and-track race game) — each its own future milestone, not yet
-  started.
+  slice (carried forward, latent, not urgent).
+- Ludo and the dice-and-track race game from `BACKLOG.md` (carried forward).
 
 ## Next Suggested Task
-- The founder's call: **M7 (presentable)** per `docs/ROADMAP.md`, or the
-  next game from `BACKLOG.md`'s prioritized list (Ludo is next). Follow
-  the same pattern used for every game so far: a design conversation with
-  the founder (exploring distinct directions per `PROJECT_CONSTITUTION.md`
-  Article 10 whenever there's a real visual/UX decision to make) before
-  any code.
+- `BDR-0002` (docs-only branch), then phase 2 of the redesign.

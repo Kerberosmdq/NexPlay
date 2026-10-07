@@ -3,8 +3,10 @@
 Living status document tracking the current sprint, objectives, completed tasks, and immediate roadmap for NexPlay.
 
 ## Current Sprint
-- Sprint: Sprint 18 - M5 (Connect 4) and M6 (Guess Who) shipped, plus a
-  platform UX hotfix
+- Sprint: Sprint 19 - Full redesign, phase 1 (`TASK-0039`, UX flow fixes)
+  shipped on `feat/ux-flow-fixes`; phase 0 (`BDR-0002`) and phases 2–3 next.
+- Previous sprint: Sprint 18 - M5 (Connect 4) and M6 (Guess Who) shipped,
+  plus a platform UX hotfix
 - Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
   playtest follow-up fixes (PRs #41–#44), `TASK-0034` (M4b special weapons),
   `TASK-0035` (M4c teams), `TASK-0036` (M4d tournament), `TASK-0037` (M5
@@ -1007,6 +1009,20 @@ race game).
       renamed characters render their new labels against the correct art.
       `lint`, `typecheck`, and all 206 unit tests pass.
 
+- [x] **TASK-0039**: UX flow fixes — phase 1 of the founder-requested full
+      redesign (2026-10-06 audit; founder chose visual Direction A
+      "Cuaderno de Recreo" and voseo, to be recorded in `BDR-0002`). Single-
+      device pass-and-play can no longer skip a player (handoff screen +
+      next locked until the card was held; Who Am I's timer starts on
+      "Listo"), one way back ("← Juegos" in the top bar) and one way out
+      (✕), family names remembered on the device and prefilled, entry
+      screen no longer clips at 375px and drops forced caps, neutral hints
+      instead of premature red errors, a three-step "¿Cómo se juega?" for
+      every game, a richer single-device picker, and all Spanish copy on
+      voseo. `lint`, `typecheck`, 216 unit tests, and the new single-device
+      e2e spec pass; the Battleship e2e couldn't run locally (Supabase host
+      unreachable from this machine) — see `HANDOFF.md`.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -1014,11 +1030,12 @@ race game).
 - None currently open.
 
 ## Next Task
-- **M7 — Presentable**, or — if the founder wants to keep prioritizing
-  games first, the same pattern M3.5/M5/M6 already followed — the two
-  remaining entries in `BACKLOG.md`'s prioritized games list (Ludo, a
-  dice-and-track race game). Neither has been discussed with the founder
-  yet as of this entry.
+- **Redesign, continued** (founder's current priority, ahead of M7's
+  remaining items and new games): `BDR-0002` recording Direction A, then
+  phase 2 (visual system) and phase 3 (motion, sound, haptics). See
+  `HANDOFF.md` → "Context: the redesign this task opens".
+- After that: **M7 — Presentable**, or the two remaining entries in
+  `BACKLOG.md`'s prioritized games list (Ludo, a dice-and-track race game).
 - Still worth doing, independent of milestone sequencing: the founder
   playtesting Battleship's full feature set (M4a–M4d — weapons, 2-vs-2
   teams, and a tournament) specifically, since that family session covered
@@ -1030,5 +1047,4 @@ race game).
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-08-15 (Guess Who portrait framing, 8 name/art gender corrections, and
-  a neighbouring-character crop-bleed cleanup in the asset script)
+- 2026-10-07 (TASK-0039: redesign phase 1 — UX flow fixes and voseo)
