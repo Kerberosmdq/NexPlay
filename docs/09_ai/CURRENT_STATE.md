@@ -6,7 +6,8 @@ Living status document tracking the current sprint, objectives, completed tasks,
 - Sprint: Sprint 19 - M6.5 redesign (Juguetería). Phase 1 (`TASK-0039`, UX
   flow fixes, PR #61), phase 0 (`TASK-0040`, `BDR-0002`, PR #62) and phase
   2a (`TASK-0041`, shared visual system, PR #63) done; phase 2b under way —
-  Impostor done (`TASK-0042`, on `feat/jugueteria-impostor`).
+  Impostor (`TASK-0042`, PR #64) and Who Am I (`TASK-0043`, on
+  `feat/jugueteria-who-am-i`) done.
 - Previous sprint: Sprint 18 - M5 (Connect 4) and M6 (Guess Who) shipped,
   plus a platform UX hotfix
 - Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
@@ -1052,6 +1053,14 @@ race game).
       to the table — now one neutral tip for everyone, guarded by the
       single-device e2e spec.
 
+- [x] **TASK-0043**: Who Am I restyled on the Juguetería system (M6.5
+      phase 2b, game 2 of 5): forehead word card in the game's yellow,
+      dark round clock, toy keys for round length, pictograms for
+      decorative emoji (word emoji kept as content). Shared layer grew a
+      `Picto` frame, `KeyRow`, and a `success` button variant. **Fixed a
+      latent type bug**: `setup` stored the schema's string default
+      (`"300"`) in a numeric field; now parsed by a unit-tested helper.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -1060,8 +1069,8 @@ race game).
 
 ## Next Task
 - **Redesign, continued** (founder's current priority, ahead of M7's
-  remaining items and new games): phase 2b for the remaining games (Who Am I,
-  Connect 4, Guess Who, Battleship — one task each) and phase 3 (motion, sound, haptics) of M6.5. See
+  remaining items and new games): phase 2b for the remaining games (Connect 4,
+  Guess Who, Battleship — one task each) and phase 3 (motion, sound, haptics) of M6.5. See
   `HANDOFF.md` → "Context: the redesign this task opens".
 - After that: **M7 — Presentable**, or the two remaining entries in
   `BACKLOG.md`'s prioritized games list (Ludo, a dice-and-track race game).
@@ -1076,4 +1085,4 @@ race game).
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-10-07 (TASK-0042: Impostor on Juguetería; TASK-0041; TASK-0040; TASK-0039)
+- 2026-10-07 (TASK-0043: Who Am I on Juguetería; TASK-0042; TASK-0041; TASK-0040; TASK-0039)

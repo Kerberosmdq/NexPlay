@@ -3,16 +3,37 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: `TASK-0042` — M6.5 phase 2b, game 1 of 5.
-- **Title**: Impostor restyled on the Juguetería system, plus a single-device
-  privacy fix.
-- **Previous tasks**: `TASK-0041` (shared visual system, PR #63),
-  `TASK-0040` (`BDR-0002`, PR #62), `TASK-0039` (UX flow fixes, PR #61).
-  Their notes are kept below.
+- **Task ID**: `TASK-0043` — M6.5 phase 2b, game 2 of 5.
+- **Title**: Who Am I restyled on the Juguetería system, plus a config type
+  fix.
+- **Previous tasks**: `TASK-0042` (Impostor, PR #64), `TASK-0041` (#63),
+  `TASK-0040` (#62), `TASK-0039` (#61). Their notes are kept below.
 
 ## Current Branch
-- `feat/jugueteria-impostor`, stacked on `feat/jugueteria-primitives`
-  (PR #63) → #62 → #61. Merge order: #61 → #62 → #63 → this one.
+- `feat/jugueteria-who-am-i`, stacked on `feat/jugueteria-impostor` (#64)
+  → #63 → #62 → #61. Merge in that order, oldest first.
+
+## What TASK-0043 changed
+- `games/who-am-i/views/Pictos.tsx` (new): head-with-question-mark,
+  phone-on-forehead, got-it, missed. Decorative emoji gone; **word emoji
+  kept on purpose** (content for the youngest player, FEEL.md).
+- `games/who-am-i/views/parts.tsx` (new): `TimerPicker` (toy keys),
+  `WordCard` (yellow forehead card), `RoundClock`, `OwnResult`,
+  `GuessIcon`, `formatTime`.
+- Both views rewritten on those pieces; "Acerté" uses the new green
+  `success` button.
+- Shared layer: `components/ui/Picto.tsx` (Impostor's pictos now use it),
+  `components/ui/KeyRow.tsx` (moved from Impostor's parts; keys use
+  `!px-1 min-w-0` so five fit at 375px), `Button` `success` variant,
+  `--color-success-hover` (+ contrast test).
+- **Bug fix:** `games/who-am-i/module.ts` `setup` stored the schema's string
+  default `"300"` in `timerSeconds: number`; now `parseTimerSeconds` in
+  `reducer.ts` (pure, unit-tested). Other games' schemas use real numbers;
+  Battleship's `boardSize` is a string union (`"8" | "10"`) on purpose.
+
+## Warnings (TASK-0043)
+- Multi-device Who Am I not seen live (Supabase unreachable from the dev
+  machine).
 
 ## What TASK-0042 changed
 - `games/impostor/views/Pictos.tsx` (new): the game's own pictograms (mask,
@@ -117,8 +138,8 @@ to C on 2026-10-07), and asked to start with phase 1. Phases:
 - **Phase 1 — UX flow fixes** (`TASK-0039`, PR #61). Done.
 - **Phase 0 — `BDR-0002`**, `FEEL.md`, `ADR-0004` 1.1.0 (`TASK-0040`). Done.
 - **Phase 2a — shared visual system** (`TASK-0041`). Done.
-- **Phase 2b — per-game restyles**, one task per game. Impostor done
-  (`TASK-0042`); four to go.
+- **Phase 2b — per-game restyles**, one task per game. Impostor
+  (`TASK-0042`) and Who Am I (`TASK-0043`) done; three to go.
 - **Phase 3 — motion, sound, haptics** (phase transitions, toy-physics
   gestures, a plastic Web Audio kit with mute, `navigator.vibrate` on
   Android).
@@ -213,6 +234,5 @@ fixed in the source, left over from a mid-edit HMR pass.
 - Ludo and the dice-and-track race game from `BACKLOG.md` (carried forward).
 
 ## Next Suggested Task
-- M6.5 phase 2b — next game: Who Am I (its handoff/forehead flow pairs
-  naturally with Impostor's pieces), then Connect 4, Guess Who, Battleship
-  (split its 1105-line view first).
+- M6.5 phase 2b — next game: Connect 4 (board as the classic plastic
+  frame), then Guess Who, Battleship (split its 1105-line view first).
