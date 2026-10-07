@@ -3,16 +3,58 @@
 Document template for transferring task execution context between AI sessions and developer agents.
 
 ## Last Completed Task
-- **Task ID**: `TASK-0040` — redesign phase 0 (docs only).
-- **Title**: `BDR-0002` — Juguetería (molded plastic toy) becomes NexPlay's
-  visual direction, superseding `BDR-0001` (Paper & Felt).
-- **Previous task**: `TASK-0039` — redesign phase 1, UX flow fixes (PR #61).
-  Its notes are kept below.
+- **Task ID**: `TASK-0041` — M6.5 phase 2a.
+- **Title**: Juguetería visual system at the shared layer — tokens, fonts,
+  primitives, brand mark, icons, and the platform screens.
+- **Previous tasks**: `TASK-0040` (`BDR-0002`, PR #62) and `TASK-0039`
+  (UX flow fixes, PR #61). Their notes are kept below.
 
 ## Current Branch
-- `docs/bdr-0002-jugueteria`, branched off `feat/ux-flow-fixes` (PR #61)
-  because the state docs build on that PR's entries. Its PR targets
-  `feat/ux-flow-fixes`; once #61 merges, GitHub retargets it to `main`.
+- `feat/jugueteria-primitives`, stacked on `docs/bdr-0002-jugueteria`
+  (PR #62), itself stacked on `feat/ux-flow-fixes` (PR #61). Merge order:
+  #61 → #62 → this one; GitHub retargets each to `main` as its base merges.
+
+## What TASK-0041 changed
+- **Tokens** (`app/tokens.css`): `BDR-0002`'s palette under the existing
+  semantic names (`surface*`, `ink*`, `action-*`…), plus `ground`,
+  `accent`, `success`, per-game colors (`game-<id>` + `on-` + `edge-`),
+  and molded-edge tokens (`--color-edge-*`, `--edge-sm/md/lg`). Penumbra
+  tokens removed. `design-tokens.test.ts` now checks 31 pairs, including
+  focus ring ≥3:1 on white and on the ground, and water separation.
+- **Fonts**: Titan One (`font-display`) + Baloo 2 (`font-sans`); Space Mono
+  stays as `font-mono` for digits only — Baloo 2's tabular figures were not
+  verified yet (check before dropping it).
+- **Ground**: `body` is the studded baseplate (`app/globals.css`).
+- **Primitives**: `Button` sits on a solid edge and sinks by it on press;
+  disabled loses the edge; inactive toggles are flat sockets. `Card` and
+  `Dialog` are white plastic panels. `Field`/`CodeInput` are sunken
+  wells / yellow keycaps. `Screen` keeps the top bar on the ground and
+  wraps every screen's content in **one white tray** — that's what keeps
+  text off the blue in game views that weren't restyled yet.
+  `RevealCard` is now a yellow egg capsule (deliberately not red-over-white,
+  which read as a well-known ball from a trademarked franchise); while held,
+  a baseplate cover hides everything else.
+- **New**: `components/ui/NexMark.tsx` (hex token, default glyph = four
+  studs), `components/platform/GameIcon.tsx` (pictograms + block color
+  classes per game id; platform layer, no GameModule change).
+- **Platform screens**: entry, single-device picker (colored game blocks,
+  compact "?" how-to key), waiting lobby (code as keycaps, colored game
+  rows, single column inside the tray), match-resolved modal.
+- **Icons**: `scripts/generate-icons.mjs` now renders the hex token SVG with
+  sharp; `app/icon.png`, `app/apple-icon.png`, `public/icons/*` regenerated.
+  `public/NexPlay_Logo.png` is no longer referenced by code (kept as a
+  founder asset).
+- **Game views (class swaps only)**: penumbra text classes → ink/action/
+  success (the reveal card is white now); `text-action-secondary` used as
+  text → `text-accent` (yellow on white is 1.54:1).
+
+## Warnings (TASK-0041)
+- **Waiting lobby not seen live**: multi-device needs Supabase, which
+  doesn't resolve from the dev machine. Typecheck passes; look at it on a
+  real connection before or during phase 2b.
+- **Game views look interim**: their own `Card` wrappers now sit inside
+  `Screen`'s tray (a panel inside a panel), boards keep their old layouts,
+  emoji illustrations remain. That's phase 2b, by design.
 
 ## What TASK-0040 changed
 - `docs/00_decisions/brand/BDR-0002-VISUAL-IDENTITY-JUGUETERIA.md` (new):
@@ -48,9 +90,8 @@ the founder chose **C** and **voseo** (first saying A by mistake, corrected
 to C on 2026-10-07), and asked to start with phase 1. Phases:
 - **Phase 1 — UX flow fixes** (`TASK-0039`, PR #61). Done.
 - **Phase 0 — `BDR-0002`**, `FEEL.md`, `ADR-0004` 1.1.0 (`TASK-0040`). Done.
-- **Phase 2 — visual system** (tokens, fonts, baseplate and molded-edge
-  primitives, capsule reveal, per-game pictograms replacing emoji, hex
-  token mark and icon set). Next.
+- **Phase 2a — shared visual system** (`TASK-0041`). Done.
+- **Phase 2b — per-game restyles**, one task per game. Next.
 - **Phase 3 — motion, sound, haptics** (phase transitions, toy-physics
   gestures, a plastic Web Audio kit with mute, `navigator.vibrate` on
   Android).
@@ -145,6 +186,6 @@ fixed in the source, left over from a mid-edit HMR pass.
 - Ludo and the dice-and-track race game from `BACKLOG.md` (carried forward).
 
 ## Next Suggested Task
-- M6.5 phase 2 — the visual system per `BDR-0002` (tokens, fonts, molded
-  edge primitives, capsule `RevealCard`, pictograms, hex token icons).
-  Large: worth splitting into a primitives task and per-game restyle tasks.
+- M6.5 phase 2b — restyle each game's own views on the new primitives, one
+  task per game. Suggested order: Impostor (the capsule's main user), Who
+  Am I, Connect 4, Guess Who, Battleship (split its 1105-line view first).

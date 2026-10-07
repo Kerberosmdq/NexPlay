@@ -4,8 +4,9 @@ Living status document tracking the current sprint, objectives, completed tasks,
 
 ## Current Sprint
 - Sprint: Sprint 19 - M6.5 redesign (Juguetería). Phase 1 (`TASK-0039`, UX
-  flow fixes, PR #61) and phase 0 (`TASK-0040`, `BDR-0002`, on
-  `docs/bdr-0002-jugueteria`) done; phase 2 (visual system) next.
+  flow fixes, PR #61), phase 0 (`TASK-0040`, `BDR-0002`, PR #62) and phase
+  2a (`TASK-0041`, shared visual system, on `feat/jugueteria-primitives`)
+  done; phase 2b (per-game restyles) next.
 - Previous sprint: Sprint 18 - M5 (Connect 4) and M6 (Guess Who) shipped,
   plus a platform UX hotfix
 - Status: `TASK-0031` (Battleship core), `TASK-0033` (M4a polish), four
@@ -1032,6 +1033,16 @@ race game).
       elevation, penumbra retired, motion vocabulary to grow), redesign
       added to `ROADMAP.md` as M6.5. Docs only.
 
+- [x] **TASK-0041**: M6.5 phase 2a — `BDR-0002`'s visual system at the
+      shared layer. New tokens (toy-blue baseplate, white plastic, edge
+      tokens, per-game colors; penumbra retired) with 31 contrast tests,
+      Titan One + Baloo 2, molded-edge primitives that sink when pressed,
+      a white tray around every screen's content, the capsule `RevealCard`
+      with a baseplate privacy cover, the hex token `NexMark`, per-game
+      pictograms, a regenerated icon set, and the entry screen, game
+      picker and waiting lobby restyled. Game views only got class swaps
+      the new palette required; their own restyle is phase 2b.
+
 ## Tasks In Progress
 - [ ] None.
 
@@ -1040,8 +1051,8 @@ race game).
 
 ## Next Task
 - **Redesign, continued** (founder's current priority, ahead of M7's
-  remaining items and new games): phase 2 (visual system, per `BDR-0002`)
-  and phase 3 (motion, sound, haptics) of M6.5. See
+  remaining items and new games): phase 2b (restyle each game's own views,
+  one task per game) and phase 3 (motion, sound, haptics) of M6.5. See
   `HANDOFF.md` → "Context: the redesign this task opens".
 - After that: **M7 — Presentable**, or the two remaining entries in
   `BACKLOG.md`'s prioritized games list (Ludo, a dice-and-track race game).
@@ -1056,4 +1067,4 @@ race game).
   slice remains open (latent leak, not urgent) — see `HANDOFF.md`.
 
 ## Last Updated
-- 2026-10-07 (TASK-0040: BDR-0002 Juguetería; TASK-0039: redesign phase 1)
+- 2026-10-07 (TASK-0041: Juguetería shared visual system; TASK-0040; TASK-0039)

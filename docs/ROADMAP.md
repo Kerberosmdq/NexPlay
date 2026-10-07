@@ -555,9 +555,13 @@ molded plastic toy), superseding `BDR-0001`.
   for every game, voseo. Independent of the look.
 - **Phase 0 — decision (`TASK-0040`):** `BDR-0002`, `FEEL.md` rewritten,
   `ADR-0004` amended (1.1.0).
-- **Phase 2 — visual system:** tokens, fonts, baseplate and molded-edge
-  primitives, the capsule reveal, per-game pictograms and hex token icon
-  set; every screen restyled.
+- **Phase 2 — visual system:** split in two.
+  - **2a (`TASK-0041`):** tokens, fonts, baseplate, molded-edge
+    primitives, the capsule reveal, hex token mark and icon set, per-game
+    pictograms; platform screens (entry, game picker, waiting lobby)
+    restyled.
+  - **2b:** each game's own views restyled, one task per game (boards,
+    setup screens, emoji illustrations replaced).
 - **Phase 3 — motion, sound, haptics:** phase transitions, toy-physics
   gestures, a plastic sound kit with mute, vibration on Android.
 
